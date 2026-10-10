@@ -517,9 +517,10 @@ window.MineCards = (function () {
     return html;
   }
 
-  /* ---- 系统字卡 tab：字卡池中你审批通过的字卡（来自组字卡审批），按联系人分组 ---- */
+  /* ---- 系统字卡 tab：字卡池中你审批通过的字卡（来自组字卡审批），按联系人分组、可折叠 ---- */
+  var sysPoolCollapse = {};   /* 联系人组折叠状态：默认折叠，点击组头展开 */
   function renderSysPoolTab() {
-    var html = '<div class="card-hint">系统字卡：你审批通过的字卡（来自字卡池），联系人组卡审批通过后自动进入此处 · 删除后同时移出聊天使用</div>';
+    var html = '<div class="card-hint">系统字卡：你审批通过的字卡（来自字卡池），联系人组卡审批通过后自动进入此处 · 按联系人分组，点击组名展开/折叠 · 删除后同时移出聊天使用</div>';
     var pool = (window.MineCardGenerator && window.MineCardGenerator.getPool) ? window.MineCardGenerator.getPool() : [];
     if (!pool || pool.length === 0) {
       return html + '<div class="cm-empty">暂无审批通过的字卡</div>';
@@ -531,12 +532,17 @@ window.MineCards = (function () {
     });
     Object.keys(byCid).forEach(function (k) {
       var name = k === "global" ? "通用" : contactName(k);
-      html += '<div class="group-head">' + escapeHtml(name) + ' · ' + byCid[k].length + ' 张</div>';
-      html += '<div class="card-list">' + byCid[k].map(function (it) {
-        var inner = '<span class="card-text">' + escapeHtml(it.text) + '</span>';
-        return '<div class="card-item">' + inner +
-          '<button class="card-del" data-del-pool-id="' + escapeHtml(it.id) + '" aria-label="删除">' + I.svg("trash", 16) + '</button></div>';
-      }).join("") + '</div>';
+      var open = sysPoolCollapse[k] === true;
+      html += '<div class="group-head sp-group-head" data-sp-group="' + escapeHtml(k) + '" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">' +
+        '<span>' + escapeHtml(name) + ' · ' + byCid[k].length + ' 张</span>' +
+        '<span style="font-size:12px;color:#888;">' + (open ? '收起 ▲' : '展开 ▼') + '</span></div>';
+      if (open) {
+        html += '<div class="card-list">' + byCid[k].map(function (it) {
+          var inner = '<span class="card-text">' + escapeHtml(it.text) + '</span>';
+          return '<div class="card-item">' + inner +
+            '<button class="card-del" data-del-pool-id="' + escapeHtml(it.id) + '" aria-label="删除">' + I.svg("trash", 16) + '</button></div>';
+        }).join("") + '</div>';
+      }
     });
     return html;
   }
@@ -802,6 +808,15 @@ window.MineCards = (function () {
         else if (scope === "per") removePerCard(cid, idx);
         else if (scope === "sys") removeSysCard(idx);
         else if (scope === "auto") removeAutoCard(cid, idx);
+        render();
+      });
+    });
+
+    /* 系统字卡联系人分组：点击组头展开 / 折叠 */
+    body.querySelectorAll("[data-sp-group]").forEach(function (h) {
+      h.addEventListener("click", function () {
+        var k = h.getAttribute("data-sp-group");
+        sysPoolCollapse[k] = sysPoolCollapse[k] !== true;
         render();
       });
     });

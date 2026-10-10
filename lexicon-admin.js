@@ -190,6 +190,8 @@ window.MineLexiconAdmin = (function () {
     });
     renderPendingList();
   }
+  /* 待审批字卡：按联系人分组，组头可点击展开/折叠（默认折叠） */
+  var pendingCollapse = {};
   function renderPendingList() {
     var detail = document.getElementById("page-detail");
     var box = detail.querySelector("#cg-pending-list");
@@ -199,31 +201,57 @@ window.MineLexiconAdmin = (function () {
       box.innerHTML = '<div class="card-hint">暂无待审批字卡。点击上方「生成一批」试试。</div>';
       return;
     }
-    box.innerHTML = pending.map(function (it) {
-      var routeTag = it.route === "pinyin"
-        ? '<span style="background:#fdf0e6;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">拼音</span>'
-        : '<span style="background:#e8f1fb;color:#2563a8;padding:1px 6px;border-radius:4px;font-size:11px;">模板</span>';
-      var srcTag = it.source === "backlog"
-        ? '<span style="background:#e8f6ef;color:#1d8348;padding:1px 6px;border-radius:4px;font-size:11px;">后台组卡</span>'
-        : (it.source === "realtime"
-          ? '<span style="background:#fdf3e7;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">实时</span>'
-          : '');
-      var inputLine = it.input
-        ? '<div style="font-size:12px;color:#888;margin-top:2px;">输入：' + esc(it.input) + ' → 还原为</div>'
-        : '';
-      return '<div style="margin:0 12px 10px;border:1px solid #eee;border-radius:12px;padding:12px;background:#fff;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<div style="font-size:17px;font-weight:600;">' + esc(it.text) + '</div>' +
-          '<div style="display:flex;gap:6px;align-items:center;">' + routeTag + srcTag + '</div>' +
-        '</div>' +
-        inputLine +
-        '<div style="font-size:12px;color:#999;margin-top:6px;">评分 ' + it.conf.toFixed(2) +
-          '（语法 ' + it.syntax.toFixed(2) + ' / 通顺 ' + it.fluency.toFixed(2) + '） · ' + fmtTime(it.createdAt) + '</div>' +
-        '<div style="display:flex;gap:8px;margin-top:8px;">' +
-          '<button class="cg-approve" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#2ecc71;color:#fff;border:none;font-size:13px;">' + iconSvg("check", 13) + ' 通过</button>' +
-          '<button class="cg-reject" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#eee;color:#555;border:none;font-size:13px;">拒绝</button>' +
-        '</div></div>';
-    }).join("");
+    /* 按联系人分组：通用 + 各联系人 */
+    var groups = {};
+    pending.forEach(function (it) {
+      var k = (it.contactId && it.contactId !== "global") ? it.contactId : "global";
+      (groups[k] = groups[k] || []).push(it);
+    });
+    var html = "";
+    Object.keys(groups).forEach(function (k) {
+      var name = k === "global" ? "通用" : contactName(k);
+      var open = pendingCollapse[k] === true;
+      html += '<div class="group-head cg-group-head" data-cg-group="' + esc(k) + '" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">' +
+        '<span>' + esc(name) + ' 组了 ' + groups[k].length + ' 张，待你审批</span>' +
+        '<span style="font-size:12px;color:#888;">' + (open ? '收起 ▲' : '展开 ▼') + '</span>' +
+        '</div>';
+      if (open) {
+        html += groups[k].map(function (it) {
+          var routeTag = it.route === "pinyin"
+            ? '<span style="background:#fdf0e6;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">拼音</span>'
+            : '<span style="background:#e8f1fb;color:#2563a8;padding:1px 6px;border-radius:4px;font-size:11px;">模板</span>';
+          var srcTag = it.source === "backlog"
+            ? '<span style="background:#e8f6ef;color:#1d8348;padding:1px 6px;border-radius:4px;font-size:11px;">后台组卡</span>'
+            : (it.source === "realtime"
+              ? '<span style="background:#fdf3e7;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">实时</span>'
+              : '');
+          var inputLine = it.input
+            ? '<div style="font-size:12px;color:#888;margin-top:2px;">输入：' + esc(it.input) + ' → 还原为</div>'
+            : '';
+          return '<div style="margin:0 12px 10px;border:1px solid #eee;border-radius:12px;padding:12px;background:#fff;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+              '<div style="font-size:17px;font-weight:600;">' + esc(it.text) + '</div>' +
+              '<div style="display:flex;gap:6px;align-items:center;">' + routeTag + srcTag + '</div>' +
+            '</div>' +
+            inputLine +
+            '<div style="font-size:12px;color:#999;margin-top:6px;">评分 ' + it.conf.toFixed(2) +
+              '（语法 ' + it.syntax.toFixed(2) + ' / 通顺 ' + it.fluency.toFixed(2) + '） · ' + fmtTime(it.createdAt) + '</div>' +
+            '<div style="display:flex;gap:8px;margin-top:8px;">' +
+              '<button class="cg-approve" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#2ecc71;color:#fff;border:none;font-size:13px;">' + iconSvg("check", 13) + ' 通过</button>' +
+              '<button class="cg-reject" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#eee;color:#555;border:none;font-size:13px;">拒绝</button>' +
+            '</div></div>';
+        }).join("");
+      }
+    });
+    box.innerHTML = html;
+    /* 组头点击：展开 / 折叠 */
+    Array.prototype.forEach.call(box.querySelectorAll(".cg-group-head"), function (h) {
+      h.addEventListener("click", function () {
+        var k = h.getAttribute("data-cg-group");
+        pendingCollapse[k] = pendingCollapse[k] !== true;
+        renderPendingList();
+      });
+    });
     Array.prototype.forEach.call(box.querySelectorAll(".cg-approve"), function (btn) {
       btn.addEventListener("click", function () {
         var r = G.approve(btn.getAttribute("data-id"));
@@ -242,6 +270,37 @@ window.MineLexiconAdmin = (function () {
 
   /* ==================== 2. 字卡池（筛选 / 搜索 / 删除） ==================== */
   var poolState = { filter: "", kw: "" };
+  /* 字卡池卡片 HTML（单张） */
+  function poolItemHtml(it) {
+    var routeTag = it.route === "pinyin"
+      ? '<span style="background:#fdf0e6;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">拼音</span>'
+      : '<span style="background:#e8f1fb;color:#2563a8;padding:1px 6px;border-radius:4px;font-size:11px;">模板</span>';
+    var src = it.judgedBy === "manual" ? "人工批准" : "AI 自动通过";
+    var owner = it.contactId && it.contactId !== "global"
+      ? '<span style="background:#f3f0fa;color:#6c4ab6;padding:1px 6px;border-radius:4px;font-size:11px;">' + esc(contactName(it.contactId)) + '专用</span>'
+      : '<span style="background:#eafaf1;color:#1d8348;padding:1px 6px;border-radius:4px;font-size:11px;">公用</span>';
+    return '<div style="margin:0 12px 10px;border:1px solid #eee;border-radius:12px;padding:12px;background:#fff;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<div style="font-size:16px;font-weight:600;">' + esc(it.text) + '</div>' +
+        '<div style="display:flex;gap:6px;align-items:center;">' + routeTag + owner + '</div></div>' +
+      '<div style="font-size:12px;color:#999;margin-top:4px;">' + src + ' · 评分 ' + it.conf.toFixed(2) + ' · ' + fmtTime(it.createdAt) + '</div>' +
+      '<button class="cg-pool-rm" data-id="' + it.id + '" style="margin-top:6px;padding:5px 10px;border-radius:6px;background:#fdeaea;color:#c0392b;border:none;font-size:12px;">' + iconSvg("trash", 13) + ' 删除该字卡</button>' +
+    '</div>';
+  }
+  function renderPoolItems(box, arr) {
+    if (!arr.length) {
+      box.innerHTML = '<div class="card-hint">无符合条件的字卡</div>';
+      return;
+    }
+    box.innerHTML = arr.map(poolItemHtml).join("");
+    Array.prototype.forEach.call(box.querySelectorAll(".cg-pool-rm"), function (btn) {
+      btn.addEventListener("click", function () {
+        var r = G.removePoolItem(btn.getAttribute("data-id"));
+        toast(r.ok ? ("已删除字卡「" + r.text + "」") : "删除失败");
+        renderPool();
+      });
+    });
+  }
   function renderPool() {
     var stats = G.getStats();
     var pool = G.getPool();
@@ -259,6 +318,9 @@ window.MineLexiconAdmin = (function () {
       if (kw && it.text.indexOf(kw) < 0) return false;
       return true;
     });
+    /* 分两栏：自动通过 / 人工批准 */
+    var autoList = list.filter(function (it) { return it.judgedBy !== "manual"; });
+    var manualList = list.filter(function (it) { return it.judgedBy === "manual"; });
     var inner =
       '<div class="group-head">统计</div>' +
       '<div class="card-hint">自动通过 ' + stats.auto + ' · 人工批准 ' + stats.approved +
@@ -268,8 +330,10 @@ window.MineLexiconAdmin = (function () {
         '<select id="pl-filter" style="flex:1;min-width:110px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' + opts + '</select>' +
         '<input id="pl-search" placeholder="搜索已通过字卡…" value="' + esc(poolState.kw) + '" style="flex:1.4;min-width:140px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
       '</div>' +
-      '<div class="group-head">已通过字卡（' + list.length + ' / ' + pool.length + '）</div>' +
-      '<div id="cg-pool-list"></div>';
+      '<div class="group-head">自动通过（' + autoList.length + ' / ' + pool.length + '）</div>' +
+      '<div id="cg-pool-auto"></div>' +
+      '<div class="group-head">人工批准（' + manualList.length + '）</div>' +
+      '<div id="cg-pool-manual"></div>';
     pageShell("pool", inner);
     var detail = document.getElementById("page-detail");
     var sel = detail.querySelector("#pl-filter");
@@ -282,34 +346,13 @@ window.MineLexiconAdmin = (function () {
       poolState.kw = search.value;
       renderPool();
     });
-    var box = detail.querySelector("#cg-pool-list");
     if (!list.length) {
-      box.innerHTML = '<div class="card-hint">' + (pool.length ? '没有符合条件的字卡，试试调整筛选/搜索。' : '还没有通过的字卡。去「字卡审批」生成一批，或调低自动阈值让更多候选自动通过。') + '</div>';
+      var box = detail.querySelector("#cg-pool-auto");
+      if (box) box.innerHTML = '<div class="card-hint">' + (pool.length ? '没有符合条件的字卡，试试调整筛选/搜索。' : '还没有通过的字卡。去「字卡审批」生成一批，或调低自动阈值让更多候选自动通过。') + '</div>';
       return;
     }
-    box.innerHTML = list.map(function (it) {
-      var routeTag = it.route === "pinyin"
-        ? '<span style="background:#fdf0e6;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">拼音</span>'
-        : '<span style="background:#e8f1fb;color:#2563a8;padding:1px 6px;border-radius:4px;font-size:11px;">模板</span>';
-      var src = it.judgedBy === "manual" ? "人工批准" : "AI 自动";
-      var owner = it.contactId && it.contactId !== "global"
-        ? '<span style="background:#f3f0fa;color:#6c4ab6;padding:1px 6px;border-radius:4px;font-size:11px;">' + esc(contactName(it.contactId)) + '专用</span>'
-        : '<span style="background:#eafaf1;color:#1d8348;padding:1px 6px;border-radius:4px;font-size:11px;">公用</span>';
-      return '<div style="margin:0 12px 10px;border:1px solid #eee;border-radius:12px;padding:12px;background:#fff;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<div style="font-size:16px;font-weight:600;">' + esc(it.text) + '</div>' +
-          '<div style="display:flex;gap:6px;align-items:center;">' + routeTag + owner + '</div></div>' +
-        '<div style="font-size:12px;color:#999;margin-top:4px;">' + src + ' · 评分 ' + it.conf.toFixed(2) + ' · ' + fmtTime(it.createdAt) + '</div>' +
-        '<button class="cg-pool-rm" data-id="' + it.id + '" style="margin-top:6px;padding:5px 10px;border-radius:6px;background:#fdeaea;color:#c0392b;border:none;font-size:12px;">' + iconSvg("trash", 13) + ' 删除该字卡</button>' +
-      '</div>';
-    }).join("");
-    Array.prototype.forEach.call(box.querySelectorAll(".cg-pool-rm"), function (btn) {
-      btn.addEventListener("click", function () {
-        var r = G.removePoolItem(btn.getAttribute("data-id"));
-        toast(r.ok ? ("已删除字卡「" + r.text + "」") : "删除失败");
-        renderPool();
-      });
-    });
+    renderPoolItems(detail.querySelector("#cg-pool-auto"), autoList);
+    renderPoolItems(detail.querySelector("#cg-pool-manual"), manualList);
   }
 
   /* ==================== 3. 本地训练 ==================== */
