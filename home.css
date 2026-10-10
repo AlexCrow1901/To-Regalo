@@ -1,0 +1,213 @@
+/* ========================================================================
+   Mine · Home 页面 · 手机主屏幕布局
+   ------------------------------------------------------------------------
+   顶部状态区 → 应用图标网格 → 页面指示点 → 底部 Dock
+   全部重新设计为雾都冷调风格，不照搬真实系统视觉。
+   ======================================================================== */
+
+/* ---------- 顶部状态区 ---------- */
+.status-bar {
+  flex: 0 0 var(--status-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-5);
+  padding-top: env(safe-area-inset-top, 0);
+  height: calc(var(--status-h) + env(safe-area-inset-top, 0));
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--blur-sm)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--blur-sm)) saturate(1.15);
+  border-bottom: 1px solid var(--bd-faint);
+  position: relative;
+  z-index: 5;
+}
+.status-time {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--t-primary);
+  font-variant-numeric: tabular-nums;
+}
+.status-indicators {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--t-secondary);
+}
+.status-indicators svg { width: 16px; height: 16px; }
+
+/* 信号点 · 极简递增圆点 */
+.sig-dots { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+.sig-dots i {
+  width: 3px; border-radius: 1px;
+  background: var(--t-secondary);
+}
+.sig-dots i:nth-child(1) { height: 4px; }
+.sig-dots i:nth-child(2) { height: 7px; }
+.sig-dots i:nth-child(3) { height: 10px; }
+.sig-dots i:nth-child(4) { height: 12px; opacity: 0.4; }
+
+/* 电池 · 极简 */
+.battery {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 12px; font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--t-secondary);
+}
+.battery-body {
+  width: 22px; height: 11px;
+  border: 1px solid var(--bd-medium);
+  border-radius: 3px;
+  padding: 1.5px;
+  position: relative;
+}
+.battery-body::after {
+  content: ""; position: absolute;
+  right: -3px; top: 3px;
+  width: 2px; height: 5px;
+  background: var(--bd-medium);
+  border-radius: 0 1px 1px 0;
+}
+.battery-fill {
+  width: 72%; height: 100%;
+  background: var(--t-secondary);
+  border-radius: 1px;
+}
+
+/* ---------- 应用图标网格 ---------- */
+.app-grid-wrap {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--grid-gap) 0;
+  padding: var(--sp-6) var(--sp-4) var(--sp-4);
+  align-content: start;
+}
+.app-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+.app-cell:active .app-icon {
+  transform: scale(0.92);
+}
+
+/* 页面指示点（主屏分页暗示） */
+.page-dots {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--sp-2) 0 var(--sp-3);
+}
+.page-dots i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--t-primary);
+  opacity: 0.28;
+}
+.page-dots i.is-active { opacity: 0.7; }
+
+/* ---------- 底部 Dock ---------- */
+.dock {
+  flex: 0 0 var(--dock-h);
+  padding: 0 var(--sp-4) calc(env(safe-area-inset-bottom, 0px) + var(--sp-3));
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  position: relative;
+  z-index: 5;
+}
+.dock-inner {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 62px;
+  padding: 0 var(--sp-2);
+  background: var(--glass-3);
+  backdrop-filter: blur(var(--blur-lg)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(1.2);
+  border: none;
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-soft),
+              inset 0 1px 0 rgba(230, 240, 246, 0.05);
+}
+
+/* 底部导航项（微信风格：图标 + 文字，选中高亮） */
+.dock-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  min-width: 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  color: var(--t-primary);
+  opacity: 0.5;
+  transition: opacity .15s ease, transform .12s ease;
+}
+.dock-cell .dock-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dock-cell .dock-label {
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  padding: 0 2px;
+}
+.dock-cell.is-active {
+  opacity: 1;
+  color: var(--t-accent, #07c160);
+}
+.dock-cell.is-active .dock-icon {
+  color: var(--t-accent, #07c160);
+}
+.dock-cell:active {
+  transform: scale(0.94);
+}
+
+/* 搜索条 · 主屏顶部下方（可选，克制存在） */
+.search-pill {
+  margin: var(--sp-4) var(--sp-5) 0;
+  display: flex; align-items: center; gap: var(--sp-2);
+  height: 38px;
+  padding: 0 var(--sp-4);
+  background: var(--glass-2);
+  backdrop-filter: blur(var(--blur-sm)) saturate(1.1);
+  -webkit-backdrop-filter: blur(var(--blur-sm)) saturate(1.1);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-pill);
+  color: var(--t-tertiary);
+  font-size: 14px;
+}
+.search-pill svg { width: 16px; height: 16px; opacity: 0.8; }
+
+/* 日期问候 · 主屏顶部 */
+.greeting {
+  padding: var(--sp-5) var(--sp-5) var(--sp-2);
+}
+.greeting .hello {
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--t-tertiary);
+}
+.greeting .date {
+  font-size: 12px;
+  color: var(--t-faint);
+  margin-top: 2px;
+}

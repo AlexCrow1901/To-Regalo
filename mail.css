@@ -1,0 +1,464 @@
+/* ========================================================================
+   Mine · 次元信箱样式
+   ------------------------------------------------------------------------
+   延续雾都冷调：信箱列表 / 邮件列表 / 阅读页 / 写邮件页
+   ======================================================================== */
+
+/* ---------- 搜索栏 ---------- */
+.mail-search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-3) var(--sp-4);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-md);
+  transition: border-color var(--dur-fast) var(--ease-soft);
+}
+.mail-search-bar:focus-within {
+  border-color: var(--accent);
+}
+
+.mail-search-icon {
+  flex: 0 0 auto;
+  color: var(--t-faint);
+  display: flex;
+  align-items: center;
+}
+.mail-search-icon svg { width: 16px; height: 16px; }
+
+.mail-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  color: var(--t-primary);
+  font-size: 14px;
+  font-family: inherit;
+}
+.mail-search-input::placeholder {
+  color: var(--t-faint);
+}
+
+.mail-search-clear {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: var(--glass-3);
+  color: var(--t-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-soft);
+}
+.mail-search-clear:active {
+  background: var(--glass-press);
+}
+.mail-search-clear svg { width: 12px; height: 12px; }
+
+/* ---------- 分组标题 ---------- */
+.mail-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-5) var(--sp-1);
+}
+.mail-group-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+}
+.mail-group-count {
+  font-size: 11px;
+  color: var(--t-faint);
+}
+
+/* ---------- 主页面信箱行 ---------- */
+.mail-box-row {
+  cursor: pointer;
+}
+
+.mail-badge {
+  flex: 0 0 auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: var(--sp-2);
+}
+
+/* ---------- 邮件列表项 ---------- */
+.mail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: 1px solid var(--bd-faint);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.mail-item:active { background: var(--glass-press); }
+.mail-item.is-unread .mail-item-from { font-weight: 600; color: var(--t-primary); }
+.mail-item.is-unread .mail-item-subject { font-weight: 600; }
+
+.mail-item-star {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t-faint);
+  margin-top: 2px;
+}
+.mail-item-star.is-starred { color: #c9a84c; }
+.mail-item-star svg { width: 16px; height: 16px; }
+
+.mail-item-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mail-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.mail-item-from-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  overflow: hidden;
+}
+
+.mail-item-from {
+  font-size: 15px;
+  color: var(--t-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mail-item-time {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--t-faint);
+  white-space: nowrap;
+}
+
+.mail-item-subject {
+  font-size: 14px;
+  color: var(--t-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mail-item-preview {
+  font-size: 13px;
+  color: var(--t-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- 阅读邮件 ---------- */
+.mail-read {
+  padding: var(--sp-5) var(--sp-5) var(--sp-8);
+}
+
+.mail-read-subject {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--t-primary);
+  line-height: 1.4;
+  margin-bottom: var(--sp-4);
+}
+
+.mail-read-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-bottom: var(--sp-4);
+}
+
+.mail-read-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.mr-label {
+  flex: 0 0 auto;
+  width: 48px;
+  color: var(--t-faint);
+  font-size: 13px;
+}
+
+.mr-value {
+  flex: 1;
+  color: var(--t-secondary);
+  word-break: break-word;
+}
+
+.mail-read-body {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--t-primary);
+  padding: var(--sp-4) 0;
+  min-height: 120px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.mail-read-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+}
+
+/* ---------- 写邮件 ---------- */
+.mail-compose {
+  padding-bottom: var(--sp-8);
+}
+
+.compose-field {
+  padding: var(--sp-3) var(--sp-5);
+}
+
+.compose-field-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.compose-label {
+  display: block;
+  font-size: 13px;
+  color: var(--t-faint);
+  margin-bottom: var(--sp-2);
+  letter-spacing: 0.3px;
+}
+
+.compose-field-row .compose-label {
+  flex: 0 0 auto;
+  width: 48px;
+  margin-bottom: 0;
+}
+
+.compose-input {
+  flex: 1;
+  height: 42px;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-sm);
+  color: var(--t-primary);
+  font-size: 15px;
+  padding: 0 var(--sp-3);
+  font-family: inherit;
+  transition: border-color var(--dur-fast) var(--ease-soft);
+}
+.compose-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.compose-textarea {
+  width: 100%;
+  min-height: 160px;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-sm);
+  color: var(--t-primary);
+  font-size: 15px;
+  line-height: 1.7;
+  padding: var(--sp-3);
+  resize: none;
+  font-family: inherit;
+  transition: border-color var(--dur-fast) var(--ease-soft);
+}
+.compose-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ---------- 收件人标签 ---------- */
+.compose-recipients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+  min-height: 8px;
+}
+
+.recipient-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--glass-3);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--t-primary);
+}
+
+.recipient-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: var(--t-faint);
+  transition: color var(--dur-fast) var(--ease-soft);
+}
+.recipient-remove:active { color: #c97a7a; }
+.recipient-remove svg { width: 12px; height: 12px; }
+
+/* ---------- 联系人选择列表 ---------- */
+.compose-contact-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding-top: var(--sp-2);
+}
+
+.contact-pick-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-soft);
+}
+.contact-pick-item.is-selected {
+  background: var(--glass-3);
+  border-color: var(--accent);
+}
+
+.contact-pick-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--glass-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.contact-pick-name {
+  font-size: 13px;
+  color: var(--t-primary);
+}
+
+.contact-pick-check {
+  display: none;
+  color: var(--accent);
+}
+.contact-pick-check svg { width: 16px; height: 16px; }
+.contact-pick-item.is-selected .contact-pick-check { display: flex; }
+
+/* ---------- 发送操作区 ---------- */
+.compose-actions {
+  padding: var(--sp-4) var(--sp-5) 0;
+}
+
+/* ---------- 邮件列表滚动区域 ---------- */
+.mail-scroll {
+  padding-bottom: var(--sp-8);
+}
+
+/* ---------- 抖动动画（未选收件人时提示） ---------- */
+@keyframes mailShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* ---------- 邮件状态标签（列表项） ---------- */
+.mail-status {
+  flex: 0 0 auto;
+  margin: 0 var(--sp-1);
+  padding: 1px 6px;
+  height: 16px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+.mail-status-sending {
+  background: rgba(100, 120, 140, 0.15);
+  color: #64788c;
+}
+.mail-status-delivered {
+  background: rgba(70, 160, 130, 0.15);
+  color: #46a082;
+}
+
+/* ---------- 阅读页状态文字 ---------- */
+.mail-read-status-sending {
+  color: #64788c;
+}
+.mail-read-status-delivered {
+  color: #46a082;
+}
+
+/* ---------- 收件箱板块标题 ---------- */
+.mail-section-head {
+  padding: var(--sp-4) var(--sp-5) var(--sp-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t-faint);
+  letter-spacing: 0.8px;
+}
+
+.mail-section-empty {
+  padding: var(--sp-4) var(--sp-5) var(--sp-6);
+  font-size: 13px;
+  color: var(--t-tertiary);
+  text-align: center;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* ---------- 空状态微调 ---------- */
+.mail-scroll .empty-state {
+  padding: var(--sp-10) var(--sp-5);
+}

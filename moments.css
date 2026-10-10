@@ -1,0 +1,609 @@
+/* ========================================================================
+   Mine · 朋友圈模块样式
+   ------------------------------------------------------------------------
+   参考微信朋友圈视觉框架：
+   · 顶部封面横幅 + 用户信息浮层
+   · 动态流（头像 + 文字 + 图片九宫格 + 定位 + 时间 + 互动栏）
+   · 发表动态编辑器
+   · 评论 / 点赞交互结构
+   ======================================================================== */
+
+/* ---------- 页面容器 ---------- */
+.moments-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--c-charcoal);
+}
+
+/* ---------- 导航栏 ---------- */
+.moments-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 var(--sp-2);
+  flex-shrink: 0;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+}
+.moments-nav .nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--sp-1) var(--sp-2);
+  background: transparent;
+  border: none;
+  color: var(--t-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+.moments-nav .nav-btn:active { opacity: 0.6; }
+.moments-nav .nav-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--t-primary);
+  pointer-events: none;
+}
+.moments-nav .nav-camera {
+  width: 36px; height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  color: var(--t-primary);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.moments-nav .nav-camera:active {
+  background: var(--glass-press);
+}
+
+/* ---------- 可滚动内容区 ---------- */
+.moments-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden;
+}
+
+/* ---------- 封面横幅 ---------- */
+.moments-cover {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a1e22 0%, #2a3036 40%, #1e2429 100%);
+}
+.moments-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(31, 35, 38, 0.8) 100%);
+  pointer-events: none;
+}
+.moments-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.6;
+}
+.moments-cover-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t-faint);
+  font-size: 14px;
+}
+/* 封面可点击 + 更换提示 */
+.moments-cover {
+  cursor: pointer;
+}
+.moments-cover-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 14px;
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(var(--blur-xs));
+  -webkit-backdrop-filter: blur(var(--blur-xs));
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-soft);
+}
+.moments-cover-hint svg { width: 14px; height: 14px; }
+.moments-cover:hover .moments-cover-hint,
+.moments-cover:active .moments-cover-hint {
+  opacity: 1;
+}
+
+/* ---------- 用户信息浮层 ---------- */
+.moments-user-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-4) var(--sp-2);
+  margin-top: -50px;
+  z-index: 5;
+}
+.moments-user-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--t-primary);
+  margin-bottom: 6px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.moments-user-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 3px solid var(--c-charcoal);
+  flex-shrink: 0;
+  background: var(--glass-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--t-primary);
+}
+.moments-user-avatar img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+/* ---------- 动态流 ---------- */
+.moments-feed {
+  padding: var(--sp-2) 0 var(--sp-8);
+}
+
+/* ---------- 单条动态 ---------- */
+.moment-item {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-2);
+  border-bottom: 1px solid var(--bd-faint);
+}
+.moment-item:last-child {
+  border-bottom: none;
+}
+
+/* 头像 */
+.moment-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--glass-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--t-secondary);
+}
+.moment-avatar img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+/* 右侧内容 */
+.moment-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.moment-author {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1.4;
+}
+.moment-text {
+  font-size: 14px;
+  color: var(--t-primary);
+  line-height: 1.6;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.moment-text.moment-emoji {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ---------- 图片九宫格 ---------- */
+.moment-images {
+  display: grid;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+}
+/* 1 张图：大图 */
+.moment-images.count-1 {
+  grid-template-columns: 1fr;
+  max-width: 200px;
+}
+.moment-images.count-1 .moment-img {
+  aspect-ratio: 1;
+}
+/* 2~4 张：每行 2 张 */
+.moment-images.count-2,
+.moment-images.count-3,
+.moment-images.count-4 {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 220px;
+}
+/* 5~9 张：每行 3 张 */
+.moment-images.count-5,
+.moment-images.count-6,
+.moment-images.count-7,
+.moment-images.count-8,
+.moment-images.count-9 {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 240px;
+}
+.moment-img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+  background: var(--glass-2);
+  cursor: pointer;
+}
+.moment-img img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform var(--dur-fast) var(--ease-soft);
+}
+.moment-img:active img {
+  transform: scale(0.95);
+}
+
+/* ---------- 定位 ---------- */
+.moment-location {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--t-tertiary);
+  margin-top: 2px;
+}
+.moment-location svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+/* ---------- 时间 + 互动栏 ---------- */
+.moment-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--sp-1);
+}
+.moment-time {
+  font-size: 12px;
+  color: var(--t-faint);
+}
+.moment-actions {
+  position: relative;
+}
+.moment-action-btn {
+  width: 28px; height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-xs);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  cursor: pointer;
+  color: var(--t-secondary);
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.moment-action-btn:active {
+  background: var(--glass-press);
+}
+.moment-action-btn svg { width: 14px; height: 14px; }
+
+/* 互动弹出菜单 */
+.moment-action-popup {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  display: none;
+  flex-direction: row;
+  gap: 2px;
+  background: var(--c-graphite);
+  border-radius: var(--r-xs);
+  box-shadow: var(--sh-soft);
+  overflow: hidden;
+  z-index: 20;
+}
+.moment-action-popup.is-show {
+  display: flex;
+}
+.moment-action-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--t-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.moment-action-item:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+.moment-action-item svg { width: 14px; height: 14px; }
+.moment-action-item.is-liked {
+  color: var(--accent);
+}
+
+/* ---------- 点赞列表 ---------- */
+.moment-likes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  padding: var(--sp-1) 0;
+  font-size: 12px;
+  color: var(--t-tertiary);
+}
+.moment-likes-icon {
+  color: var(--accent);
+  font-size: 12px;
+}
+.moment-likes-name {
+  color: var(--accent);
+  cursor: pointer;
+}
+
+/* ---------- 评论列表 ---------- */
+.moment-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-1) 0;
+}
+.moment-comment {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--t-secondary);
+}
+.moment-comment .cmt-name {
+  color: var(--accent);
+  font-weight: 500;
+  margin-right: 4px;
+}
+.moment-comment .cmt-reply {
+  color: var(--t-secondary);
+}
+
+/* ---------- 空状态 ---------- */
+.moments-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-10) var(--sp-4);
+}
+.moments-empty-icon {
+  font-size: 40px;
+  opacity: 0.3;
+}
+.moments-empty-text {
+  font-size: 14px;
+  color: var(--t-tertiary);
+  text-align: center;
+}
+
+/* ---------- 发表动态编辑器 ---------- */
+.moments-composer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-charcoal);
+}
+.moments-composer textarea {
+  flex: 1;
+  width: 100%;
+  padding: var(--sp-4);
+  border: none;
+  background: transparent;
+  color: var(--t-primary);
+  font-size: 16px;
+  font-family: var(--font-base);
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+}
+.moments-composer textarea::placeholder {
+  color: var(--t-faint);
+}
+.moments-composer-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4) var(--sp-4);
+  border-top: 1px solid var(--bd-faint);
+  flex-shrink: 0;
+}
+.moments-composer-tool {
+  width: 36px; height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  color: var(--t-secondary);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.moments-composer-tool:active {
+  background: var(--glass-press);
+}
+.moments-composer-tool svg { width: 18px; height: 18px; }
+.moments-composer-location {
+  flex: 1;
+  font-size: 13px;
+  color: var(--t-tertiary);
+  text-align: right;
+  cursor: pointer;
+}
+.moments-composer-send {
+  padding: 6px 18px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--c-charcoal);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity var(--dur-fast) var(--ease-soft);
+}
+.moments-composer-send:active { opacity: 0.7; }
+.moments-composer-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---------- 图片选择预览 ---------- */
+.moments-composer-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-4);
+  padding-bottom: var(--sp-2);
+}
+.moments-composer-thumb {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+  background: var(--glass-2);
+}
+.moments-composer-thumb img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.moments-composer-thumb-del {
+  position: absolute;
+  top: 2px; right: 2px;
+  width: 18px; height: 18px;
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+}
+.moments-composer-thumb-del svg { width: 10px; height: 10px; }
+
+/* 添加图片块 */
+.moments-composer-add {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--r-xs);
+  border: 1.5px dashed var(--bd-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t-faint);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color var(--dur-fast) var(--ease-soft),
+              color var(--dur-fast) var(--ease-soft);
+}
+.moments-composer-add:active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.moments-composer-add svg { width: 24px; height: 24px; }
+.moments-composer-count {
+  font-size: 11px;
+  color: var(--t-faint);
+  padding: 0 var(--sp-4) var(--sp-1);
+}
+
+/* ---------- 评论输入栏（底部弹出） ---------- */
+.moments-comment-bar {
+  display: none;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  border-top: 1px solid var(--bd-soft);
+  flex-shrink: 0;
+}
+.moments-comment-bar.is-show {
+  display: flex;
+}
+.moments-comment-input {
+  flex: 1;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  padding: 0 var(--sp-3);
+  font-size: 14px;
+  color: var(--t-primary);
+  outline: none;
+}
+.moments-comment-input:focus { border-color: var(--accent); }
+.moments-comment-send {
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  color: var(--c-charcoal);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.moments-comment-send:active { opacity: 0.7; }
+
+/* ---------- Toast ---------- */
+.moments-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-pill);
+  padding: var(--sp-2) var(--sp-5);
+  font-size: 13px;
+  color: var(--t-primary);
+  box-shadow: var(--sh-soft);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-soft),
+              transform var(--dur-fast) var(--ease-soft);
+  z-index: 9100;
+}
+.moments-toast.is-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

@@ -1,0 +1,1692 @@
+/* ========================================================================
+   Mine · 奶油软新拟态 (Soft Neumorphism) 主题
+   ------------------------------------------------------------------------
+   · 暖奶油米白背景 #F8F4EF
+   · 卡片底色 #F7F1EB，超大圆角 24px，无 border
+   · 柔和双重软阴影：右下暖棕阴影 + 左上白色高光
+   · 低饱和暖调配色，文字 #5A524D 深灰棕色
+   · 部分卡片叠加信纸纹理
+   · 字体：中文仿宋，英文纤细装饰衬线体
+   ------------------------------------------------------------------------
+   使用方式：body 添加 class="theme-neumorphism" 即可激活
+   切换：通过 theme-manager.js 管理，支持后期扩展更多主题
+   ======================================================================== */
+
+/* ====== 主题变量覆写 ====== */
+body.theme-neumorphism {
+  /* ---------- 核心配色 · 奶油暖调 ---------- */
+  --c-charcoal:        #F8F4EF;   /* 页面底色 → 奶油米白 */
+  --c-charcoal-cool:   #F5F0E8;   /* 次级底色 */
+  --c-graphite:        #F7F1EB;   /* 卡片底色 */
+  --c-fog-silver:      #C4B8A8;   /* 暖灰 */
+  --c-mist:            #D8CDBE;   /* 浅暖灰 */
+  --c-pale-cyan-gray:  #E8DFD2;   /* 极浅暖米 */
+  --c-ghost:           #FBF7F2;   /* 近白暖调 */
+
+  /* ---------- 文字层级（低对比暖灰棕） ---------- */
+  --t-primary:    #5A524D;        /* 主文字 深灰棕 */
+  --t-secondary:  #8B7D6B;        /* 次要文字 暖棕灰 */
+  --t-tertiary:   #A89B89;        /* 辅助/标签 浅暖棕 */
+  --t-faint:      #BFB3A2;        /* 最弱信息 */
+
+  /* ---------- 玻璃雾面 → 改为奶油半透明 ---------- */
+  --glass-1: rgba(247, 241, 235, 0.75);    /* L1 面板底 */
+  --glass-2: rgba(247, 241, 235, 0.50);    /* L2 图标底 */
+  --glass-2-hi: rgba(255, 252, 247, 0.60); /* L2 高光 */
+  --glass-3: rgba(248, 244, 239, 0.85);    /* L3 浮层 */
+  --glass-press: rgba(232, 223, 210, 0.50); /* L4 按压 */
+
+  /* ---------- 边框 → 极淡暖色 ---------- */
+  --bd-faint:   rgba(160, 140, 120, 0.06);
+  --bd-soft:    rgba(160, 140, 120, 0.10);
+  --bd-medium:  rgba(160, 140, 120, 0.14);
+  --bd-strong:  rgba(160, 140, 120, 0.20);
+  --bd-icon:    rgba(160, 140, 120, 0.08);
+
+  /* ---------- 强调色 · 暖棕调 ---------- */
+  --accent:        #A89888;   /* 暖棕灰 */
+  --accent-soft:   rgba(168, 152, 136, 0.18);
+  --accent-glow:   rgba(168, 152, 136, 0.30);
+
+  /* ---------- 微信语音条配色（高对比 · 随主题换肤） ---------- */
+  --voicebar-them-bg:    rgba(255, 255, 255, 0.92); /* 对方 · 近白实底 */
+  --voicebar-them-bd:    rgba(160, 140, 120, 0.20); /* 对方 · 边框 */
+  --voicebar-them-color: #5A524D;                   /* 对方 · 深棕内容 */
+  --voicebar-me-bg:      #A89888;                   /* 我方 · 强调色实底 */
+  --voicebar-me-color:   #ffffff;                   /* 我方 · 白色内容 */
+
+  /* ---------- 新拟态阴影变量（单侧柔和暗阴影） ---------- */
+  --neu-dark:   rgba(160, 140, 120, 0.22);   /* 右下柔和暗阴影 */
+  --neu-dark-2:  rgba(140, 122, 102, 0.15);
+
+  /* 凸起卡片阴影 · 单侧柔和暗阴影，微微浮起 */
+  --sh-neu-out:  4px  4px 12px var(--neu-dark);
+  /* 凹陷阴影 · 内侧柔和暗阴影 */
+  --sh-neu-in:  inset  3px  3px 7px var(--neu-dark);
+  /* 凹陷浅 */
+  --sh-neu-in-soft: inset  2px  2px 5px var(--neu-dark-2);
+
+  /* ---------- 弥散阴影 → 暖调柔和 ---------- */
+  --sh-diffuse:  0 8px 30px rgba(160, 140, 120, 0.10);
+  --sh-soft:     0 4px 18px rgba(160, 140, 120, 0.08);
+  --sh-float:    0 2px 8px rgba(160, 140, 120, 0.06);
+  --sh-moist:    none;
+  --sh-icon:     var(--sh-neu-out);
+
+  /* ---------- 模糊 ---------- */
+  --blur-xs:  4px;
+  --blur-sm:  8px;
+  --blur-md:  12px;
+  --blur-lg:  16px;
+  --blur-xl:  24px;
+
+  /* ---------- 微光/纹理 ---------- */
+  --glint:        0.03;
+  --halo-opacity: 0.15;
+  --noise-opacity: 0.03;
+  --fog-tint:     0.05;
+
+  /* ---------- 圆角 → 超大 ---------- */
+  --r-xs: 8px;
+  --r-sm: 14px;
+  --r-md: 20px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --r-pill: 999px;
+  --r-icon: 22px;
+
+  /* ---------- 间距（留白充足） ---------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 14px;
+  --sp-4: 18px;
+  --sp-5: 22px;
+  --sp-6: 28px;
+  --sp-8: 36px;
+  --sp-10: 44px;
+
+  /* ---------- 字体 ---------- */
+  --font-base: "FangSong", "STFangsong", "仿宋", "FangSong_GB2312",
+               "Noto Serif SC", serif;
+  --font-script: "Playfair Display", "Cormorant Garamond",
+                 "Georgia", "Times New Roman", serif;
+  --font-mono: "FangSong", "STFangsong", "仿宋", serif;
+
+  /* ---------- 布局 ---------- */
+  --app-max-w: 440px;
+  --status-h: 48px;
+  --dock-h: 80px;
+  --grid-gap: 22px;
+
+  /* ---------- 动效 ---------- */
+  --ease-soft: cubic-bezier(0.32, 0.72, 0.18, 1);
+  --ease-fog:  cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 0.18s;
+  --dur-mid:  0.34s;
+  --dur-slow: 0.5s;
+
+  /* ---------- 信纸纹理（部分卡片叠加） ---------- */
+  --paper-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.48 0 0 0 0 0.40 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+}
+
+/* ====== 背景覆写 ====== */
+body.theme-neumorphism .bg-base {
+  background:
+    radial-gradient(120% 80% at 50% -10%,
+      rgba(255, 252, 247, 0.50) 0%,
+      rgba(248, 244, 239, 0.20) 30%,
+      transparent 60%),
+    linear-gradient(180deg, #F8F4EF 0%, #F5F0E8 50%, #F2EDE4 100%);
+}
+body.theme-neumorphism .bg-noise { opacity: 0.02; mix-blend-mode: multiply; }
+body.theme-neumorphism .bg-fog-tint { display: none; }
+body.theme-neumorphism .bg-vignette { display: none; }
+
+/* ====== 状态栏 ====== */
+body.theme-neumorphism .status-bar {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
+}
+body.theme-neumorphism .status-time { color: var(--t-secondary); font-weight: 500; }
+body.theme-neumorphism .status-indicators { color: var(--t-tertiary); }
+body.theme-neumorphism .sig-dots i { background: var(--t-tertiary); }
+body.theme-neumorphism .battery-body { border-color: var(--bd-medium); }
+body.theme-neumorphism .battery-fill { background: var(--t-tertiary); }
+body.theme-neumorphism .battery { color: var(--t-tertiary); }
+
+/* ====== 首页布局覆写 ====== */
+
+/* 隐藏原有问候和搜索（由新拟态组件替代） */
+body.theme-neumorphism .greeting { display: none; }
+body.theme-neumorphism .search-pill { display: none; }
+
+/* 首页滚动区 */
+body.theme-neumorphism .app-grid-wrap {
+  padding: var(--sp-3) var(--sp-4) 0;
+}
+
+/* 应用图标网格 → 新拟态卡片网格 */
+body.theme-neumorphism .app-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-5) var(--sp-4);
+  padding: var(--sp-4) 0 var(--sp-6);
+  align-content: start;
+}
+
+/* 单个应用单元格 → 新拟态小卡片 */
+body.theme-neumorphism .app-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+/* 应用图标 → 新拟态凸起卡片 */
+body.theme-neumorphism .app-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--r-md);
+  background: var(--c-graphite);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-secondary);
+  transition: all var(--dur-fast) var(--ease-soft);
+}
+body.theme-neumorphism .app-icon::before { display: none; }
+body.theme-neumorphism .app-icon::after { display: none; }
+body.theme-neumorphism .app-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.4;
+  opacity: 0.85;
+}
+body.theme-neumorphism .app-icon:active {
+  transform: scale(0.93);
+  box-shadow: var(--sh-neu-in-soft);
+}
+
+/* 强调色图标 */
+body.theme-neumorphism .app-icon.accent {
+  color: var(--accent);
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out),
+              inset 0 0 0 1px var(--accent-soft);
+}
+
+/* 图标标签 */
+body.theme-neumorphism .app-label {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--t-tertiary);
+  text-shadow: none;
+  font-family: var(--font-base);
+}
+
+/* ====== 底部 Dock → 新拟态大圆角导航栏 ====== */
+body.theme-neumorphism .dock {
+  padding: 0 var(--sp-4) calc(env(safe-area-inset-bottom, 0px) + var(--sp-3));
+}
+body.theme-neumorphism .dock-inner {
+  height: 58px;
+  background: var(--c-graphite);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .dock-inner .app-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--r-md);
+}
+body.theme-neumorphism .dock-inner .app-icon svg { width: 20px; height: 20px; }
+body.theme-neumorphism .dock-inner .app-icon:active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+
+/* 页面指示点 */
+body.theme-neumorphism .page-dots i { background: var(--t-tertiary); opacity: 0.25; }
+body.theme-neumorphism .page-dots i.is-active { opacity: 0.55; }
+
+/* ====== 新拟态 · 顶部 Hero 组件卡片 ====== */
+body.theme-neumorphism .neu-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-2);
+  background: var(--c-graphite);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-neu-out);
+  position: relative;
+  overflow: hidden;
+}
+/* 信纸纹理叠加 */
+body.theme-neumorphism .neu-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--paper-texture);
+  background-size: 200px 200px;
+  opacity: 0.10;
+  pointer-events: none;
+  border-radius: inherit;
+}
+body.theme-neumorphism .neu-hero-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: var(--sh-neu-out);
+  background: var(--c-graphite);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body.theme-neumorphism .neu-hero-avatar img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+body.theme-neumorphism .neu-hero-info { flex: 1; min-width: 0; position: relative; z-index: 1; }
+body.theme-neumorphism .neu-hero-name {
+  font-family: var(--font-script);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--t-primary);
+  letter-spacing: 0.5px;
+}
+body.theme-neumorphism .neu-hero-subtitle {
+  font-family: var(--font-script);
+  font-size: 11px;
+  color: var(--t-tertiary);
+  letter-spacing: 1px;
+  margin-top: 1px;
+}
+body.theme-neumorphism .neu-hero-quote {
+  font-family: var(--font-script);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--t-secondary);
+  line-height: 1.5;
+  margin-top: var(--sp-1);
+  opacity: 0.8;
+}
+
+/* ====== 新拟态 · 时钟卡片 (2×2) ====== */
+body.theme-neumorphism .neu-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: var(--c-graphite);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .neu-clock-time {
+  font-family: var(--font-script);
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--t-primary);
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+}
+body.theme-neumorphism .neu-clock-date {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--t-tertiary);
+  margin-top: var(--sp-1);
+  text-transform: uppercase;
+}
+
+/* ====== 新拟态 · 标题卡片 ====== */
+body.theme-neumorphism .neu-title-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: var(--c-graphite);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-neu-out);
+  position: relative;
+  overflow: hidden;
+}
+body.theme-neumorphism .neu-title-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--paper-texture);
+  background-size: 200px 200px;
+  opacity: 0.08;
+  pointer-events: none;
+  border-radius: inherit;
+}
+body.theme-neumorphism .neu-brand {
+  font-family: var(--font-script);
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--t-tertiary);
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+}
+body.theme-neumorphism .neu-title-main {
+  font-family: var(--font-script);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--t-primary);
+  margin-top: 2px;
+  position: relative;
+  z-index: 1;
+}
+body.theme-neumorphism .neu-title-sub {
+  font-size: 10px;
+  color: var(--t-secondary);
+  line-height: 1.4;
+  margin-top: 3px;
+  position: relative;
+  z-index: 1;
+}
+
+/* 时钟+标题行布局 */
+body.theme-neumorphism .neu-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+
+/* ====== 欢迎语 ====== */
+body.theme-neumorphism .neu-welcome {
+  font-family: var(--font-script);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--t-tertiary);
+  text-align: center;
+  margin: var(--sp-1) 0 var(--sp-2);
+  text-transform: uppercase;
+}
+
+/* ====== 编辑模式 ====== */
+body.theme-neumorphism .neu-edit-bar {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sp-2) var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+body.theme-neumorphism.neu-edit-mode .neu-edit-bar { display: flex; }
+body.theme-neumorphism.neu-edit-mode .neu-add-widget-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--c-graphite);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-neu-out);
+  font-size: 13px;
+  color: var(--t-secondary);
+}
+body.theme-neumorphism.neu-edit-mode .neu-done-btn {
+  padding: var(--sp-2) var(--sp-5);
+  background: var(--accent-soft);
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  color: var(--accent);
+}
+/* 编辑模式：卡片可拖拽，显示抖动 */
+body.theme-neumorphism.neu-edit-mode .neu-hero,
+body.theme-neumorphism.neu-edit-mode .neu-clock,
+body.theme-neumorphism.neu-edit-mode .neu-title-card,
+body.theme-neumorphism.neu-edit-mode .app-cell {
+  cursor: grab;
+  animation: neu-wiggle 0.3s ease-in-out infinite alternate;
+}
+body.theme-neumorphism.neu-edit-mode .neu-hero:active,
+body.theme-neumorphism.neu-edit-mode .neu-clock:active,
+body.theme-neumorphism.neu-edit-mode .neu-title-card:active,
+body.theme-neumorphism.neu-edit-mode .app-cell:active {
+  cursor: grabbing;
+}
+@keyframes neu-wiggle {
+  0% { transform: rotate(-0.6deg); }
+  100% { transform: rotate(0.6deg); }
+}
+/* 删除角标 */
+body.theme-neumorphism.neu-edit-mode .neu-delete-badge {
+  display: flex;
+}
+body.theme-neumorphism .neu-delete-badge {
+  display: none;
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #C97A6A;
+  color: #fff;
+  font-size: 14px;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* 拖拽中 */
+body.theme-neumorphism .neu-dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+body.theme-neumorphism .neu-drag-over {
+  box-shadow: var(--sh-neu-in);
+}
+
+/* ====== 小组件弹窗 ====== */
+body.theme-neumorphism .neu-widget-panel {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(100%);
+  width: 100%;
+  max-width: var(--app-max-w);
+  max-height: 80vh;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-ghost);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  box-shadow: 0 -4px 30px rgba(160, 140, 120, 0.12);
+  transition: transform var(--dur-mid) var(--ease-fog);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+body.theme-neumorphism .neu-widget-panel.is-open {
+  transform: translateX(-50%) translateY(0);
+}
+body.theme-neumorphism .neu-panel-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bd-medium);
+  margin: var(--sp-3) auto var(--sp-2);
+}
+body.theme-neumorphism .neu-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-5) var(--sp-3);
+}
+body.theme-neumorphism .neu-panel-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--t-primary);
+}
+body.theme-neumorphism .neu-panel-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-in-soft);
+  color: var(--t-secondary);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body.theme-neumorphism .neu-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 var(--sp-5) var(--sp-6);
+  -webkit-overflow-scrolling: touch;
+}
+body.theme-neumorphism .neu-panel-body::-webkit-scrollbar { width: 0; }
+
+/* 小组件列表条目 */
+body.theme-neumorphism .neu-widget-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  background: var(--c-graphite);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .neu-widget-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-md);
+  background: var(--c-charcoal);
+  box-shadow: var(--sh-neu-in-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--t-tertiary);
+}
+body.theme-neumorphism .neu-widget-preview svg {
+  width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.4;
+}
+body.theme-neumorphism .neu-widget-info { flex: 1; min-width: 0; }
+body.theme-neumorphism .neu-widget-name {
+  font-size: 14px;
+  color: var(--t-primary);
+  font-weight: 500;
+}
+body.theme-neumorphism .neu-widget-size {
+  font-size: 11px;
+  color: var(--t-tertiary);
+  margin-top: 2px;
+}
+body.theme-neumorphism .neu-widget-add-btn {
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--c-graphite);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-neu-out);
+  font-size: 12px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+body.theme-neumorphism .neu-widget-add-btn:active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+
+/* 弹窗遮罩 */
+body.theme-neumorphism .neu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(160, 140, 120, 0.08);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-mid) var(--ease-fog), visibility 0s linear var(--dur-mid);
+}
+body.theme-neumorphism .neu-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+/* ====== 通用组件覆写 ====== */
+
+/* 玻璃面板 → 新拟态卡片 */
+body.theme-neumorphism .glass-panel {
+  background: var(--c-graphite);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-neu-out);
+}
+
+/* 导航栏 */
+body.theme-neumorphism .nav-bar {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
+}
+body.theme-neumorphism .nav-title { color: var(--t-primary); }
+body.theme-neumorphism .nav-btn {
+  color: var(--accent);
+}
+body.theme-neumorphism .nav-btn:active { opacity: 0.6; }
+
+/* 按钮 */
+body.theme-neumorphism .btn {
+  background: var(--c-graphite);
+  border: none;
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-primary);
+}
+body.theme-neumorphism .btn:active {
+  transform: scale(0.97);
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .btn-primary {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out), inset 0 0 0 1px var(--accent-soft);
+  color: var(--accent);
+}
+
+/* 底部弹出面板 */
+body.theme-neumorphism .sheet-overlay {
+  background: rgba(160, 140, 120, 0.10);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+body.theme-neumorphism .sheet {
+  background: var(--c-ghost);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-top: none;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  box-shadow: 0 -4px 30px rgba(160, 140, 120, 0.10);
+}
+body.theme-neumorphism .sheet-handle { background: var(--bd-medium); }
+body.theme-neumorphism .sheet-head h2 { color: var(--t-primary); }
+
+/* 设置行 */
+body.theme-neumorphism .setting-row {
+  border-bottom-color: var(--bd-faint);
+}
+body.theme-neumorphism .setting-name { color: var(--t-primary); }
+body.theme-neumorphism .setting-desc { color: var(--t-tertiary); }
+
+/* 滑块 */
+body.theme-neumorphism input[type="range"].slider {
+  background: var(--bd-medium);
+}
+body.theme-neumorphism input[type="range"].slider::-webkit-slider-thumb {
+  background: var(--c-ghost);
+  border: 2px solid var(--accent);
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism input[type="range"].slider::-moz-range-thumb {
+  background: var(--c-ghost);
+  border: 2px solid var(--accent);
+}
+
+/* 开关 */
+body.theme-neumorphism .toggle {
+  background: var(--bd-medium);
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .toggle::after {
+  background: var(--c-ghost);
+  box-shadow: 0 2px 5px rgba(160, 140, 120, 0.20);
+}
+body.theme-neumorphism .toggle.is-on { background: var(--accent); }
+
+/* 空状态 */
+body.theme-neumorphism .empty-state .empty-icon {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-tertiary);
+}
+body.theme-neumorphism .empty-title { color: var(--t-primary); }
+body.theme-neumorphism .empty-desc { color: var(--t-tertiary); }
+
+/* 上传区 */
+body.theme-neumorphism .upload-zone {
+  border-color: var(--bd-medium);
+  background: var(--c-graphite);
+  color: var(--t-tertiary);
+}
+body.theme-neumorphism .upload-zone:active {
+  background: var(--glass-press);
+  box-shadow: var(--sh-neu-in-soft);
+}
+
+/* 预设网格 */
+body.theme-neumorphism .preset-item {
+  background: var(--c-graphite);
+  border-color: var(--bd-faint);
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .preset-item.is-active {
+  border-color: var(--accent);
+  box-shadow: var(--sh-neu-out), 0 0 0 2px var(--accent-soft);
+}
+
+/* 字体颜色选择 */
+body.theme-neumorphism .font-color-btn {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-primary);
+}
+body.theme-neumorphism .font-color-btn.is-active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+
+/* 分区标签 */
+body.theme-neumorphism .section-label { color: var(--t-tertiary); }
+
+/* ====== 主题切换按钮 ====== */
+body.theme-neumorphism .theme-switch-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: 16px;
+  z-index: 200;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-soft);
+}
+body.theme-neumorphism .theme-switch-btn:active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+/* 非新拟态主题下也显示主题切换按钮 */
+.theme-switch-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: 16px;
+  z-index: 200;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(190, 202, 210, 0.075);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(210, 220, 226, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-soft);
+}
+.theme-switch-btn:active { transform: scale(0.9); }
+.theme-switch-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+/* ====== 主题选择面板 ====== */
+.theme-panel {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(100%);
+  width: 100%;
+  max-width: var(--app-max-w);
+  z-index: 100;
+  background: var(--c-ghost);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  box-shadow: var(--sh-diffuse);
+  transition: transform var(--dur-mid) var(--ease-fog);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  overflow: hidden;
+}
+.theme-panel.is-open { transform: translateX(-50%) translateY(0); }
+.theme-panel-handle {
+  width: 36px; height: 4px;
+  border-radius: 2px;
+  background: var(--bd-medium);
+  margin: var(--sp-3) auto var(--sp-2);
+}
+.theme-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-2) var(--sp-5) var(--sp-4);
+}
+.theme-panel-head h2 { font-size: 17px; font-weight: 700; color: var(--t-primary); }
+.theme-panel-close {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--glass-2);
+  color: var(--t-secondary);
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.theme-panel-body {
+  padding: 0 var(--sp-5) var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-soft);
+}
+.theme-option:active { transform: scale(0.98); }
+.theme-option.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.theme-swatch {
+  width: 40px; height: 40px;
+  border-radius: var(--r-md);
+  flex-shrink: 0;
+  border: 1px solid var(--bd-soft);
+}
+.theme-swatch.fog {
+  background: linear-gradient(135deg, #1f2326 0%, #343a3e 50%, #8b9298 100%);
+}
+.theme-swatch.neumorphism {
+  background: linear-gradient(135deg, #F8F4EF 0%, #F7F1EB 50%, #E8DFD2 100%);
+  box-shadow: 3px 3px 8px rgba(160, 140, 120, 0.20);
+}
+.theme-option-info { flex: 1; }
+.theme-option-name { font-size: 15px; color: var(--t-primary); font-weight: 500; }
+.theme-option-desc { font-size: 12px; color: var(--t-tertiary); margin-top: 2px; }
+
+/* ====== 滚动条隐藏（所有滚动区域） ====== */
+body.theme-neumorphism ::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ====== 文字选择颜色 ====== */
+body.theme-neumorphism ::selection {
+  background: var(--accent-soft);
+  color: var(--t-primary);
+}
+
+/* ========================================================================
+   全页面适配 · 聊天模块
+   ======================================================================== */
+
+/* 聊天导航栏 */
+body.theme-neumorphism .chat-nav-info .chat-nav-title { color: var(--t-primary); }
+body.theme-neumorphism .chat-nav-info .chat-nav-sub { color: var(--t-tertiary); }
+
+/* with-me 栏目 */
+body.theme-neumorphism .with-me-bar {
+  background: var(--c-graphite);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid var(--bd-faint);
+}
+body.theme-neumorphism .with-me-toggle:active { background: var(--glass-press); }
+body.theme-neumorphism .with-me-label {
+  color: var(--t-secondary);
+  opacity: 0.8;
+}
+body.theme-neumorphism .with-me-chevron { opacity: 0.5; }
+
+/* with-me 功能入口 */
+body.theme-neumorphism .wm-action {
+  background: var(--c-graphite);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .wm-action:active {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-in-soft);
+  border: none;
+}
+body.theme-neumorphism .wm-action-icon { color: var(--t-secondary); opacity: 0.8; }
+body.theme-neumorphism .wm-action-name { color: var(--t-tertiary); }
+
+/* 消息区域 */
+body.theme-neumorphism .chat-messages {
+  background: var(--c-charcoal);
+}
+
+/* 日期分隔 */
+body.theme-neumorphism .chat-date-sep {
+  color: var(--t-tertiary);
+}
+
+/* 消息气泡 - 双方统一奶油风 */
+body.theme-neumorphism .msg-bubble {
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 10px 16px;
+  border-radius: var(--r-lg);
+  border: none;
+  box-shadow: var(--sh-neu-out);
+  background: var(--c-graphite);
+  color: var(--t-primary);
+  /* 文字排版：左对齐、无多余间距、中文自然换行 */
+  text-align: left !important;
+  text-align-last: auto !important;
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+  text-indent: 0 !important;
+  /* 气泡紧贴内容，不拉伸 */
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+/* 消息内容容器：气泡不拉伸，紧贴内容 */
+body.theme-neumorphism .msg-content {
+  min-width: 0;
+  max-width: 85%;
+}
+body.theme-neumorphism .msg-content .msg-bubble {
+  align-self: flex-start;
+}
+body.theme-neumorphism .msg-row.is-me .msg-content .msg-bubble {
+  align-self: flex-end;
+}
+/* 对方气泡 */
+body.theme-neumorphism .msg-bubble.is-them {
+  background: var(--c-graphite);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  color: var(--t-primary);
+  border-bottom-left-radius: var(--r-sm);
+  box-shadow: var(--sh-neu-out);
+}
+/* 我的气泡 - 同样奶油风，仅通过位置区分 */
+body.theme-neumorphism .msg-bubble.is-me {
+  background: var(--c-graphite);
+  border: none;
+  color: var(--t-primary);
+  border-bottom-right-radius: var(--r-sm);
+  box-shadow: var(--sh-neu-out);
+}
+/* 语音消息：语音条本身即气泡，去掉外层框（背景/边框/阴影/内边距/圆角全清） */
+body.theme-neumorphism .msg-bubble.is-audio-msg {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* 消息时间 */
+body.theme-neumorphism .msg-time {
+  color: var(--t-tertiary);
+}
+
+/* 已读对勾 */
+body.theme-neumorphism .msg-read.is-read { color: var(--accent); opacity: 0.6; }
+body.theme-neumorphism .msg-read.is-unread { color: var(--t-tertiary); opacity: 0.4; }
+
+/* 发送者名 */
+body.theme-neumorphism .msg-sender { color: var(--t-tertiary); }
+
+/* 消息头像 */
+body.theme-neumorphism .msg-avatar {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-secondary);
+}
+
+/* 输入栏 */
+body.theme-neumorphism .chat-input-bar {
+  background: var(--c-graphite);
+  border-top: 1px solid var(--bd-faint);
+}
+body.theme-neumorphism .chat-input {
+  background: var(--c-charcoal);
+  border: none;
+  color: var(--t-primary);
+  box-shadow: var(--sh-neu-in-soft);
+  border-radius: var(--r-md);
+}
+body.theme-neumorphism .chat-input::placeholder { color: var(--t-tertiary); }
+body.theme-neumorphism .chat-input:focus {
+  outline: none;
+  box-shadow: var(--sh-neu-in);
+}
+body.theme-neumorphism .chat-send-btn {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  color: var(--accent);
+  border: none;
+}
+body.theme-neumorphism .chat-send-btn:active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .chat-tool-btn {
+  color: var(--t-tertiary);
+}
+body.theme-neumorphism .chat-tool-btn:active { color: var(--accent); }
+
+/* 会话列表 */
+body.theme-neumorphism .conv-list {
+  background: var(--c-charcoal);
+}
+body.theme-neumorphism .conv-item {
+  border-bottom: 1px solid var(--bd-faint);
+}
+body.theme-neumorphism .conv-item:active { background: var(--glass-press); }
+body.theme-neumorphism .conv-name { color: var(--t-primary); }
+body.theme-neumorphism .conv-preview { color: var(--t-tertiary); }
+body.theme-neumorphism .conv-time { color: var(--t-faint); }
+
+/* 抉择消息 */
+body.theme-neumorphism .is-choice-msg {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .choice-msg-title { color: var(--t-primary); }
+body.theme-neumorphism .choice-msg-option {
+  color: var(--t-primary);
+}
+body.theme-neumorphism .choice-msg-option:active { background: var(--glass-press); }
+body.theme-neumorphism .choice-msg-option.is-selected {
+  background: var(--accent-soft);
+}
+body.theme-neumorphism .choice-msg-letter {
+  background: var(--c-charcoal);
+  border: 1px solid var(--bd-soft);
+  color: var(--t-secondary);
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .choice-msg-option.is-selected .choice-msg-letter {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+body.theme-neumorphism .choice-msg-text { color: var(--t-primary); }
+body.theme-neumorphism .choice-msg-picked {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid transparent;
+}
+
+/* 空状态 */
+body.theme-neumorphism .chat-empty {
+  color: var(--t-tertiary);
+}
+
+/* ========================================================================
+   全页面适配 · 通讯录模块
+   ======================================================================== */
+
+body.theme-neumorphism .avatar {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-secondary);
+}
+body.theme-neumorphism .avatar-gen {
+  background: var(--c-graphite);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--sh-neu-out);
+}
+
+/* 功能入口行 */
+body.theme-neumorphism .func-icon {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-out);
+  color: var(--accent);
+}
+body.theme-neumorphism .func-title { color: var(--t-primary); }
+body.theme-neumorphism .func-sub { color: var(--t-tertiary); }
+
+/* 分组标题 */
+body.theme-neumorphism .group-head { color: var(--t-tertiary); }
+body.theme-neumorphism .group-head .count { color: var(--t-faint); }
+
+/* 联系人行 */
+body.theme-neumorphism .contact-row:active { background: var(--glass-press); }
+body.theme-neumorphism .contact-name { color: var(--t-primary); }
+body.theme-neumorphism .contact-status { color: var(--t-tertiary); }
+
+/* 搜索框 */
+body.theme-neumorphism .contacts-search {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-in-soft);
+  color: var(--t-primary);
+}
+body.theme-neumorphism .contacts-search::placeholder { color: var(--t-tertiary); }
+body.theme-neumorphism .contacts-search:focus {
+  box-shadow: var(--sh-neu-in);
+  outline: none;
+}
+
+/* 通讯录页面背景 */
+body.theme-neumorphism #page-contacts {
+  background: var(--c-charcoal);
+}
+
+/* 联系人详情页 */
+body.theme-neumorphism .profile-hero {
+  background: var(--c-charcoal);
+}
+body.theme-neumorphism .profile-name { color: var(--t-primary); }
+body.theme-neumorphism .profile-status { color: var(--t-tertiary); }
+
+/* 字卡管理 */
+body.theme-neumorphism .card-item {
+  background: var(--c-graphite);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-primary);
+}
+body.theme-neumorphism .card-item:active {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .card-text { color: var(--t-primary); }
+body.theme-neumorphism .card-del { color: var(--t-faint); }
+body.theme-neumorphism .card-del:active { color: #c97a6a; background: rgba(201, 122, 106, 0.12); }
+body.theme-neumorphism .cards-empty { color: var(--t-faint); }
+
+/* 回复设置 */
+body.theme-neumorphism .reply-setting-row {
+  border-bottom: 1px solid var(--bd-faint);
+}
+body.theme-neumorphism .reply-setting-info .func-title { color: var(--t-primary); }
+body.theme-neumorphism .reply-setting-info .func-sub { color: var(--t-tertiary); }
+
+/* 滑块 */
+body.theme-neumorphism .fog-slider {
+  background: var(--bd-medium);
+}
+body.theme-neumorphism .fog-slider::-webkit-slider-thumb {
+  background: var(--c-ghost);
+  box-shadow: var(--sh-neu-out);
+  border: 2px solid var(--accent);
+}
+
+/* 字卡选中态 */
+body.theme-neumorphism .card-item.is-selected {
+  background: var(--accent-soft);
+  box-shadow: var(--sh-neu-out), inset 0 0 0 1px var(--accent-soft);
+}
+body.theme-neumorphism .card-item.is-selected .card-text { color: var(--t-primary); }
+body.theme-neumorphism .card-check {
+  background: var(--c-charcoal);
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .card-item.is-selected .card-check {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+/* 当前使用标识 */
+body.theme-neumorphism .card-item.is-current {
+  box-shadow: var(--sh-neu-out), inset 0 0 0 1px var(--accent-soft);
+}
+body.theme-neumorphism .status-dot {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+/* 批量工具栏 */
+body.theme-neumorphism .batch-toolbar {
+  background: var(--c-graphite);
+  border-top: 1px solid var(--bd-faint);
+}
+body.theme-neumorphism .batch-toggle-btn {
+  color: var(--t-tertiary);
+}
+body.theme-neumorphism .batch-toggle-btn:active { color: #c97a6a; background: rgba(201, 122, 106, 0.1); }
+
+/* ========================================================================
+   全页面适配 · 陪伴页（companion）
+   ======================================================================== */
+
+body.theme-neumorphism .comp-hero-title { color: var(--t-primary); }
+body.theme-neumorphism .comp-hero-sub { color: var(--t-tertiary); }
+
+/* 每日寄语卡片 */
+body.theme-neumorphism .comp-quote {
+  background: var(--c-graphite);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .comp-quote::before { display: none; }
+body.theme-neumorphism .comp-quote-label { color: var(--t-faint); }
+body.theme-neumorphism .comp-quote-text { color: var(--t-secondary); }
+body.theme-neumorphism .comp-quote-author { color: var(--t-tertiary); }
+
+/* bento 卡片 */
+body.theme-neumorphism .comp-card {
+  background: var(--c-graphite);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .comp-card::before { display: none; }
+body.theme-neumorphism .comp-card:active {
+  transform: scale(0.96);
+  box-shadow: var(--sh-neu-in-soft);
+  background: var(--c-graphite);
+  border: none;
+}
+
+body.theme-neumorphism .comp-card-icon {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-in-soft);
+  color: var(--t-secondary);
+}
+body.theme-neumorphism .comp-card-title { color: var(--t-primary); }
+body.theme-neumorphism .comp-card-desc { color: var(--t-tertiary); }
+
+/* 陪伴页背景 */
+body.theme-neumorphism #page-companion {
+  background: var(--c-charcoal);
+}
+
+/* ========================================================================
+   全页面适配 · 朋友圈（moments）
+   ======================================================================== */
+
+body.theme-neumorphism .moments-page {
+  background: var(--c-charcoal);
+}
+
+/* 导航栏 */
+body.theme-neumorphism .moments-nav .nav-btn { color: var(--t-primary); }
+body.theme-neumorphism .moments-nav .nav-title { color: var(--t-primary); }
+body.theme-neumorphism .moments-nav .nav-camera {
+  color: var(--t-primary);
+}
+body.theme-neumorphism .moments-nav .nav-camera:active {
+  background: var(--glass-press);
+}
+
+/* 封面横幅 - 奶油风适配 */
+body.theme-neumorphism .moments-cover {
+  background: linear-gradient(135deg, #E8DFD2 0%, #F5F0E8 40%, #E0D5C5 100%);
+}
+body.theme-neumorphism .moments-cover::after {
+  background: linear-gradient(180deg, transparent 60%, rgba(248, 244, 239, 0.85) 100%);
+}
+body.theme-neumorphism .moments-cover-img { opacity: 0.5; }
+body.theme-neumorphism .moments-cover-empty { color: var(--t-tertiary); }
+
+/* 用户信息浮层 */
+body.theme-neumorphism .moments-user-name {
+  color: var(--t-primary);
+  text-shadow: none;
+}
+body.theme-neumorphism .moments-user-avatar {
+  background: var(--c-graphite);
+  border: 3px solid var(--c-charcoal);
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-primary);
+}
+
+/* 动态流 */
+body.theme-neumorphism .moment-item {
+  border-bottom: 1px solid var(--bd-faint);
+}
+body.theme-neumorphism .moment-avatar {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-secondary);
+}
+body.theme-neumorphism .moment-author { color: var(--t-primary); }
+body.theme-neumorphism .moment-text { color: var(--t-primary); }
+body.theme-neumorphism .moment-time { color: var(--t-tertiary); }
+body.theme-neumorphism .moment-location { color: var(--t-tertiary); }
+
+/* 互动按钮 */
+body.theme-neumorphism .moment-action-btn {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-secondary);
+  border: none;
+}
+body.theme-neumorphism .moment-action-btn:active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .moment-action-item.is-liked { color: var(--accent); }
+
+/* 评论区 */
+body.theme-neumorphism .moment-likes {
+  background: var(--c-graphite);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .moment-likes-icon { color: var(--accent); }
+body.theme-neumorphism .moment-likes-name { color: var(--t-secondary); }
+body.theme-neumorphism .moment-comment .cmt-name { color: var(--accent); }
+body.theme-neumorphism .moment-comment .cmt-reply { color: var(--t-primary); }
+
+/* 评论输入栏 */
+body.theme-neumorphism .moments-comment-bar {
+  background: var(--c-graphite);
+  border-top: 1px solid var(--bd-faint);
+}
+body.theme-neumorphism .moments-comment-input {
+  background: var(--c-charcoal);
+  border: none;
+  color: var(--t-primary);
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .moments-comment-input:focus {
+  box-shadow: var(--sh-neu-in);
+  outline: none;
+}
+body.theme-neumorphism .moments-comment-send {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  color: var(--accent);
+}
+body.theme-neumorphism .moments-comment-send:active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+
+/* 朋友圈空状态 */
+body.theme-neumorphism .moments-empty-text { color: var(--t-tertiary); }
+body.theme-neumorphism .moments-empty-icon { color: var(--t-faint); }
+
+/* 发布编辑器 */
+body.theme-neumorphism .moments-composer {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .moments-composer textarea {
+  color: var(--t-primary);
+}
+body.theme-neumorphism .moments-composer textarea::placeholder { color: var(--t-tertiary); }
+body.theme-neumorphism .moments-composer-tool { color: var(--t-secondary); }
+body.theme-neumorphism .moments-composer-tool:active { color: var(--accent); }
+body.theme-neumorphism .moments-composer-send {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  color: var(--accent);
+}
+body.theme-neumorphism .moments-composer-send:active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+
+/* 图片缩略图 */
+body.theme-neumorphism .moments-composer-thumb {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .moments-composer-add {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-tertiary);
+  border: none;
+}
+body.theme-neumorphism .moments-composer-add:active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+
+/* 图片九宫格 */
+body.theme-neumorphism .moment-img {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+}
+
+/* 动作弹窗 */
+body.theme-neumorphism .moment-action-popup {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  border: none;
+}
+body.theme-neumorphism .moment-action-item {
+  color: var(--t-secondary);
+  border-bottom: 1px solid var(--bd-faint);
+}
+body.theme-neumorphism .moment-action-item:active {
+  background: var(--glass-press);
+}
+
+/* 文字计数 */
+body.theme-neumorphism .moments-composer-count { color: var(--t-tertiary); }
+
+/* ========================================================================
+   全页面适配 · 个人中心（profile）
+   ======================================================================== */
+
+body.theme-neumorphism .me-scroll {
+  background: var(--c-charcoal);
+}
+body.theme-neumorphism .me-name-input {
+  background: var(--c-graphite);
+  border: none;
+  color: var(--t-primary);
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .me-name-input:focus {
+  box-shadow: var(--sh-neu-in);
+  outline: none;
+}
+body.theme-neumorphism .me-name-input::placeholder { color: var(--t-tertiary); }
+
+body.theme-neumorphism .me-edit-row {
+  border-bottom: 1px solid var(--bd-faint);
+}
+body.theme-neumorphism .big-avatar {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  border: none;
+}
+body.theme-neumorphism .cam-badge {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-secondary);
+  border: none;
+}
+
+/* ========================================================================
+   全页面适配 · 信箱/树洞/电台/美食
+   ======================================================================== */
+
+/* 信箱 */
+body.theme-neumorphism #page-companion .mail-page,
+body.theme-neumorphism #page-companion .treehole-page,
+body.theme-neumorphism #page-companion .radio-page,
+body.theme-neumorphism #page-companion .foodie-page {
+  background: var(--c-charcoal);
+}
+body.theme-neumorphism .mail-item,
+body.theme-neumorphism .treehole-item {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .mail-item:active,
+body.theme-neumorphism .treehole-item:active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .mail-title,
+body.theme-neumorphism .treehole-title { color: var(--t-primary); }
+body.theme-neumorphism .mail-preview,
+body.theme-neumorphism .treehole-preview { color: var(--t-tertiary); }
+body.theme-neumorphism .mail-time,
+body.theme-neumorphism .treehole-time { color: var(--t-faint); }
+
+/* 电台 */
+body.theme-neumorphism .radio-disc {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  border: none;
+}
+body.theme-neumorphism .radio-song { color: var(--t-primary); }
+body.theme-neumorphism .radio-artist { color: var(--t-tertiary); }
+body.theme-neumorphism .radio-progress {
+  background: var(--bd-medium);
+}
+body.theme-neumorphism .radio-progress-fill {
+  background: var(--accent);
+}
+
+/* 美食 */
+body.theme-neumorphism .foodie-card {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-out);
+}
+body.theme-neumorphism .foodie-name { color: var(--t-primary); }
+body.theme-neumorphism .foodie-desc { color: var(--t-tertiary); }
+
+/* ========================================================================
+   首页修复 · 图标文字显示不全
+   ======================================================================== */
+
+/* 应用图标网格：增加行间距，确保文字完整显示 */
+body.theme-neumorphism .app-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-3) var(--sp-2);
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+}
+
+/* 应用单元格 */
+body.theme-neumorphism .app-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 74px;
+}
+
+/* 应用图标 */
+body.theme-neumorphism .app-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--r-md);
+}
+body.theme-neumorphism .app-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* 图标标签 - 确保完整显示，不截断 */
+body.theme-neumorphism .app-label {
+  font-size: 10px;
+  line-height: 1.3;
+  letter-spacing: 0.3px;
+  color: var(--t-tertiary);
+  text-shadow: none;
+  text-align: center;
+  max-width: 64px;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  font-family: var(--font-base);
+  word-break: keep-all;
+}
+
+/* Dock 图标大小 */
+body.theme-neumorphism .dock-inner .app-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+}
+body.theme-neumorphism .dock-inner .app-icon svg { width: 18px; height: 18px; }
+
+/* ========================================================================
+   输入框通用适配
+   ======================================================================== */
+
+body.theme-neumorphism input[type="text"],
+body.theme-neumorphism input[type="number"],
+body.theme-neumorphism textarea {
+  color: var(--t-primary);
+  -webkit-text-fill-color: var(--t-primary);
+}
+body.theme-neumorphism input::placeholder,
+body.theme-neumorphism textarea::placeholder {
+  color: var(--t-tertiary);
+}
+
+/* ========================================================================
+   抉择弹窗适配
+   ======================================================================== */
+
+body.theme-neumorphism .choice-overlay.is-open {
+  background: rgba(160, 140, 120, 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+body.theme-neumorphism .choice-dialog {
+  background: var(--c-ghost);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  box-shadow: var(--sh-neu-out), 0 8px 32px rgba(160,140,120,0.15);
+}
+body.theme-neumorphism .choice-title { color: var(--t-primary); }
+body.theme-neumorphism .choice-close { color: var(--t-tertiary); }
+body.theme-neumorphism .choice-question-input {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-in-soft);
+  color: var(--t-primary);
+}
+body.theme-neumorphism .choice-question-input:focus {
+  box-shadow: var(--sh-neu-in);
+  outline: none;
+}
+body.theme-neumorphism .choice-question-input::placeholder { color: var(--t-tertiary); }
+body.theme-neumorphism .choice-option-label { color: var(--t-secondary); }
+body.theme-neumorphism .choice-option-input {
+  background: var(--c-graphite);
+  border: none;
+  box-shadow: var(--sh-neu-in-soft);
+  color: var(--t-primary);
+}
+body.theme-neumorphism .choice-option-input:focus {
+  box-shadow: var(--sh-neu-in);
+  outline: none;
+}
+body.theme-neumorphism .choice-option-del { color: var(--t-faint); }
+body.theme-neumorphism .choice-option-del:active { color: #c97a6a; }
+body.theme-neumorphism .choice-add-btn {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-secondary);
+  border: none;
+}
+body.theme-neumorphism .choice-add-btn:active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+body.theme-neumorphism .choice-submit-btn {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  color: var(--accent);
+  border: none;
+}
+body.theme-neumorphism .choice-submit-btn:active {
+  box-shadow: var(--sh-neu-in-soft);
+}
+
+/* ========================================================================
+   其他通用适配
+   ======================================================================== */
+
+/* 通知角标奶油风：仅数字文本，无背景/无边框 */
+body.theme-neumorphism .notify-badge {
+  background: transparent !important;
+  color: var(--t-primary);
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+  text-shadow: none;
+}
+
+/* 列表项分隔线奶油色 */
+body.theme-neumorphism .setting-row {
+  border-bottom-color: var(--bd-faint);
+}
+
+/* toast 提示 */
+body.theme-neumorphism .moments-toast,
+body.theme-neumorphism .toast {
+  background: var(--c-graphite);
+  box-shadow: var(--sh-neu-out);
+  color: var(--t-primary);
+  border: none;
+}
+
+/* 滚动容器确保奶油底色 */
+body.theme-neumorphism .scroll {
+  background: transparent;
+}

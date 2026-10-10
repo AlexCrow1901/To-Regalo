@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <!-- PWA：独立应用（standalone）。安装后桌面/应用抽屉出现独立图标，打开无浏览器地址栏，支持离线 -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#F8F4EF" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Mine" />
+  <meta name="app-version" content="1.0.4" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>Mine</title>
+  <!-- 主题变量：修改此处即可整体换肤 -->
+  <link rel="stylesheet" href="theme.css?v7" />
+  <!-- 基础样式 + 雾霭背景层 -->
+  <link rel="stylesheet" href="base.css?v9" />
+  <!-- Home 页面布局 -->
+  <link rel="stylesheet" href="home.css?v7" />
+  <!-- 通用组件（图标雾面 / 面板 / 背景管理 / 滑块） -->
+  <link rel="stylesheet" href="components.css?v21" />
+  <!-- 通讯录页面（联系人列表 / 群聊） -->
+  <link rel="stylesheet" href="contacts.css?v9" />
+  <!-- 聊天页面（消息气泡 / 输入栏 / 字卡 / 会话列表） -->
+  <link rel="stylesheet" href="chat.css?v38" />
+  <!-- 陪伴页面（内容应用入口 / bento 网格） -->
+  <link rel="stylesheet" href="companion.css?v3" />
+  <link rel="stylesheet" href="profile.css?v6" />
+  <link rel="stylesheet" href="mail.css?v4" />
+  <link rel="stylesheet" href="treehole.css?v4" />
+  <!-- 心情电台（悬浮唱片 / 播放控制） -->
+  <link rel="stylesheet" href="radio.css?v4" />
+  <link rel="stylesheet" href="foodie.css?v3" />
+  <!-- 朋友圈（动态流 / 封面 / 九宫格 / 评论交互） -->
+  <link rel="stylesheet" href="moments.css?v3" />
+   <!-- 联系人朋友圈（字卡管理） -->
+  <link rel="stylesheet" href="contact-moments.css?v2" />
+  <!-- 电话模块（呼出 / 来电 / 群电话预留） -->
+  <link rel="stylesheet" href="phone.css?v1" />
+  <!-- 浏览器模块（基础浏览壳） -->
+  <link rel="stylesheet" href="browser.css?v1" />
+  <!-- 全局通知角标 -->
+  <link rel="stylesheet" href="notify.css?v1" />
+  <!-- 奶油软新拟态主题（可选主题，通过 theme-manager.js 切换） -->
+  <link rel="stylesheet" href="theme-neumorphism.css?v6" />
+</head>
+<body>
+  <!-- ===== 多层雾霭背景（见 base.css） ===== -->
+  <div class="bg-stack">
+    <div class="bg-layer bg-base"></div>
+    <div class="bg-layer bg-image"></div>
+    <div class="bg-layer bg-fog-tint"></div>
+    <div class="bg-layer bg-noise"></div>
+    <div class="bg-layer bg-vignette"></div>
+  </div>
+  <!-- ===== 沉浸式应用外壳 ===== -->
+  <main class="app-shell">
+    <!-- ============ Home 页面 ============ -->
+    <section class="page is-active" data-page="home">
+      <!-- 顶部状态区 -->
+      <header class="status-bar">
+        <span class="status-time" id="status-time">--:--</span>
+        <div class="status-indicators">
+          <span class="sig-dots"><i></i><i></i><i></i><i></i></span>
+          <span id="status-wifi"></span>
+          <span class="battery">
+            <span class="battery-body"><span class="battery-fill"></span></span>
+          </span>
+        </div>
+      </header>
+      <!-- 可滚动主体 -->
+      <div class="app-grid-wrap scroll">
+        <div class="greeting">
+          <div class="hello">你好</div>
+          <div class="date">—</div>
+        </div>
+        <!-- 搜索条 -->
+        <div class="search-pill" role="button" tabindex="0">
+          <span id="search-icon"></span>
+          <span>搜索应用…</span>
+        </div>
+        <!-- 应用图标网格（由 app.js 渲染） -->
+        <div class="app-grid" id="app-grid"></div>
+      </div>
+      <!-- 页面指示点 -->
+      <div class="page-dots"><i class="is-active"></i><i></i></div>
+      <!-- 底部 Dock -->
+      <nav class="dock">
+        <div class="dock-inner" id="dock-inner"></div>
+      </nav>
+    </section>
+    <!-- ============ 通用详情页（占位，由 app.js 注入） ============ -->
+    <section class="page" data-page="detail" id="page-detail"></section>
+    <!-- ============ 通讯录页（由 contacts.js 接管） ============ -->
+    <section class="page" data-page="contacts" id="page-contacts"></section>
+    <!-- ============ 聊天页（由 chat.js 接管） ============ -->
+    <section class="page" data-page="chat" id="page-chat"></section>
+    <!-- ============ 陪伴页（由 companion.js 接管） ============ -->
+    <section class="page" data-page="companion" id="page-companion"></section>
+    <!-- ============ 朋友圈页（由 moments.js 接管） ============ -->
+    <section class="page" data-page="moments" id="page-moments"></section>
+  </main>
+  <!-- ===== 脚本 ===== -->
+  <!-- storage.js 必须最先加载：拦截 localStorage，底层使用 IndexedDB 大容量存储 -->
+  <script src="storage.js?v3"></script>
+  <script src="utils.js?v8"></script>
+  <script src="notify.js?v1"></script>
+  <!-- 后台保活：音频保活（双通道）+ 系统通知 + 回前台补发，需尽早加载 -->
+  <script src="keepalive.js?v7"></script>
+  <!-- 设置（后台保活开关：消息通知 / 后台运行 / 逐条弹 / 不抢声音） -->
+  <script src="settings.js?v15"></script>
+  <script src="icons.js?v22"></script>
+  <script src="background.js?v14"></script>
+  <script src="probabilities.js?v7"></script>
+  <script src="contacts.js?v23"></script>
+  <script src="cards.js?v8"></script>
+  <!-- 字卡生成器：词库 → 引擎（拼音还原+评分）→ 生成器（双路生成+双轨审批），依赖 MineCards -->
+  <script src="lexicon.js?v1"></script>
+  <script src="lexicon-engine.js?v1"></script>
+  <script src="lexicon-card-generator.js?v3"></script>
+  <!-- 字卡管理界面（审批 / 字卡池 / 运行规则 / 词库管理） -->
+  <script src="lexicon-admin.js?v2"></script>
+  <script src="chat.js?v59"></script>
+  <!-- 电话模块（依赖 MineContacts / MineIcons） -->
+  <script src="phone.js?v5"></script>
+  <script src="companion.js?v9"></script>
+  <script src="profile.js?v14"></script>
+  <script src="mail.js?v10"></script>
+  <script src="treehole.js?v6"></script>
+  <script src="radio.js?v4"></script>
+  <script src="netease.js?v4"></script>
+  <script src="foodie.js?v3"></script>
+  <script src="moments.js?v4"></script>
+  <script src="contact-moments.js?v1"></script>
+  <!-- 主题管理器（主题切换 + 小组件 + 拖拽） -->
+  <script src="theme-manager.js?v6"></script>
+  <!-- 文件管理（数据导出 / 清除 / 存储扩容） -->
+  <script src="files.js?v2"></script>
+  <!-- 浏览器（入口 + 基础浏览壳） -->
+  <script src="browser.js?v1"></script>
+  <script src="app.js?v17"></script>
+  <script>
+    // 状态栏 wifi 图标 / 搜索图标（等 icons.js 就绪后注入）
+    document.getElementById("status-wifi").innerHTML = MineIcons.svg("wifi", 16);
+    document.getElementById("search-icon").innerHTML = MineIcons.svg("search", 16);
+    // 主题管理器初始化
+    if (window.MineTheme) MineTheme.init();
+    // 注册 Service Worker：后台通知通道（页面被系统冻结时仍可弹通知）+ 基础离线缓存
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    }
+  </script>
+</body>
+</html>

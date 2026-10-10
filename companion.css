@@ -1,0 +1,370 @@
+/* ========================================================================
+   Mine · 陪伴页 · 内容应用入口
+   ------------------------------------------------------------------------
+   延续雾都冷调美学，采用 bento 网格布局避免与主屏视觉雷同。
+   结构预留扩展：每个内容卡片均有 data-app 属性，后续可通过
+   MineCompanion.register() 注册具体功能。
+   ======================================================================== */
+
+/* ---------- 陪伴页顶部问候 ---------- */
+.comp-hero {
+  padding: var(--sp-6) var(--sp-5) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.comp-hero-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--t-primary);
+  letter-spacing: 0.5px;
+}
+.comp-hero-sub {
+  font-size: 13px;
+  color: var(--t-tertiary);
+  line-height: 1.5;
+}
+
+/* ---------- 每日寄语卡片（hero banner） ---------- */
+.comp-quote {
+  margin: 0 var(--sp-5) var(--sp-5);
+  padding: var(--sp-5);
+  background: var(--glass-2);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-soft),
+              inset 0 1px 0 var(--glass-2-hi);
+  position: relative;
+  overflow: hidden;
+}
+.comp-quote::before {
+  content: "";
+  position: absolute;
+  top: -20px; right: -20px;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(141, 157, 166, 0.08), transparent 70%);
+  pointer-events: none;
+}
+.comp-quote-label {
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--t-faint);
+  margin-bottom: var(--sp-2);
+}
+.comp-quote-text {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--t-secondary);
+  font-style: italic;
+}
+.comp-quote-author {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--t-faint);
+  margin-top: var(--sp-3);
+  text-align: right;
+  letter-spacing: 0.3px;
+}
+/* 今日寄语 · 管理入口 */
+.comp-quote-manage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: var(--sp-3);
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--bd-faint);
+  background: var(--glass-2);
+  color: var(--accent);
+  font-size: 12px;
+  transition: all var(--dur-fast) var(--ease-soft);
+}
+.comp-quote-manage:active { background: var(--glass-press); transform: scale(0.97); }
+.comp-quote-manage svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+
+/* 今日寄语管理面板 */
+.quote-add-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.quote-tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-bottom: var(--sp-3);
+}
+.quote-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.quote-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+}
+.quote-item-main { flex: 1; min-width: 0; }
+.quote-item-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--t-primary);
+  word-break: break-all;
+}
+.quote-item-author {
+  font-size: 12px;
+  color: var(--t-tertiary);
+  margin-top: 2px;
+}
+.quote-del {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  color: #c97a7a;
+  border: 1px solid transparent;
+  background: transparent;
+}
+.quote-del:active { background: rgba(180, 90, 90, 0.12); }
+.quote-del svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+.quote-empty {
+  padding: var(--sp-5) var(--sp-4);
+  text-align: center;
+  font-size: 13px;
+  color: var(--t-tertiary);
+}
+
+/* ---------- bento 网格容器 ---------- */
+.comp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-5) var(--sp-8);
+}
+
+/* ---------- 内容卡片基础 ---------- */
+.comp-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  background: var(--glass-2);
+  backdrop-filter: blur(var(--blur-sm)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--blur-sm)) saturate(1.15);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-float);
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform var(--dur-fast) var(--ease-soft),
+              background var(--dur-fast) var(--ease-soft),
+              border-color var(--dur-fast) var(--ease-soft);
+}
+.comp-card:active {
+  transform: scale(0.96);
+  background: var(--glass-press);
+  border-color: var(--bd-soft);
+}
+
+/* 卡片上沿微光（与 app-icon 一致的湿润感） */
+.comp-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(165deg,
+    rgba(230, 240, 246, 0.035) 0%,
+    transparent 40%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ---------- 大卡片（跨两列） ---------- */
+.comp-card.is-wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+}
+
+/* ---------- 卡片图标 ---------- */
+.comp-card-icon {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-icon);
+  color: var(--t-primary);
+  position: relative;
+  z-index: 2;
+  transition: color var(--dur-fast) var(--ease-soft);
+}
+.comp-card-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.85;
+}
+
+/* 大卡片图标略大 */
+.comp-card.is-wide .comp-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-md);
+}
+.comp-card.is-wide .comp-card-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* ---------- 卡片文字 ---------- */
+.comp-card-body {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 2;
+}
+.comp-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--t-primary);
+  letter-spacing: 0.3px;
+  line-height: 1.3;
+}
+.comp-card-desc {
+  font-size: 12px;
+  color: var(--t-tertiary);
+  line-height: 1.4;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 大卡片标题略大 */
+.comp-card.is-wide .comp-card-title {
+  font-size: 16px;
+}
+.comp-card.is-wide .comp-card-desc {
+  font-size: 13px;
+  -webkit-line-clamp: 1;
+}
+
+/* ---------- 强调色卡片变体 ---------- */
+.comp-card.is-accent .comp-card-icon {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--bd-medium);
+}
+.comp-card.is-accent .comp-card-icon svg { opacity: 1; }
+
+/* ---------- 卡片右上角装饰圆光 ---------- */
+.comp-card-glow {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(141, 157, 166, 0.06), transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ---------- 分区标题 ---------- */
+.comp-section-label {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--t-tertiary);
+  margin-top: var(--sp-3);
+  margin-bottom: var(--sp-1);
+  padding: 0 var(--sp-1);
+}
+.comp-section-label:first-child {
+  margin-top: 0;
+}
+
+/* ---------- 待开发提示 ---------- */
+.comp-soon {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--t-faint);
+  background: rgba(36, 41, 45, 0.5);
+  padding: 2px 6px;
+  border-radius: var(--r-xs);
+  z-index: 3;
+}
+
+/* ---------- 轻量提示 Toast ---------- */
+.comp-toast {
+  position: fixed;
+  bottom: calc(var(--dock-h) + var(--sp-6));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5);
+  background: rgba(28, 32, 35, 0.88);
+  backdrop-filter: blur(var(--blur-lg)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(1.2);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-soft);
+  color: var(--t-secondary);
+  font-size: 13px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-soft),
+              transform var(--dur-fast) var(--ease-soft);
+  pointer-events: none;
+}
+.comp-toast.is-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.comp-toast-icon {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  opacity: 0.8;
+}
+.comp-toast-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+}

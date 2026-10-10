@@ -1,0 +1,599 @@
+/* ========================================================================
+   Mine · 联系人朋友圈模块样式
+   ------------------------------------------------------------------------
+   · 联系人个人主页 → 朋友圈入口
+   · 朋友圈字卡管理（字符 / 图片 / emoji 三类）
+   · UI 与聊天字卡管理保持一致
+   ======================================================================== */
+
+/* ---------- 页面容器 ---------- */
+.cm-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--c-charcoal);
+}
+
+/* ---------- 导航栏 ---------- */
+.cm-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 var(--sp-2);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.cm-nav .nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--sp-1) var(--sp-2);
+  background: transparent;
+  border: none;
+  color: var(--t-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+.cm-nav .nav-btn:active { opacity: 0.6; }
+.cm-nav .nav-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--t-primary);
+  pointer-events: none;
+}
+
+/* ---------- 可滚动区 ---------- */
+.cm-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---------- 封面 + 用户信息 ---------- */
+.cm-cover {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a1e22 0%, #2a3036 40%, #1e2429 100%);
+}
+.cm-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(31,35,38,0.8) 100%);
+  pointer-events: none;
+}
+.cm-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.6;
+}
+.cm-cover-empty {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t-faint);
+  font-size: 14px;
+}
+
+.cm-user-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-4) var(--sp-2);
+  margin-top: -40px;
+  z-index: 5;
+}
+.cm-user-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--t-primary);
+  margin-bottom: 4px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.cm-user-avatar {
+  width: 56px; height: 56px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 3px solid var(--c-charcoal);
+  flex-shrink: 0;
+  background: var(--glass-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; color: var(--t-primary);
+}
+.cm-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---------- 字卡管理区 ---------- */
+.cm-cards-section { padding: 0 var(--sp-5); }
+
+.cm-group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-5) var(--sp-2);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--t-tertiary);
+}
+.cm-group-head .count {
+  font-size: 12px;
+  color: var(--t-faint);
+  font-weight: 400;
+}
+
+/* 字卡切换按钮（+ / −） */
+.cm-toggle-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  color: var(--t-secondary);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft);
+  -webkit-tap-highlight-color: transparent;
+}
+.cm-toggle-btn:active { background: var(--glass-press); }
+.cm-toggle-btn svg { width: 16px; height: 16px; }
+.cm-toggle-btn.is-open svg { transform: rotate(45deg); }
+
+/* 字卡类型弹窗 */
+.cm-type-popup {
+  display: none;
+  padding: var(--sp-2) var(--sp-5);
+  background: var(--glass-1);
+  border-bottom: 1px solid var(--bd-faint);
+}
+.cm-type-popup.is-show {
+  display: flex;
+  flex-direction: row;
+  gap: var(--sp-3);
+  justify-content: center;
+}
+.cm-type-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 20px;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-md);
+  color: var(--t-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft),
+              border-color var(--dur-fast) var(--ease-soft);
+}
+.cm-type-option:active {
+  background: var(--glass-press);
+  border-color: var(--bd-soft);
+}
+.cm-type-option svg { width: 20px; height: 20px; }
+.cm-type-count {
+  font-size: 10px;
+  color: var(--t-faint);
+  background: var(--glass-press);
+  border-radius: 8px;
+  padding: 1px 6px;
+  margin-top: 2px;
+}
+
+/* 字卡列表 */
+.cm-cards-list {
+  padding: 0 var(--sp-5);
+}
+.cm-card-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-2);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-md);
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.cm-card-item:active { background: var(--glass-press); }
+.cm-card-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--t-primary);
+  word-break: break-word;
+  line-height: 1.5;
+}
+.cm-card-emoji {
+  flex: 1;
+  font-size: 14px;
+  color: var(--t-primary);
+  word-break: break-word;
+  line-height: 1.5;
+}
+.cm-card-image-thumb {
+  flex: 1;
+  width: 100%;
+  max-height: 120px;
+  border-radius: var(--r-xs);
+  object-fit: cover;
+}
+.cm-card-del {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-xs);
+  background: transparent;
+  border: 1px solid var(--bd-faint);
+  color: var(--t-tertiary);
+  cursor: pointer;
+}
+.cm-card-del:active { background: var(--glass-press); }
+.cm-card-del svg { width: 14px; height: 14px; }
+
+/* 添加行 */
+.cm-add-row {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5) 0;
+}
+.cm-add-input {
+  flex: 1;
+  height: 42px;
+  border-radius: var(--r-sm);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  padding: 0 var(--sp-3);
+  font-size: 14px;
+  color: var(--t-primary);
+  outline: none;
+}
+.cm-add-input:focus { border-color: var(--accent); }
+.cm-add-btn {
+  flex-shrink: 0;
+  width: 42px; height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  border: none;
+  color: var(--c-charcoal);
+  cursor: pointer;
+}
+.cm-add-btn:active { opacity: 0.7; }
+.cm-add-btn svg { width: 18px; height: 18px; }
+
+.cm-image-add-btn {
+  flex: 1;
+  height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--glass-2);
+  border: 1px dashed var(--bd-soft);
+  color: var(--t-secondary);
+  font-size: 14px;
+  cursor: pointer;
+}
+.cm-image-add-btn:active { background: var(--glass-press); }
+.cm-image-add-btn svg { width: 18px; height: 18px; }
+
+.cm-hint {
+  padding: var(--sp-3) var(--sp-5) var(--sp-8);
+  font-size: 12px;
+  color: var(--t-faint);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.cm-empty {
+  padding: var(--sp-8) var(--sp-5);
+  text-align: center;
+  font-size: 14px;
+  color: var(--t-tertiary);
+}
+
+/* ---------- Toast ---------- */
+.cm-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-pill);
+  padding: var(--sp-2) var(--sp-5);
+  font-size: 13px;
+  color: var(--t-primary);
+  box-shadow: var(--sh-soft);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-soft),
+              transform var(--dur-fast) var(--ease-soft);
+  z-index: 9100;
+}
+.cm-toast.is-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ========================================================================
+   联系人历史朋友圈 Feed 样式 (.cmf-*)
+   ======================================================================== */
+
+/* 查看历史入口按钮 */
+.cm-feed-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: var(--sp-3) var(--sp-5) var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.cm-feed-entry:active { background: var(--glass-press); }
+.cm-feed-entry-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--glass-1);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.cm-feed-entry-icon svg { width: 18px; height: 18px; }
+.cm-feed-entry-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cm-feed-entry-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--t-primary);
+}
+.cm-feed-entry-sub {
+  font-size: 12px;
+  color: var(--t-faint);
+}
+.cm-feed-entry .chevron {
+  color: var(--t-faint);
+  transform: rotate(180deg);
+}
+.cm-feed-entry .chevron svg { width: 16px; height: 16px; }
+
+/* Feed 页面容器 */
+.cmf-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--c-charcoal);
+}
+
+/* Feed 导航栏 */
+.cmf-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 var(--sp-2);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  background: transparent;
+}
+.cmf-nav .nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--sp-1) var(--sp-2);
+  background: transparent;
+  border: none;
+  color: var(--t-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+.cmf-nav .nav-btn:active { opacity: 0.6; }
+.cmf-nav .nav-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--t-primary);
+  pointer-events: none;
+}
+
+/* Feed 可滚动区 */
+.cmf-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden;
+}
+
+/* Feed 封面（复用 cm-cover 样式，额外调整高度） */
+.cmf-cover {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a1e22 0%, #2a3036 40%, #1e2429 100%);
+}
+.cmf-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(31,35,38,0.9) 100%);
+  pointer-events: none;
+}
+.cmf-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.55;
+}
+.cmf-cover-empty {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t-faint);
+  font-size: 14px;
+}
+
+/* Feed 用户信息浮层 */
+.cmf-user-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-5) var(--sp-3);
+  margin-top: -45px;
+  z-index: 5;
+}
+.cmf-user-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--t-primary);
+  margin-bottom: 6px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+}
+.cmf-user-avatar {
+  width: 60px; height: 60px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 3px solid var(--c-charcoal);
+  flex-shrink:  0;
+  background: var(--glass-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700; color: var(--t-primary);
+}
+.cmf-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Feed 动态列表 */
+.cmf-feed {
+  padding: var(--sp-2) var(--sp-5) var(--sp-8);
+}
+
+/* 日期分隔符 */
+.cmf-date-sep {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4) 0 var(--sp-2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t-faint);
+  letter-spacing: 0.5px;
+}
+.cmf-date-sep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--bd-faint);
+}
+
+/* 单条动态卡片 */
+.cmf-post {
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-md);
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.cmf-post:active { background: var(--glass-press); }
+
+/* 动态文字 */
+.cmf-post-text { font-size: 14px; line-height: 1.6; color: var(--t-primary); word-break: break-word; margin-bottom: var(--sp-2); }
+
+/* 动态图片网格 */
+.cmf-post-images {
+  display: grid;
+  gap: 4px;
+  margin-top: var(--sp-2);
+}
+.cmf-post-images.count-1 { grid-template-columns: 1fr; }
+.cmf-post-images.count-2 { grid-template-columns: repeat(2, 1fr); }
+.cmf-post-images.count-3 { grid-template-columns: repeat(3, 1fr); }
+.cmf-post-images.count-4,
+.cmf-post-images.count-5,
+.cmf-post-images.count-6 { grid-template-columns: repeat(3, 1fr); }
+.cmf-post-images.count-7,
+.cmf-post-images.count-8,
+.cmf-post-images.count-9 { grid-template-columns: repeat(3, 1fr); }
+.cmf-post-img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+  background: var(--glass-1);
+}
+.cmf-post-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+}
+/* 单张图片不裁剪，限制最大高度 */
+.cmf-post-images.count-1 .cmf-post-img {
+  aspect-ratio: auto;
+  max-height: 300px;
+}
+.cmf-post-images.count-1 .cmf-post-img img {
+  object-fit: contain;
+}
+
+/* 动态时间 */
+.cmf-post-time {
+  margin-top: var(--sp-2);
+  font-size: 11px;
+  color: var(--t-faint);
+}
+
+/* Feed 空状态 */
+.cmf-empty {
+  padding: var(--sp-10) var(--sp-5);
+  text-align: center;
+}
+.cmf-empty-icon {
+  font-size: 40px;
+  margin-bottom: var(--sp-3);
+  opacity: 0.5;
+}
+.cmf-empty-text {
+  font-size: 14px;
+  color: var(--t-tertiary);
+  line-height: 1.6;
+}
+
+/* Feed 统计条 */
+.cmf-stats {
+  display: flex;
+  gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-5);
+  font-size: 12px;
+  color: var(--t-faint);
+}
+.cmf-stats-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cmf-stats-item svg { width: 14px; height: 14px; opacity: 0.7; }

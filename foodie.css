@@ -1,0 +1,468 @@
+/* ========================================================================
+   Mine · 觅食模块样式
+   ------------------------------------------------------------------------
+   塔罗牌卡牌 / 扇形排列 / 抽牌动画 / 洗牌动画
+   ======================================================================== */
+
+/* ---------- 页面布局 ---------- */
+.foodie-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---------- 顶部人物栏 ---------- */
+.foodie-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-2);
+  flex-shrink: 0;
+}
+.foodie-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 600;
+  background: var(--glass-2);
+  border: 2px solid var(--bd-soft);
+  flex-shrink: 0;
+}
+.foodie-avatar img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.foodie-pair-text {
+  font-size: 15px;
+  color: var(--t-primary);
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+}
+.foodie-pair-text .pair-accent { color: var(--accent); }
+
+/* ---------- 抽牌结果展示区 ---------- */
+.foodie-result {
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-4);
+  flex-shrink: 0;
+}
+.foodie-result-text {
+  font-size: 13px;
+  color: var(--t-tertiary);
+  text-align: center;
+}
+.foodie-result-card {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
+  padding: var(--sp-2) var(--sp-5);
+  background: var(--accent-soft);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--accent);
+  animation: foodie-reveal 0.4s var(--ease-soft);
+}
+@keyframes foodie-reveal {
+  from { opacity: 0; transform: scale(0.8) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ---------- 塔罗牌扇形区域 ---------- */
+.foodie-deck-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 0;
+  padding: var(--sp-2);
+  overflow: hidden;
+  touch-action: pan-y;
+}
+.foodie-deck {
+  position: relative;
+  width: 130px;
+  height: 180px;
+}
+
+/* ---------- 塔罗牌 ---------- */
+.tarot-card {
+  position: absolute;
+  top: 0; left: 0;
+  width: 130px;
+  height: 180px;
+  border-radius: var(--r-md);
+  cursor: grab;
+  transition: transform 0.35s var(--ease-soft),
+              opacity 0.25s var(--ease-soft);
+  will-change: transform, opacity;
+}
+.tarot-card:active { cursor: grabbing; }
+
+/* 卡牌正面（食物文字）——默认隐藏 */
+.tarot-front {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: linear-gradient(135deg, #1e2429 0%, #2a3138 50%, #1e2429 100%);
+  border: 1.5px solid var(--accent);
+  box-shadow: var(--sh-soft), inset 0 0 0 3px rgba(141,157,166,0.08);
+  opacity: 0;
+  transition: opacity 0.3s var(--ease-soft);
+  z-index: 2;
+}
+.tarot-front::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(141,157,166,0.2);
+  border-radius: calc(var(--r-md) - 3px);
+  pointer-events: none;
+}
+.tarot-front-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+.tarot-front-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t-primary);
+  text-align: center;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.tarot-front-label {
+  font-size: 9px;
+  color: var(--t-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* 卡牌背面（花纹）——默认显示 */
+.tarot-back {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2a3138 0%, #1a2025 50%, #2a3138 100%);
+  border: 1.5px solid rgba(141,157,166,0.25);
+  box-shadow: var(--sh-soft);
+  opacity: 1;
+  transition: opacity 0.3s var(--ease-soft);
+  z-index: 1;
+}
+.tarot-back::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(141,157,166,0.15);
+  border-radius: calc(var(--r-md) - 4px);
+}
+.tarot-back-pattern {
+  font-size: 32px;
+  color: rgba(141,157,166,0.3);
+}
+
+/* 翻转状态：显示正面、隐藏背面 */
+.tarot-card.is-revealed .tarot-front { opacity: 1; }
+.tarot-card.is-revealed .tarot-back { opacity: 0; }
+
+/* 抽牌状态 */
+.tarot-card.is-drawing {
+  z-index: 100;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.2s var(--ease-soft);
+}
+
+/* 洗牌状态 */
+.tarot-card.is-shuffling {
+  transition: transform 0.3s var(--ease-soft);
+}
+
+/* ---------- 底部按钮 ---------- */
+.foodie-cat-selector {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-4) var(--sp-2);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.foodie-cat-selector::-webkit-scrollbar { display: none; }
+
+.foodie-cat-chip {
+  flex-shrink: 0;
+  padding: 5px 14px;
+  border-radius: var(--r-pill);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  color: var(--t-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-soft),
+              color var(--dur-fast) var(--ease-soft),
+              border-color var(--dur-fast) var(--ease-soft);
+}
+.foodie-cat-chip:active { transform: scale(0.95); }
+.foodie-cat-chip.is-active {
+  background: var(--accent);
+  color: var(--c-charcoal);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.foodie-actions {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4) var(--sp-4);
+  flex-shrink: 0;
+}
+.foodie-btn {
+  flex: 1;
+  height: 46px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-soft),
+              background var(--dur-fast) var(--ease-soft);
+}
+.foodie-btn:active { transform: scale(0.96); }
+.foodie-btn svg { width: 18px; height: 18px; }
+
+.foodie-btn-decide {
+  background: var(--accent);
+  color: var(--c-charcoal);
+  border: 1px solid var(--accent);
+}
+.foodie-btn-together {
+  background: var(--glass-2);
+  color: var(--t-primary);
+  border: 1px solid var(--bd-soft);
+}
+
+/* ---------- 食物字卡管理子页 ---------- */
+.foodie-manage {
+  min-height: 100%;
+  padding-bottom: var(--sp-6);
+}
+
+/* 添加区头部（与聊天字卡一致） */
+.foodie-add-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-5);
+}
+.foodie-add-head .group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--t-secondary);
+}
+.foodie-add-head .count {
+  font-size: 12px;
+  color: var(--t-faint);
+  background: var(--glass-press);
+  border-radius: 8px;
+  padding: 1px 8px;
+}
+.foodie-toggle-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  cursor: pointer;
+  color: var(--t-secondary);
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.foodie-toggle-btn:active { background: var(--glass-press); }
+.foodie-toggle-btn svg { transition: transform 0.3s var(--ease-soft); }
+.foodie-toggle-btn.is-open svg { transform: rotate(45deg); }
+
+/* 分类弹窗 */
+.foodie-cat-popup {
+  display: none;
+  padding: var(--sp-2) var(--sp-5);
+  background: var(--glass-1);
+  border-bottom: 1px solid var(--bd-faint);
+}
+.foodie-cat-popup.is-show {
+  display: flex;
+  flex-direction: row;
+  gap: var(--sp-3);
+  justify-content: center;
+}
+
+/* 分类选项 */
+.foodie-cat-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-md);
+  color: var(--t-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft),
+              border-color var(--dur-fast) var(--ease-soft);
+}
+.foodie-cat-option:active {
+  background: var(--glass-press);
+  border-color: var(--bd-soft);
+}
+.foodie-cat-option .cat-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.foodie-cat-option .cat-count {
+  font-size: 10px;
+  color: var(--t-faint);
+  background: var(--glass-press);
+  border-radius: 8px;
+  padding: 1px 6px;
+  margin-top: 2px;
+}
+
+/* 输入行（选中分类后显示） */
+.foodie-add-row {
+  display: none;
+  padding: var(--sp-2) var(--sp-5);
+  gap: var(--sp-2);
+  align-items: center;
+}
+.foodie-add-row.is-show {
+  display: flex;
+}
+.foodie-add-row .cat-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: var(--r-pill);
+  padding: 2px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.foodie-add-input {
+  flex: 1;
+  height: 38px;
+  border-radius: var(--r-md);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  padding: 0 var(--sp-3);
+  font-size: 14px;
+  color: var(--t-primary);
+  outline: none;
+}
+.foodie-add-input:focus { border-color: var(--accent); }
+.foodie-add-confirm {
+  height: 38px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: var(--c-charcoal);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* 提示 */
+.foodie-manage-hint {
+  padding: var(--sp-2) var(--sp-5);
+  font-size: 12px;
+  color: var(--t-faint);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* 分类分组 */
+.foodie-cat-group {
+  margin: 0 var(--sp-5) var(--sp-2);
+}
+.foodie-cat-group-head {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t-secondary);
+  padding: var(--sp-2) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.foodie-cat-group-head .cat-emoji {
+  font-size: 16px;
+}
+
+/* ---------- 空状态 ---------- */
+.foodie-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-6);
+}
+.foodie-empty-icon {
+  font-size: 40px;
+  opacity: 0.4;
+}
+.foodie-empty-text {
+  font-size: 14px;
+  color: var(--t-tertiary);
+  text-align: center;
+}
+
+/* ---------- Toast ---------- */
+.foodie-toast {
+  position: fixed;
+  bottom: 130px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-pill);
+  padding: var(--sp-2) var(--sp-5);
+  font-size: 13px;
+  color: var(--t-primary);
+  box-shadow: var(--sh-soft);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-soft),
+              transform var(--dur-fast) var(--ease-soft);
+  z-index: 9100;
+}
+.foodie-toast.is-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

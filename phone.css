@@ -1,0 +1,429 @@
+/* ========================================================================
+   Mine · 电话模块样式
+   ------------------------------------------------------------------------
+   风格与整体一致：炭黑冷雾渐变底 + 雾霭噪点 + 暗角 + 玻璃雾面控件
+   配色沿用 theme.css 变量；接听 / 挂断使用克制的暗绿 / 暗红。
+   ======================================================================== */
+
+/* ---------- 全屏通话层（位于所有页面之上） ---------- */
+.phone-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(120% 80% at 50% -10%,
+      rgba(120, 138, 152, var(--halo-opacity)) 0%,
+      rgba(70, 80, 88, 0.22) 30%,
+      transparent 62%),
+    linear-gradient(180deg,
+      var(--c-charcoal-cool) 0%,
+      var(--c-charcoal) 46%,
+      #14171a 100%);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.1);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.1);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--dur-mid) var(--ease-fog),
+    visibility 0s linear var(--dur-mid);
+}
+
+.phone-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+/* 雾霭噪点 */
+.phone-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: var(--noise-opacity);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  pointer-events: none;
+}
+
+/* 极弱暗角 */
+.phone-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(130% 100% at 50% 42%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.28) 100%);
+  pointer-events: none;
+}
+
+/* ---------- 屏幕布局 ---------- */
+.phone-screen {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--app-max-w);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--status-h) + var(--sp-5)) var(--sp-6)
+           calc(var(--sp-8) + env(safe-area-inset-bottom, 0px));
+}
+
+.phone-top {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.phone-brand {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--t-tertiary);
+}
+
+/* ---------- 中央舞台 ---------- */
+.phone-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  min-height: 0;
+}
+
+.phone-avatar-wrap {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone-avatar-wrap .avatar {
+  width: 96px;
+  height: 96px;
+  font-size: 34px;
+  position: relative;
+  z-index: 2;
+  box-shadow: var(--sh-soft);
+}
+
+/* 响铃扩散光环 */
+.phone-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--accent-glow);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.phone-overlay.is-ringing .phone-ring.r1 {
+  animation: phonePulse 2.2s var(--ease-soft) infinite;
+}
+
+.phone-overlay.is-ringing .phone-ring.r2 {
+  animation: phonePulse 2.2s var(--ease-soft) 1.1s infinite;
+}
+
+@keyframes phonePulse {
+  0%   { transform: scale(0.9);  opacity: 0.55; }
+  70%  { transform: scale(1.5);  opacity: 0; }
+  100% { transform: scale(1.5);  opacity: 0; }
+}
+
+.phone-name {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--t-primary);
+}
+
+.phone-state {
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--t-tertiary);
+}
+
+.phone-timer {
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  letter-spacing: 2px;
+  color: var(--t-secondary);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity var(--dur-mid) var(--ease-fog),
+              transform var(--dur-mid) var(--ease-fog);
+}
+
+.phone-overlay.is-connected .phone-timer {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------- 底部控件 ---------- */
+.phone-controls {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-8);
+}
+
+.phone-ctl {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-3);
+  backdrop-filter: blur(var(--blur-sm)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--blur-sm)) saturate(1.15);
+  border: 1px solid var(--bd-soft);
+  box-shadow: var(--sh-soft),
+              inset 0 1px 0 rgba(230, 240, 246, 0.06);
+  color: var(--t-secondary);
+  transition: transform var(--dur-fast) var(--ease-soft),
+              background var(--dur-fast) var(--ease-soft),
+              color var(--dur-fast) var(--ease-soft);
+}
+
+.phone-ctl:active { transform: scale(0.92); }
+
+.phone-ctl svg { width: 24px; height: 24px; }
+
+/* 挂断 / 拒绝：克制的暗红 */
+.phone-ctl.is-danger {
+  background: rgba(180, 88, 78, 0.26);
+  border-color: rgba(200, 112, 100, 0.38);
+  color: #e0a39b;
+}
+
+/* 接听：克制的暗绿 */
+.phone-ctl.is-accept {
+  background: rgba(127, 163, 133, 0.28);
+  border-color: rgba(152, 192, 162, 0.40);
+  color: #b7d6c0;
+}
+
+/* 静音态 */
+.phone-ctl.is-muted {
+  color: var(--t-faint);
+  background: var(--glass-press);
+}
+
+/* ---------- 通讯录行内小电话按钮 ---------- */
+.contact-call-btn {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-2);
+  backdrop-filter: blur(var(--blur-xs)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--blur-xs)) saturate(1.15);
+  border: 1px solid var(--bd-icon);
+  box-shadow: var(--sh-float);
+  color: var(--accent);
+  transition: transform var(--dur-fast) var(--ease-soft),
+              background var(--dur-fast) var(--ease-soft);
+}
+
+.contact-call-btn:active {
+  transform: scale(0.9);
+  background: var(--glass-press);
+}
+
+.contact-call-btn svg { width: 17px; height: 17px; }
+
+/* 联系人主页 / 群详情：双按钮行 */
+.profile-actions-row {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+}
+
+.profile-actions-row .btn { flex: 1; }
+
+/* ---------- 群电话预留占位 ---------- */
+.phone-reserved {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-6) 0 var(--sp-4);
+}
+
+.phone-reserved-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-icon);
+  box-shadow: var(--sh-float);
+  color: var(--accent);
+}
+
+.phone-reserved-icon svg { width: 28px; height: 28px; }
+
+.phone-reserved-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--t-primary);
+}
+
+.phone-reserved-desc {
+  font-size: 12.5px;
+  color: var(--t-tertiary);
+  text-align: center;
+  line-height: 1.8;
+}
+
+/* 弹层右上角关闭按钮（若 components.css 未定义） */
+.sheet-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t-tertiary);
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+
+.sheet-close:active { background: var(--glass-press); }
+
+.sheet-close svg { width: 18px; height: 18px; }
+
+/* ---------- 电话 Toast ---------- */
+.phone-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--dock-h) + var(--sp-6));
+  transform: translateX(-50%) translateY(10px);
+  background: var(--glass-3);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.15);
+  border: 1px solid var(--bd-soft);
+  color: var(--t-primary);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  padding: 10px 18px;
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-soft);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-mid) var(--ease-fog),
+              transform var(--dur-mid) var(--ease-fog),
+              visibility 0s linear var(--dur-mid);
+  z-index: 3000;
+  max-width: 80vw;
+  text-align: center;
+}
+
+.phone-toast.is-show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+  transition-delay: 0s;
+}
+
+/* ---------- 电话页（通话记录） ---------- */
+.phone-log-head {
+  padding: var(--sp-4) var(--sp-5) var(--sp-2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--t-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.phone-log-head .count {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--t-faint);
+  letter-spacing: 0.5px;
+}
+
+.phone-log-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-5);
+}
+
+.phone-log-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-icon);
+  box-shadow: var(--sh-float);
+  color: var(--accent);
+}
+
+.phone-log-icon svg { width: 18px; height: 18px; }
+
+.phone-log-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.phone-log-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--t-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-log-kind {
+  font-size: 12px;
+  color: var(--t-tertiary);
+}
+
+.phone-log-kind.is-missed { color: #c97a6f; }
+
+.phone-log-dur {
+  font-size: 12.5px;
+  color: var(--t-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.phone-log-hint {
+  margin: var(--sp-5);
+  padding: var(--sp-4);
+  font-size: 12px;
+  color: var(--t-tertiary);
+  text-align: center;
+  line-height: 1.9;
+  border: 1px dashed var(--bd-soft);
+  border-radius: var(--r-md);
+}
+
+.phone-log-hint svg { vertical-align: -2px; }

@@ -1,0 +1,357 @@
+/* ========================================================================
+   Mine · 通讯录页面样式
+   ------------------------------------------------------------------------
+   延续雾都冷调：半透雾面列表行 / 雾色头像 / 编辑表单 / 群聊多选。
+   复用 theme.css 变量与 components.css 的 nav-bar / sheet / btn 等。
+   ======================================================================== */
+
+/* ---------- 头像通用 ---------- */
+.avatar {
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-soft);
+  box-shadow: var(--sh-float), inset 0 1px 0 rgba(230,240,246,0.06);
+  color: var(--t-secondary);
+  font-weight: 600;
+  user-select: none;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* 自动生成的雾色首字母头像 */
+.avatar-gen {
+  background:
+    radial-gradient(120% 90% at 35% 25%, rgba(160,176,188,0.22), transparent 70%),
+    var(--glass-2);
+  backdrop-filter: blur(var(--blur-xs)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-xs)) saturate(1.2);
+}
+
+/* ========================================================================
+   通讯录主页 · 列表
+   ======================================================================== */
+.contacts-scroll { padding-bottom: var(--sp-6); }
+
+/* 功能入口行（发起群聊 / 添加联系人） */
+.func-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+}
+.func-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--r-md);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-icon);
+  color: var(--accent);
+  box-shadow: var(--sh-float);
+}
+.func-icon svg { width: 20px; height: 20px; }
+.func-text { display: flex; flex-direction: column; gap: 2px; }
+.func-text .func-title { font-size: 15px; color: var(--t-primary); }
+.func-text .func-sub { font-size: 12px; color: var(--t-tertiary); }
+
+/* 分组标题 */
+.group-head {
+  padding: var(--sp-4) var(--sp-5) var(--sp-2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--t-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.group-head .count {
+  font-size: 11px; font-weight: 400;
+  color: var(--t-faint);
+  letter-spacing: 0.5px;
+}
+
+/* 联系人 / 群聊 行 */
+.contact-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-5);
+  position: relative;
+  transition: background var(--dur-fast) var(--ease-soft);
+  cursor: pointer;
+}
+.contact-row:active { background: var(--glass-press); }
+.contact-row .avatar { width: 46px; height: 46px; font-size: 17px; }
+.contact-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.contact-name {
+  font-size: 15px; font-weight: 500;
+  color: var(--t-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.contact-status {
+  font-size: 12.5px;
+  color: var(--t-tertiary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.contact-status.is-online { color: var(--accent); }
+.contact-row .chevron {
+  color: var(--t-faint);
+  flex: 0 0 auto;
+}
+.contact-row .chevron svg { width: 18px; height: 18px; }
+
+/* 群成员行 · 移出按钮 */
+.group-member-row { cursor: default; }
+.group-member-row .contact-info { cursor: pointer; }
+.group-remove-btn {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  font-size: 12.5px;
+  border-radius: var(--radius-sm);
+}
+
+/* 群聊行 · 头像为叠放多人 */
+.group-avatar {
+  width: 46px; height: 46px;
+  border-radius: var(--r-md);
+  flex: 0 0 auto;
+  position: relative;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-soft);
+  box-shadow: var(--sh-float);
+  overflow: hidden;
+}
+.group-avatar .ga-grid {
+  position: absolute; inset: 4px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+}
+.group-avatar .ga-cell {
+  border-radius: 4px;
+  background: var(--glass-2);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  font-size: 9px; font-weight: 600;
+  color: var(--t-secondary);
+}
+.group-avatar .ga-cell img { width: 100%; height: 100%; object-fit: cover; }
+.group-avatar.is-single .ga-grid { display: none; }
+.group-avatar.is-single {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 600; color: var(--accent);
+}
+/* 群详情/编辑页中内部头像不拦截点击，让父级接收 */
+.big-avatar > .group-avatar,
+.big-avatar > .avatar { pointer-events: none; }
+.big-avatar > .group-avatar img,
+.big-avatar > .avatar img { pointer-events: none; }
+
+/* 列表分隔线 */
+.list-sep {
+  height: 1px;
+  margin: 0 var(--sp-5);
+  background: var(--bd-faint);
+}
+
+/* ========================================================================
+   编辑联系人 · 表单
+   ======================================================================== */
+.edit-form { padding: var(--sp-6) var(--sp-5) var(--sp-8); }
+
+.avatar-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-8);
+}
+.avatar-picker .big-avatar {
+  width: 88px; height: 88px;
+  font-size: 32px;
+  position: relative;
+}
+.avatar-picker .big-avatar .cam-badge {
+  position: absolute;
+  right: -2px; bottom: -2px;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  border: 1.5px solid var(--bd-medium);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t-secondary);
+}
+.avatar-picker .big-avatar .cam-badge svg { width: 15px; height: 15px; }
+.avatar-picker .pick-hint { font-size: 12px; color: var(--t-tertiary); }
+
+/* 表单字段 */
+.field { margin-bottom: var(--sp-5); }
+.field-label {
+  display: block;
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--t-tertiary);
+  margin-bottom: var(--sp-2);
+}
+.field-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--sp-4);
+  font-size: 15px;
+  color: var(--t-primary);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-md);
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-soft);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.field-input::placeholder { color: var(--t-faint); }
+.field-input:focus { border-color: var(--accent-glow); }
+textarea.field-input {
+  height: auto;
+  min-height: 72px;
+  padding: var(--sp-3) var(--sp-4);
+  resize: none;
+  line-height: 1.5;
+}
+
+/* 危险按钮 */
+.btn-danger {
+  color: #c97a7a;
+  background: rgba(180, 90, 90, 0.10);
+  border-color: rgba(180, 90, 90, 0.22);
+}
+
+/* ========================================================================
+   群聊多选 · 创建
+   ======================================================================== */
+.select-header {
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--bd-faint);
+}
+.select-name-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--sp-4);
+  font-size: 15px;
+  color: var(--t-primary);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-md);
+  outline: none;
+  margin-bottom: var(--sp-3);
+}
+.select-name-input:focus { border-color: var(--accent-glow); }
+
+/* 已选成员 chips */
+.selected-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  min-height: 4px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px 0 4px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  border: 1px solid var(--bd-medium);
+  font-size: 13px;
+  color: var(--t-primary);
+}
+.chip .chip-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  font-size: 10px;
+}
+.chip .chip-x {
+  display: flex; align-items: center;
+  color: var(--t-tertiary);
+}
+.chip .chip-x svg { width: 12px; height: 12px; }
+
+/* 多选行 · 带 checkbox */
+.contact-row.selectable { padding-right: var(--sp-5); }
+.contact-row .select-box {
+  flex: 0 0 auto;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bd-medium);
+  display: flex; align-items: center; justify-content: center;
+  color: transparent;
+  transition: all var(--dur-fast) var(--ease-soft);
+}
+.contact-row .select-box svg { width: 14px; height: 14px; }
+.contact-row.is-selected .select-box {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--c-charcoal);
+}
+.contact-row.is-selected { background: var(--accent-soft); }
+
+/* 底部创建按钮固定区 */
+.select-footer {
+  flex: 0 0 auto;
+  padding: var(--sp-3) var(--sp-5) calc(env(safe-area-inset-bottom, 0px) + var(--sp-4));
+  border-top: 1px solid var(--bd-faint);
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+}
+.select-footer .btn { width: 100%; }
+.select-footer .btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ========================================================================
+   群聊详情
+   ======================================================================== */
+.group-detail-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8) var(--sp-5) var(--sp-5);
+}
+.group-detail-hero .gd-avatar { width: 76px; height: 76px; font-size: 26px; }
+.group-detail-hero .gd-name { font-size: 19px; font-weight: 700; color: var(--t-primary); }
+.group-detail-hero .gd-meta { font-size: 12px; color: var(--t-tertiary); }
+
+/* 空状态 · 通讯录专用 */
+.contacts-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-10) var(--sp-5);
+  text-align: center;
+}
+.contacts-empty .ce-icon {
+  width: 56px; height: 56px;
+  border-radius: var(--r-lg);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  color: var(--t-tertiary);
+  opacity: 0.7;
+}
+.contacts-empty .ce-icon svg { width: 26px; height: 26px; }
+.contacts-empty .ce-title { font-size: 15px; color: var(--t-secondary); }
+.contacts-empty .ce-desc { font-size: 13px; color: var(--t-faint); line-height: 1.5; max-width: 220px; }
