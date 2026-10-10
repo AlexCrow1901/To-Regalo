@@ -1,0 +1,211 @@
+/* ========================================================================
+   Mine · 基础样式 + 多层雾霭背景系统
+   ------------------------------------------------------------------------
+   背景由 5 个固定层叠合，形成"湿冷朦胧"的层次感：
+     0. bg-base      冷调渐变 + 弥散冷天光光晕（永远存在，兜底）
+     1. bg-image     用户自选背景图（可选）
+     2. bg-fog-tint  图片上方的雾色叠加（维持美学统一）
+     3. bg-noise     雾霭噪点（10–15%，不覆盖文字）
+     4. bg-vignette  极弱暗角，收敛视觉焦点
+   ======================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--font-base);
+  color: var(--t-primary);
+  background: var(--c-charcoal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+button, input { font-family: inherit; color: inherit; }
+
+/* ---------- 背景层容器 ---------- */
+.bg-stack {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.bg-layer { position: absolute; inset: 0; }
+
+/* L0 · 冷调渐变 + 弥散冷天光光晕 */
+.bg-base {
+  background:
+    radial-gradient(120% 80% at 50% -10%,
+      rgba(120, 138, 152, var(--halo-opacity)) 0%,
+      rgba(70, 80, 88, 0.22) 26%,
+      transparent 60%),
+    linear-gradient(180deg,
+      var(--c-charcoal-cool) 0%,
+      var(--c-charcoal) 42%,
+      #181b1d 100%);
+}
+
+/* 黑夜模式：点击"黑夜"直接变成纯黑背景 */
+body.theme-night .bg-base { background: #000; }
+
+/* L1 · 用户背景图 */
+.bg-image {
+  background-size: cover;
+  background-position: center;
+  opacity: 0;                       /* 默认无图，由 background.js 控制 */
+  transition: opacity var(--dur-slow) var(--ease-fog);
+}
+.bg-image.is-active { opacity: 1; }
+
+/* L2 · 图片上方雾色叠加（让任意背景图融入雾都美学） */
+.bg-fog-tint {
+  background: linear-gradient(180deg,
+    rgba(31, 35, 38, var(--fog-tint)) 0%,
+    rgba(28, 32, 35, calc(var(--fog-tint) + 0.06)) 50%,
+    rgba(22, 25, 27, calc(var(--fog-tint) + 0.12)) 100%);
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-fog);
+}
+.bg-fog-tint.is-active { opacity: 1; }
+
+/* L3 · 雾霭噪点（SVG fractalNoise，仅底层） */
+.bg-noise {
+  opacity: var(--noise-opacity);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+
+/* L4 · 极弱暗角 */
+.bg-vignette {
+  background: radial-gradient(130% 100% at 50% 42%,
+    transparent 52%,
+    rgba(0, 0, 0, 0.22) 100%);
+}
+
+/* ========================================================================
+   应用外壳 · 沉浸式全屏移动端列
+   ======================================================================== */
+.app-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  max-width: var(--app-max-w);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (min-width: 480px) {
+  /* 桌面/宽视口：保持手机 App 卡片观感，柔和投影 + 极淡边框，不再叠加深色暗角 */
+  .app-shell {
+    height: 100%;
+    box-shadow: var(--sh-diffuse);
+    border: 1px solid var(--bd-soft);
+  }
+}
+
+/* ========================================================================
+   更新提醒横幅（SW 受控更新：发现新版本 → 立即更新 / 稍后）
+   ======================================================================== */
+.update-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--glass-2);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--bd-medium);
+  box-shadow: var(--sh-diffuse);
+}
+.update-banner-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--t-primary);
+}
+.update-banner-actions {
+  flex: none;
+  display: flex;
+  gap: var(--sp-2);
+}
+.update-banner-btn {
+  flex: none;
+  height: 30px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--bd-medium);
+  border-radius: var(--r-pill);
+  background: var(--glass-2);
+  color: var(--t-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.update-banner-btn:active { background: var(--glass-press); }
+.update-banner-btn.is-primary {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ========================================================================
+   页面系统 · 单页切换
+   ======================================================================== */
+.page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.985);
+  filter: blur(4px);
+  transition:
+    opacity var(--dur-mid) var(--ease-fog),
+    transform var(--dur-mid) var(--ease-fog),
+    filter var(--dur-mid) var(--ease-fog),
+    visibility 0s linear var(--dur-mid);
+  pointer-events: none;
+}
+.page.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  filter: blur(0);
+  transition-delay: 0s;
+  pointer-events: auto;
+}
+
+/* 滚动区域通用 */
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.scroll::-webkit-scrollbar { width: 0; height: 0; }
+
+/* 文字辅助类 */
+.t-secondary { color: var(--t-secondary); }
+.t-tertiary   { color: var(--t-tertiary); }
+.t-center     { text-align: center; }
+
+/* 链接 / 可点元素 */
+[role="button"], button { cursor: pointer; border: none; background: none; }

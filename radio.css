@@ -1,0 +1,538 @@
+/* ========================================================================
+   Mine · 心情电台样式
+   ------------------------------------------------------------------------
+   电台页面 / 歌曲列表 / 上传区 / 悬浮黑胶唱片 / 控制面板
+   ======================================================================== */
+
+/* ---------- 电台页面 ---------- */
+.radio-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-8) var(--sp-5) var(--sp-5);
+}
+.radio-hero-icon {
+  width: 56px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-soft);
+  color: var(--accent);
+}
+.radio-hero-title { font-size: 20px; font-weight: 700; color: var(--t-primary); }
+.radio-hero-sub { font-size: 13px; color: var(--t-tertiary); font-style: italic; }
+
+/* ---------- 上传区 ---------- */
+.radio-upload-zone {
+  margin: 0 var(--sp-5) var(--sp-4);
+  border: 2px dashed var(--bd-medium);
+  border-radius: var(--r-lg);
+  padding: var(--sp-6) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-soft),
+              background var(--dur-fast) var(--ease-soft);
+}
+.radio-upload-zone:active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.radio-upload-zone svg { color: var(--accent); }
+.radio-upload-text { font-size: 14px; color: var(--t-secondary); }
+.radio-upload-hint { font-size: 12px; color: var(--t-faint); }
+
+/* ---------- 添加音乐链接（音频直链） ---------- */
+.radio-url-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 var(--sp-5) var(--sp-2);
+}
+.radio-url-input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--bd-medium);
+  border-radius: var(--r-md);
+  background: var(--glass-2);
+  color: var(--t-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-soft);
+}
+.radio-url-input:focus { border-color: var(--accent); }
+.radio-url-input::placeholder { color: var(--t-faint); }
+.radio-url-add {
+  flex: none;
+  height: 40px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.radio-url-add:active { background: var(--glass-press); }
+.radio-url-hint {
+  font-size: 12px;
+  color: var(--t-faint);
+  margin: 0 var(--sp-5) var(--sp-3);
+  line-height: 1.5;
+}
+.radio-item-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.6;
+  border: 1px solid var(--bd-medium);
+  border-radius: var(--r-pill);
+  color: var(--t-tertiary);
+  vertical-align: middle;
+}
+.radio-item-tag.is-url {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ---------- 网易云音乐接入区 ---------- */
+.radio-netease {
+  margin: var(--sp-2) var(--sp-5) var(--sp-4);
+  padding: var(--sp-3);
+  border: 1px solid var(--bd-medium);
+  border-radius: var(--r-lg);
+  background: var(--glass-1);
+}
+.radio-netease-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-2);
+}
+.radio-netease-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--t-primary);
+}
+.radio-netease-btn {
+  flex: none;
+  height: 30px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--bd-medium);
+  border-radius: var(--r-pill);
+  background: var(--glass-2);
+  color: var(--t-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.radio-netease-btn.is-primary {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.radio-netease-btn:active { background: var(--glass-press); }
+.radio-netease-api {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.radio-netease-hint {
+  font-size: 12px;
+  color: var(--t-faint);
+  line-height: 1.6;
+}
+.radio-netease-hint b { color: var(--t-secondary); }
+.radio-netease-sub {
+  font-size: 12px;
+  color: var(--t-tertiary);
+  margin: var(--sp-3) 0 var(--sp-2);
+}
+.radio-netease-empty {
+  font-size: 12px;
+  color: var(--t-faint);
+  padding: var(--sp-3) 0;
+}
+.radio-netease-search {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.radio-netease-results { margin-top: var(--sp-2); }
+
+/* 歌单网格 */
+.netease-playlist-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+}
+.netease-playlist {
+  cursor: pointer;
+  text-align: left;
+}
+.netease-playlist-cover {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--r-md);
+  object-fit: cover;
+  background: var(--glass-2);
+}
+.netease-playlist-name {
+  font-size: 11px;
+  color: var(--t-secondary);
+  margin-top: var(--sp-1);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.netease-playlist-count { font-size: 10px; color: var(--t-faint); }
+
+/* 歌曲列表 */
+.netease-song-list { margin-top: var(--sp-1); }
+.netease-song {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--bd-soft);
+  cursor: pointer;
+}
+.netease-song:active { background: var(--glass-press); }
+.netease-song-idx {
+  flex: none;
+  width: 18px;
+  font-size: 11px;
+  color: var(--t-faint);
+  text-align: center;
+}
+.netease-song-info { flex: 1; min-width: 0; }
+.netease-song-name {
+  font-size: 13px;
+  color: var(--t-primary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.netease-vip {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 0 5px;
+  font-size: 9px;
+  line-height: 1.6;
+  border: 1px solid #e6b347;
+  border-radius: var(--r-pill);
+  color: #b8860b;
+  vertical-align: middle;
+}
+.netease-song-artist {
+  font-size: 11px;
+  color: var(--t-faint);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.netease-song-play { flex: none; color: var(--accent); }
+
+/* 扫码登录弹层 */
+.netease-qr-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--sp-5) 0 var(--sp-6);
+}
+.netease-qr-img {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--r-md);
+  background: #fff;
+  object-fit: contain;
+}
+.netease-qr-status {
+  margin-top: var(--sp-3);
+  font-size: 13px;
+  color: var(--t-secondary);
+}
+
+/* ---------- 歌曲列表 ---------- */
+.radio-list { padding: 0 var(--sp-5) var(--sp-4); }
+.radio-list-label {
+  font-size: 12px;
+  color: var(--t-tertiary);
+  padding: var(--sp-2) 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-2);
+  background: var(--glass-2);
+  backdrop-filter: blur(var(--blur-xs)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--blur-xs)) saturate(1.15);
+  border: 1px solid var(--bd-faint);
+  border-radius: var(--r-md);
+  transition: background var(--dur-fast) var(--ease-soft);
+  cursor: pointer;
+}
+.radio-item:active { background: var(--glass-press); }
+.radio-item.is-playing {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.radio-item-num {
+  flex: 0 0 28px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600;
+  color: var(--t-secondary);
+  background: var(--glass-3);
+  border-radius: var(--r-sm);
+}
+.radio-item.is-playing .radio-item-num {
+  background: var(--accent);
+  color: var(--c-charcoal);
+}
+.radio-item-info { flex: 1; min-width: 0; }
+.radio-item-name {
+  font-size: 14px; color: var(--t-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-weight: 500;
+}
+.radio-item.is-playing .radio-item-name { color: var(--accent); font-weight: 600; }
+.radio-item-dur { font-size: 12px; color: var(--t-tertiary); margin-top: 2px; }
+.radio-item-del {
+  flex: 0 0 auto;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t-faint);
+  transition: color var(--dur-fast) var(--ease-soft), background var(--dur-fast) var(--ease-soft);
+}
+.radio-item-del:active { color: #c97a7a; background: rgba(180,90,90,0.12); }
+.radio-item-del svg { width: 14px; height: 14px; }
+
+.radio-empty {
+  padding: var(--sp-8) var(--sp-4);
+  text-align: center;
+  font-size: 13px;
+  color: var(--t-faint);
+  font-style: italic;
+}
+
+/* ---------- 悬浮黑胶唱片 ---------- */
+.radio-float {
+  position: fixed;
+  right: 16px;
+  bottom: 100px;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--sp-2);
+}
+
+.radio-vinyl {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #2a2f33 0%, #1a1e21 30%, #0d0f11 60%, #1a1e21 100%);
+  border: 2px solid rgba(141, 157, 166, 0.3);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--sh-float), 0 0 0 1px rgba(0,0,0,0.4);
+  transition: transform var(--dur-mid) var(--ease-soft),
+              box-shadow var(--dur-fast) var(--ease-soft);
+  position: relative;
+  overflow: hidden;
+}
+.radio-vinyl:active { transform: scale(0.92); }
+.radio-vinyl::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle at 50% 50%,
+    transparent 0,
+    transparent 3px,
+    rgba(255,255,255,0.015) 3px,
+    rgba(255,255,255,0.015) 4px
+  );
+}
+.radio-vinyl-center {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 1px solid rgba(0,0,0,0.3);
+  z-index: 1;
+}
+.radio-vinyl.is-spinning {
+  animation: vinyl-spin 3s linear infinite;
+}
+@keyframes vinyl-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.radio-vinyl.is-paused {
+  animation-play-state: paused;
+}
+
+/* ---------- 控制面板 ---------- */
+.radio-panel {
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4);
+  box-shadow: var(--sh-soft);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 220px;
+  max-width: 280px;
+  opacity: 0;
+  transform: translateY(8px) scale(0.95);
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-soft),
+              transform var(--dur-fast) var(--ease-soft);
+}
+.radio-panel.is-show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.radio-panel-track {
+  font-size: 13px;
+  color: var(--t-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  padding: 0 var(--sp-2);
+  flex: 1;
+  min-width: 0;
+}
+
+/* 面板头部行：曲名 + 播放模式按钮 */
+.radio-panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* 播放模式按钮 */
+.radio-ctrl.is-mode {
+  flex-shrink: 0;
+  width: 30px; height: 30px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--t-tertiary);
+}
+.radio-ctrl.is-mode:active { transform: scale(0.9); }
+.radio-ctrl.is-mode:hover { background: var(--glass-2); color: var(--accent); }
+.radio-ctrl.is-mode svg { width: 16px; height: 16px; }
+
+.radio-panel-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.radio-panel-current, .radio-panel-total {
+  font-size: 10px;
+  color: var(--t-tertiary);
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: center;
+}
+.radio-progress-bar {
+  flex: 1;
+  height: 3px;
+  background: var(--glass-3);
+  border-radius: var(--r-pill);
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+.radio-progress-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--accent);
+  border-radius: var(--r-pill);
+  width: 0%;
+  transition: width 0.2s linear;
+}
+
+.radio-panel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+}
+.radio-ctrl {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  color: var(--t-secondary);
+  transition: background var(--dur-fast) var(--ease-soft),
+              color var(--dur-fast) var(--ease-soft),
+              transform var(--dur-fast) var(--ease-soft);
+  cursor: pointer;
+}
+.radio-ctrl:active { transform: scale(0.9); }
+.radio-ctrl:hover { background: var(--glass-press); color: var(--t-primary); }
+.radio-ctrl.is-main {
+  width: 44px; height: 44px;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--c-charcoal);
+}
+.radio-ctrl.is-main:active { transform: scale(0.9); }
+.radio-ctrl.is-exit {
+  width: 32px; height: 32px;
+  font-size: 11px;
+}
+.radio-ctrl svg { width: 18px; height: 18px; }
+.radio-ctrl.is-main svg { width: 20px; height: 20px; }
+.radio-ctrl.is-exit svg { width: 14px; height: 14px; }
+
+/* ---------- Toast ---------- */
+.radio-toast {
+  position: fixed;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--glass-1);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-pill);
+  padding: var(--sp-2) var(--sp-5);
+  font-size: 13px;
+  color: var(--t-primary);
+  box-shadow: var(--sh-soft);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-soft),
+              transform var(--dur-fast) var(--ease-soft);
+  z-index: 9100;
+}
+.radio-toast.is-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Mine",
+  "version": "1.0.0",
+  "build": "20261003",
+  "note": "发布新版本时同步更新本文件 version 与 index.html 中 meta[name=app-version] 的值（及 sw.js 缓存版本），PWA 端在设置-版本与更新中即可手动检测到新版本。"
+}

@@ -1,0 +1,36 @@
+/* ========================================================================
+   Mine · 全局通知角标样式
+   ------------------------------------------------------------------------
+   · 位置：图标左上角
+   · 文字：象牙白楷体数字
+   · 设计：无边框
+   ======================================================================== */
+
+/* ---------- 通知角标 ---------- */
+.notify-badge {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  color: #fffff0;            /* 象牙白 */
+  font-family: var(--font-base);
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 20;
+  pointer-events: none;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* ---------- 图标容器需相对定位以承载角标 ---------- */
+.app-cell {
+  position: relative;
+}
+
+/* ---------- 陪伴卡片角标 ---------- */
+.comp-card {
+  position: relative;
+}
+.comp-card .notify-badge {
+  top: 2px;
+  left: 4px;
+}

@@ -1,0 +1,145 @@
+/* ========================================================================
+   Mine · 浏览器页面样式
+   ======================================================================== */
+.browser-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.browser-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--bd-faint);
+  background: var(--glass-1);
+}
+.browser-navbtns {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+.browser-nav-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: var(--t-secondary);
+  border: 1px solid transparent;
+  background: transparent;
+}
+.browser-nav-btn:active { background: var(--glass-press); }
+.browser-nav-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.browser-addr {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px 0 10px;
+  height: 34px;
+  border-radius: 17px;
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+}
+.browser-url {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--t-primary);
+  font-size: 14px;
+  height: 100%;
+}
+.browser-url::placeholder { color: var(--t-tertiary); }
+.browser-go {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+}
+.browser-go:active { opacity: 0.75; }
+.browser-go svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
+.browser-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+}
+.browser-frame {
+  display: none;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+.browser-start {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  background: var(--glass-1);
+  overflow-y: auto;
+}
+.browser-start-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--t-primary);
+  letter-spacing: 0.5px;
+}
+.browser-start-sub {
+  font-size: 13px;
+  color: var(--t-tertiary);
+  margin-bottom: 18px;
+}
+.browser-quick {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+}
+.browser-quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 6px;
+  border-radius: var(--r-md);
+  background: var(--glass-2);
+  border: 1px solid var(--bd-faint);
+  color: var(--t-primary);
+  font-size: 13px;
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.browser-quick-btn:active { background: var(--glass-press); }
+.browser-quick-dot {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+}
+.browser-hint {
+  margin-top: 22px;
+  font-size: 12px;
+  color: var(--t-tertiary);
+}
