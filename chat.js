@@ -848,10 +848,16 @@ window.MineChat = (function () {
     if (texts.length === 0) return null;
     return texts[Math.floor(Math.random() * texts.length)];
   }
-  /** 联系人回复来源决策：命中「组字卡发送」概率且组字卡池非空 → 组字卡；否则原有字卡 */
+  /** 联系人回复来源决策：命中「组字卡发送」概率 → 先实时组新卡（系统审批，通过即发），
+      失败/低分回退到已通过字卡池；其余概率使用原有字卡（我的字卡 + 联系人字卡 + 系统字卡）。 */
   function pickReplyCard(contact) {
     if (!contact) return null;
     if (Math.random() < prob("genCard")) {
+      /* 实时组字卡（系统审批）：评分 ≥ 阈值直接发出，只用于该次实时聊天，不入池 */
+      if (window.MineCardGenerator && window.MineCardGenerator.realtimeCard) {
+        var live = window.MineCardGenerator.realtimeCard(contact.id);
+        if (live && live.ok && live.text) return live.text;
+      }
       var gen = pickGenCard();
       if (gen) return gen;
     }
@@ -859,6 +865,10 @@ window.MineChat = (function () {
   }
   function pickReplyCardForGroup(contact, group) {
     if (Math.random() < prob("genCard")) {
+      if (window.MineCardGenerator && window.MineCardGenerator.realtimeCard) {
+        var live = window.MineCardGenerator.realtimeCard(contact.id);
+        if (live && live.ok && live.text) return live.text;
+      }
       var gen = pickGenCard();
       if (gen) return gen;
     }

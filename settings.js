@@ -304,8 +304,10 @@ window.MineSettings = (function () {
       "生成候选字卡 · 人工审批待定项（拼音原文 + 还原结果 + 评分）");
     html += funcRow("card-pool", "bookmark", "字卡池",
       "已通过字卡列表 · 从公用字卡池移除");
+    html += funcRow("card-train", "chart", "本地训练",
+      "你的通过/拒绝自动成为样本 · 攒满批量稳定更新（只作用于模板路）");
     html += funcRow("card-rules", "settings", "运行规则",
-      "两路占比 / 置信度阈值 / 批量 / 限流 / 实时发送");
+      "两路占比 / 置信度阈值 / 批量 / 限流 / 实时发送 / AI 终审接口");
     html += funcRow("card-lexicon", "book", "词库管理",
       "字词开关 / 增删 / 搜索 / A-Z 排序查看");
     // 应用图标自定义
@@ -712,7 +714,7 @@ window.MineSettings = (function () {
     }
     /* 字卡入口：审批 / 字卡池 / 运行规则 / 词库管理（lexicon-admin.js 挂载的页面）
        必须先 switchPage 切换显示，再 page 渲染内容（与主屏图标点击路径一致） */
-    [["card-approve", "card-approve"], ["card-pool", "card-pool"], ["card-rules", "card-rules"], ["card-lexicon", "card-lexicon"]].forEach(function (pair) {
+    [["card-approve", "card-approve"], ["card-pool", "card-pool"], ["card-train", "card-train"], ["card-rules", "card-rules"], ["card-lexicon", "card-lexicon"]].forEach(function (pair) {
       var btn = pageEl.querySelector("#set-" + pair[0]);
       if (btn) {
         btn.addEventListener("click", function () {

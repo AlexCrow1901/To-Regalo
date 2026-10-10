@@ -193,6 +193,14 @@ window.MineCards = (function () {
     save();
     return true;
   }
+  /* 按值从公用字卡池移除（生成器/字卡池删除用，幂等） */
+  function removePublicCardByValue(card) {
+    var idx = state.public.indexOf(card);
+    if (idx < 0) return false;
+    state.public.splice(idx, 1);
+    save();
+    return true;
+  }
   function addSysCard(card) {
     return addTo(state.sys, card);
   }

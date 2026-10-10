@@ -8,11 +8,13 @@
      1) approve  字卡审批：联系人 + 生成一批 → 待审批列表（拼音原文/还原结果/
                     评分）→ 通过（入公用字卡池）/ 拒绝
      2) pool     字卡池：已通过字卡列表（auto 自动 / 人工批准）+ 从池移除
-     3) rules    运行规则：两路占比 / 置信度阈值 / 批量 / 限流 / 自动入池 /
-                    实时发送（全部可配置）
-     4) lexicon  词库管理：字词 A-Z 排序展示 + 搜索 + 开关 + 添加 / 删除
+     3) train    本地训练：你的通过/拒绝自动成为训练样本，攒满批量稳定更新
+                    （只作用于模板路）——样本量 / 维度权重 / 立即训练 / 重置 / 导出导入
+     4) rules    运行规则：两路占比 / 置信度阈值 / 批量 / 限流 / 自动入池 /
+                    实时发送 / AI 终审接口（默认关闭）（全部可配置）
+     5) lexicon  词库管理：字词 A-Z 排序展示 + 搜索 + 开关 + 添加 / 删除
                     自定义词 + 原词删除（=禁用）
-   挂载：MineApp.page 钩子（card-approve / card-pool / card-rules / card-lexicon）
+   挂载：MineApp.page 钩子（card-approve / card-pool / card-train / card-rules / card-lexicon）
    ======================================================================== */
 window.MineLexiconAdmin = (function () {
   "use strict";
@@ -41,8 +43,8 @@ window.MineLexiconAdmin = (function () {
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
   }
 
-  var VIEW_TITLES = { approve: "字卡审批", pool: "字卡池", rules: "运行规则", lexicon: "词库管理" };
-  var VIEW_ICONS = { approve: "check", pool: "bookmark", rules: "settings", lexicon: "book" };
+  var VIEW_TITLES = { approve: "字卡审批", pool: "字卡池", train: "本地训练", rules: "运行规则", lexicon: "词库管理" };
+  var VIEW_ICONS = { approve: "check", pool: "bookmark", train: "chart", rules: "settings", lexicon: "book" };
 
   /* 词库分组展开状态 */
   var lexState = { search: "", expanded: {}, showCount: {}, loadedMore: {} };
@@ -55,7 +57,7 @@ window.MineLexiconAdmin = (function () {
         '<span class="nav-title">' + VIEW_TITLES[view] + '</span>' +
         '<span class="nav-right"></span>' +
       '</div>';
-    var tabs = ["approve", "pool", "rules", "lexicon"].map(function (v) {
+    var tabs = ["approve", "pool", "train", "rules", "lexicon"].map(function (v) {
       return '<button class="card-tab' + (v === view ? " is-active" : "") + '" data-tab="' + v + '">' +
         iconSvg(VIEW_ICONS[v], 14) + VIEW_TITLES[v] + '</button>';
     }).join("");
@@ -88,11 +90,57 @@ window.MineLexiconAdmin = (function () {
     if (!G) { toast("字卡引擎未加载"); return; }
     if (view === "approve") renderApprove();
     else if (view === "pool") renderPool();
+    else if (view === "train") renderTrain();
     else if (view === "rules") renderRules();
     else renderLexicon();
   }
 
   /* ==================== 1. 字卡审批 ==================== */
+  function contactName(cid) {
+    if (!cid || cid === "global") return "通用";
+    var cs = (C && C.getState) ? (C.getState().contacts || []) : [];
+    for (var i = 0; i < cs.length; i++) {
+      if (cs[i].id === cid) return cs[i].name || cid;
+    }
+    return cid;
+  }
+  function renderLimitReqs() {
+    var detail = document.getElementById("page-detail");
+    var box = detail.querySelector("#cg-limit-reqs");
+    if (!box) return;
+    var reqs = G.getLimitRequests();
+    if (!reqs.length) { box.innerHTML = ""; return; }
+    box.innerHTML = reqs.map(function (r) {
+      var dir = r.direction === "up"
+        ? '<span style="color:#1d8348;">增加</span>'
+        : '<span style="color:#b3571f;">降低</span>';
+      var remainMin = Math.max(0, Math.ceil((r.expireAt - Date.now()) / 60000));
+      return '<div style="margin:0 12px 10px;border:1px solid #eee;border-radius:12px;padding:12px;background:#fff;">' +
+        '<div style="font-size:14px;font-weight:600;">' + esc(contactName(r.cid)) + ' 申请' + dir +
+          '每小时组字卡上限至 <b>' + r.newLimit + '</b> 条</div>' +
+        '<div style="font-size:12px;color:#999;margin-top:4px;">' +
+          (r.direction === "up" ? '想组更多字卡' : '想少组一些') + ' · 幅度 ±' + r.delta + ' 条 · ' +
+          '剩余 <b style="color:#c0392b;">' + remainMin + '</b> 分钟（超时自动生效）</div>' +
+        '<div style="display:flex;gap:8px;margin-top:8px;">' +
+          '<button class="lr-ok" data-id="' + r.id + '" style="flex:1;padding:8px;border-radius:8px;background:#2ecc71;color:#fff;border:none;font-size:13px;">' + iconSvg("check", 13) + ' 同意</button>' +
+          '<button class="lr-no" data-id="' + r.id + '" style="flex:1;padding:8px;border-radius:8px;background:#eee;color:#555;border:none;font-size:13px;">拒绝</button>' +
+        '</div></div>';
+    }).join("");
+    Array.prototype.forEach.call(box.querySelectorAll(".lr-ok"), function (btn) {
+      btn.addEventListener("click", function () {
+        var r = G.respondLimitRequest(btn.getAttribute("data-id"), true);
+        toast(r.ok ? ("已同意，上限调整为 " + r.backlogMax + " 条") : "该申请已失效");
+        renderApprove();
+      });
+    });
+    Array.prototype.forEach.call(box.querySelectorAll(".lr-no"), function (btn) {
+      btn.addEventListener("click", function () {
+        var r = G.respondLimitRequest(btn.getAttribute("data-id"), false);
+        toast(r.ok ? "已拒绝该申请" : "该申请已失效");
+        renderApprove();
+      });
+    });
+  }
   function renderApprove() {
     var contacts = (C && C.getState) ? (C.getState().contacts || []) : [];
     var opts = '<option value="global">通用（不入会话）</option>';
@@ -101,7 +149,9 @@ window.MineLexiconAdmin = (function () {
     });
     var counts = G.getStats();
     var pending = G.getPending();
+    var reqs = G.getLimitRequests();
     var inner =
+      (reqs.length ? '<div class="group-head">上限调整申请（' + reqs.length + '）</div>' + '<div id="cg-limit-reqs"></div>' : '') +
       '<div class="group-head">生成字卡</div>' +
       '<div class="card-hint">选择联系人后生成：评分 ≥ 自动阈值 的字卡将实时发送给对方并入字卡池；中等分进入下方待审批队列；低分自动丢弃。生成频率受「每小时候选数」限制。</div>' +
       '<div style="padding:0 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
@@ -116,6 +166,9 @@ window.MineLexiconAdmin = (function () {
       '<div id="cg-pending-list"></div>';
     pageShell("approve", inner);
     var detail = document.getElementById("page-detail");
+    /* 进入审批页先跑一次调度检查（处理过期申请 + 补跑到期的小时组卡） */
+    try { G.tick(); } catch (e) {}
+    renderLimitReqs();
     var run = detail.querySelector("#cg-run");
     if (run) run.addEventListener("click", function () {
       var cid = detail.querySelector("#cg-contact").value;
@@ -145,12 +198,18 @@ window.MineLexiconAdmin = (function () {
       var routeTag = it.route === "pinyin"
         ? '<span style="background:#fdf0e6;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">拼音</span>'
         : '<span style="background:#e8f1fb;color:#2563a8;padding:1px 6px;border-radius:4px;font-size:11px;">模板</span>';
+      var srcTag = it.source === "backlog"
+        ? '<span style="background:#e8f6ef;color:#1d8348;padding:1px 6px;border-radius:4px;font-size:11px;">后台组卡</span>'
+        : (it.source === "realtime"
+          ? '<span style="background:#fdf3e7;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">实时</span>'
+          : '');
       var inputLine = it.input
         ? '<div style="font-size:12px;color:#888;margin-top:2px;">输入：' + esc(it.input) + ' → 还原为</div>'
         : '';
       return '<div style="margin:0 12px 10px;border:1px solid #eee;border-radius:12px;padding:12px;background:#fff;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<div style="font-size:17px;font-weight:600;">' + esc(it.text) + '</div>' + routeTag +
+          '<div style="font-size:17px;font-weight:600;">' + esc(it.text) + '</div>' +
+          '<div style="display:flex;gap:6px;align-items:center;">' + routeTag + srcTag + '</div>' +
         '</div>' +
         inputLine +
         '<div style="font-size:12px;color:#999;margin-top:6px;">评分 ' + it.conf.toFixed(2) +
@@ -176,54 +235,158 @@ window.MineLexiconAdmin = (function () {
     });
   }
 
-  /* ==================== 2. 字卡池 ==================== */
+  /* ==================== 2. 字卡池（筛选 / 搜索 / 删除） ==================== */
+  var poolState = { filter: "", kw: "" };
   function renderPool() {
     var stats = G.getStats();
     var pool = G.getPool();
-    var pub = (M && M.getPublicCards) ? M.getPublicCards() : [];
+    var contacts = (C && C.getState) ? (C.getState().contacts || []) : [];
+    /* 联系人筛选下拉：全部 + 通用 + 各联系人 */
+    var opts = '<option value="">全部联系人</option>' +
+      '<option value="global"' + (poolState.filter === "global" ? " selected" : "") + '>通用</option>';
+    contacts.forEach(function (c) {
+      var sel = poolState.filter === c.id ? " selected" : "";
+      opts += '<option value="' + esc(c.id) + '"' + sel + '>' + esc(c.name || c.id) + '</option>';
+    });
+    var kw = poolState.kw.trim();
+    var list = pool.filter(function (it) {
+      if (poolState.filter && it.contactId !== poolState.filter) return false;
+      if (kw && it.text.indexOf(kw) < 0) return false;
+      return true;
+    });
     var inner =
       '<div class="group-head">统计</div>' +
       '<div class="card-hint">自动通过 ' + stats.auto + ' · 人工批准 ' + stats.approved +
         ' · 待审批 ' + stats.pending + ' · 拒绝 ' + stats.rejected + ' · 丢弃 ' + stats.dropped + '</div>' +
-      '<div class="group-head">已通过字卡（' + pool.length + '）</div>' +
+      '<div class="group-head">筛选</div>' +
+      '<div style="padding:0 12px 6px;display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<select id="pl-filter" style="flex:1;min-width:110px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' + opts + '</select>' +
+        '<input id="pl-search" placeholder="搜索已通过字卡…" value="' + esc(poolState.kw) + '" style="flex:1.4;min-width:140px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
+      '</div>' +
+      '<div class="group-head">已通过字卡（' + list.length + ' / ' + pool.length + '）</div>' +
       '<div id="cg-pool-list"></div>';
     pageShell("pool", inner);
     var detail = document.getElementById("page-detail");
+    var sel = detail.querySelector("#pl-filter");
+    if (sel) sel.addEventListener("change", function () {
+      poolState.filter = sel.value;
+      renderPool();
+    });
+    var search = detail.querySelector("#pl-search");
+    if (search) search.addEventListener("input", function () {
+      poolState.kw = search.value;
+      renderPool();
+    });
     var box = detail.querySelector("#cg-pool-list");
-    if (!pool.length) {
-      box.innerHTML = '<div class="card-hint">还没有通过的字卡。去「字卡审批」生成一批，或调低自动阈值让更多候选自动通过。</div>';
+    if (!list.length) {
+      box.innerHTML = '<div class="card-hint">' + (pool.length ? '没有符合条件的字卡，试试调整筛选/搜索。' : '还没有通过的字卡。去「字卡审批」生成一批，或调低自动阈值让更多候选自动通过。') + '</div>';
       return;
     }
-    box.innerHTML = pool.map(function (it) {
-      var inPool = pub.indexOf(it.text) >= 0;
+    box.innerHTML = list.map(function (it) {
       var routeTag = it.route === "pinyin"
         ? '<span style="background:#fdf0e6;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">拼音</span>'
         : '<span style="background:#e8f1fb;color:#2563a8;padding:1px 6px;border-radius:4px;font-size:11px;">模板</span>';
       var src = it.judgedBy === "manual" ? "人工批准" : "AI 自动";
+      var owner = it.contactId && it.contactId !== "global"
+        ? '<span style="background:#f3f0fa;color:#6c4ab6;padding:1px 6px;border-radius:4px;font-size:11px;">' + esc(contactName(it.contactId)) + '专用</span>'
+        : '<span style="background:#eafaf1;color:#1d8348;padding:1px 6px;border-radius:4px;font-size:11px;">公用</span>';
       return '<div style="margin:0 12px 10px;border:1px solid #eee;border-radius:12px;padding:12px;background:#fff;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<div style="font-size:16px;font-weight:600;">' + esc(it.text) + '</div>' +
-          '<div style="display:flex;gap:6px;align-items:center;">' + routeTag +
-            (inPool ? '<span style="background:#eafaf1;color:#1d8348;padding:1px 6px;border-radius:4px;font-size:11px;">已入池</span>' : '') +
-          '</div></div>' +
+          '<div style="display:flex;gap:6px;align-items:center;">' + routeTag + owner + '</div></div>' +
         '<div style="font-size:12px;color:#999;margin-top:4px;">' + src + ' · 评分 ' + it.conf.toFixed(2) + ' · ' + fmtTime(it.createdAt) + '</div>' +
-        (inPool ? '<button class="cg-pool-rm" data-text="' + esc(it.text) + '" style="margin-top:6px;padding:5px 10px;border-radius:6px;background:#eee;color:#777;border:none;font-size:12px;">从公用字卡池移除</button>' : '') +
+        '<button class="cg-pool-rm" data-id="' + it.id + '" style="margin-top:6px;padding:5px 10px;border-radius:6px;background:#fdeaea;color:#c0392b;border:none;font-size:12px;">' + iconSvg("trash", 13) + ' 删除该字卡</button>' +
       '</div>';
     }).join("");
     Array.prototype.forEach.call(box.querySelectorAll(".cg-pool-rm"), function (btn) {
       btn.addEventListener("click", function () {
-        var t = btn.getAttribute("data-text");
-        if (M && M.removePublicCard) {
-          var idx = pub.indexOf(t);
-          if (idx >= 0) M.removePublicCard(idx);
-        }
-        toast("已从公用字卡池移除");
+        var r = G.removePoolItem(btn.getAttribute("data-id"));
+        toast(r.ok ? ("已删除字卡「" + r.text + "」") : "删除失败");
         renderPool();
       });
     });
   }
 
-  /* ==================== 3. 运行规则 ==================== */
+  /* ==================== 3. 本地训练 ==================== */
+  function renderTrain() {
+    var st = G.getTrainStats();
+    var w = st.weights;
+    var updated = st.updatedAt ? fmtTime(st.updatedAt) : "尚未训练";
+    var inner =
+      '<div class="group-head">训练说明</div>' +
+      '<div class="card-hint">你在「字卡审批」里每点一次"通过 / 拒绝"，就是一条训练样本' +
+        '（只作用于<strong>模板路</strong>）。攒满 ' + st.batchSize +
+        ' 条后自动批量训练一次：系统会学习你偏好的词语搭配与维度权重，让模板路字卡越来越贴合你的口味。稳定更新，不做单条抖动。</div>' +
+      '<div class="group-head">训练进度</div>' +
+      '<div class="card-hint">已训练样本 ' + st.trained + ' 条 · 待训练 ' + st.pending +
+        ' 条（满 ' + st.batchSize + ' 条自动更新）· 最近训练 ' + updated + '</div>' +
+      '<div class="group-head">当前维度权重</div>' +
+      '<div class="func-row">' +
+        '<div class="func-text" style="flex:1;">' +
+          '<span class="func-title">语法结构权重</span>' +
+          '<span class="func-sub">词性搭配合法性的权重（当前 ' + Math.round(w.syntax * 100) + '%）</span>' +
+        '</div>' +
+        '<div style="width:110px;flex:none;margin-right:14px;">' +
+          '<div style="height:8px;border-radius:4px;background:#eee;overflow:hidden;"><div style="height:100%;width:' + Math.round(w.syntax * 100) + '%;background:#4a90d9;"></div></div>' +
+        '</div></div>' +
+      '<div class="func-row">' +
+        '<div class="func-text" style="flex:1;">' +
+          '<span class="func-title">通顺度权重</span>' +
+          '<span class="func-sub">词频常用度与句长的权重（当前 ' + Math.round(w.fluency * 100) + '%）</span>' +
+        '</div>' +
+        '<div style="width:110px;flex:none;margin-right:14px;">' +
+          '<div style="height:8px;border-radius:4px;background:#eee;overflow:hidden;"><div style="height:100%;width:' + Math.round(w.fluency * 100) + '%;background:#6bc47f;"></div></div>' +
+        '</div></div>' +
+      '<div class="card-hint" style="margin:0 12px 4px;">搭配表 ' + st.bigramCount + ' 条 · 反例表 ' + st.negBigramCount +
+        ' 条 · 偏好词 ' + st.prefWordCount + ' 个</div>' +
+      '<div class="group-head">训练管理</div>' +
+      '<div style="padding:0 12px;display:flex;flex-wrap:wrap;gap:8px;">' +
+        '<button id="tr-now" class="chat-bg-btn" style="flex:1;min-width:100px;padding:10px;border-radius:8px;background:#4a90d9;color:#fff;border:none;font-size:13px;">' + iconSvg("chart", 14) + ' 立即训练</button>' +
+        '<button id="tr-reset" class="chat-bg-btn" style="flex:1;min-width:100px;padding:10px;border-radius:8px;background:#eee;color:#777;border:none;font-size:13px;">重置训练</button>' +
+      '</div>' +
+      '<div style="padding:8px 12px 0;display:flex;flex-wrap:wrap;gap:8px;">' +
+        '<button id="tr-export" class="chat-bg-btn" style="flex:1;min-width:100px;padding:10px;border-radius:8px;background:#eee;color:#555;border:none;font-size:13px;">导出训练数据</button>' +
+        '<button id="tr-import" class="chat-bg-btn" style="flex:1;min-width:100px;padding:10px;border-radius:8px;background:#eee;color:#555;border:none;font-size:13px;">导入训练数据</button>' +
+      '</div>' +
+      '<textarea id="tr-import-box" placeholder="粘贴导出的训练 JSON 后点「导入训练数据」…" style="display:none;margin:10px 12px 0;width:calc(100% - 24px);box-sizing:border-box;height:90px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:12px;"></textarea>' +
+      '<div class="card-hint" style="margin:10px 12px 0;">训练只影响模板路的评分；拼音路不受影响。训练数据仅存本地，导出后可换设备迁移。</div>';
+    pageShell("train", inner);
+    var detail = document.getElementById("page-detail");
+    var now = detail.querySelector("#tr-now");
+    if (now) now.addEventListener("click", function () {
+      var r = G.trainNow();
+      toast(r && r.trained ? "已训练 " + r.trained + " 条样本（正 " + r.pos + " / 负 " + r.neg + "）" : "当前没有待训练样本");
+      renderTrain();
+    });
+    var reset = detail.querySelector("#tr-reset");
+    if (reset) reset.addEventListener("click", function () {
+      if (window.confirm("确定清空全部训练数据？权重将恢复默认。")) {
+        G.resetTrain();
+        toast("训练数据已重置");
+        renderTrain();
+      }
+    });
+    var exp = detail.querySelector("#tr-export");
+    if (exp) exp.addEventListener("click", function () {
+      var json = G.exportTrain();
+      var ta = detail.querySelector("#tr-import-box");
+      ta.style.display = "block";
+      ta.value = json;
+      ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      toast("训练数据已导出并复制到剪贴板");
+    });
+    var imp = detail.querySelector("#tr-import");
+    if (imp) imp.addEventListener("click", function () {
+      var ta = detail.querySelector("#tr-import-box");
+      if (ta.style.display === "none") { ta.style.display = "block"; return; }
+      var r = G.importTrain(ta.value.trim());
+      toast(r.ok ? "训练数据导入成功" : "导入失败：JSON 格式不正确");
+      if (r.ok) renderTrain();
+    });
+  }
+
+  /* ==================== 4. 运行规则 ==================== */
   function renderRules() {
     var cfg = G.getConfig();
     var inner =
@@ -240,6 +403,23 @@ window.MineLexiconAdmin = (function () {
       selRow("rg-max", "每小时候选数上限", "每个联系人每小时最多生成的候选数", cfg.maxPerHour, [5, 10, 20, 50, 100]) +
       switchRow("rg-pool", "自动入字卡池", "自动通过的字卡写入公用字卡池（聊天/主动消息可用）", cfg.autoAddToPool) +
       switchRow("rg-send", "实时发送", "自动通过的字卡立即作为该联系人消息发送", cfg.realtimeSend) +
+      '<div class="group-head">本地训练</div>' +
+      selRow("rg-train-batch", "训练批量", "攒满多少条人工审批样本后自动批量训练一次", cfg.trainBatchSize, [10, 20, 30, 50]) +
+      '<div class="group-head">后台组卡调度</div>' +
+      '<div class="card-hint" style="margin:0 12px;">联系人每小时后台自动组字卡（条数在 0~上限 随机），全部进入人工审批；' +
+        '每小时 ' + Math.round((cfg.backlogProb || 0.01) * 100) + '% 概率申请调整上限，超时 ' + (cfg.reqTimeout || 15) + ' 分钟自动生效。</div>' +
+      row("rg-backlog-max", "每小时组卡上限", "联系人每小时后台自动组字卡条数上限（0~N 随机）", cfg.backlogMax, "条", 5, 50, 1) +
+      row("rg-req-timeout", "申请超时", "上限调整申请未处理的自动生效时间", cfg.reqTimeout, "分", 5, 60, 1) +
+      '<div class="group-head">AI 终审（接口位，默认关闭）</div>' +
+      switchRow("rg-ai", "启用 AI 终审", "灰色区间（aiGrayLow ~ aiGrayHigh）的候选送外部 AI 判断语义通顺度", cfg.aiEnabled) +
+      '<div class="card-hint" style="margin:0 12px;">接入后：评分落在灰色区间（默认 0.4~0.85）的候选会调用外部 AI 复核，' +
+        'AI 判断结果覆盖本地分；未启用 / 无 Key / 调用失败时自动降级为本地评分。</div>' +
+      selRow("rg-ai-provider", "AI 服务商", "OpenAI 兼容接口的服务商（deepseek / qwen / glm 等）", cfg.aiProvider || "deepseek", ["deepseek", "qwen", "glm", "openai"]) +
+      rowText("rg-ai-model", "模型名", "如 deepseek-chat / qwen-plus / glm-4-flash", cfg.aiModel, "deepseek-chat") +
+      rowText("rg-ai-key", "API Key", "存储在本机浏览器（请注意保管，勿外泄）", cfg.aiApiKey, "") +
+      '<div class="group-head">AI 灰色区间</div>' +
+      row("rg-ai-low", "灰色区间下限", "评分低于此值不送 AI（直接按本地分处理）", Math.round((cfg.aiGrayLow || 0.4) * 100), "%", 10, 60, 5) +
+      row("rg-ai-high", "灰色区间上限", "评分高于此值不送 AI（自动通过）", Math.round((cfg.aiGrayHigh || 0.85) * 100), "%", 60, 95, 5) +
       '<div style="padding:14px 12px;">' +
         '<button id="rg-save" style="width:100%;padding:12px;border-radius:10px;background:#4a90d9;color:#fff;border:none;font-size:14px;">' + iconSvg("check", 14) + ' 保存运行规则</button>' +
       '</div>' +
@@ -255,7 +435,16 @@ window.MineLexiconAdmin = (function () {
         batchSize: parseInt(detail.querySelector("#rg-batch").value, 10) || 3,
         maxPerHour: parseInt(detail.querySelector("#rg-max").value, 10) || 10,
         autoAddToPool: detail.querySelector("#rg-pool").checked,
-        realtimeSend: detail.querySelector("#rg-send").checked
+        realtimeSend: detail.querySelector("#rg-send").checked,
+        trainBatchSize: parseInt(detail.querySelector("#rg-train-batch").value, 10) || 20,
+        backlogMax: parseInt(detail.querySelector("#rg-backlog-max").value, 10) || 20,
+        reqTimeout: parseInt(detail.querySelector("#rg-req-timeout").value, 10) || 15,
+        aiEnabled: detail.querySelector("#rg-ai").checked,
+        aiProvider: detail.querySelector("#rg-ai-provider").value,
+        aiModel: detail.querySelector("#rg-ai-model").value.trim(),
+        aiApiKey: detail.querySelector("#rg-ai-key").value.trim(),
+        aiGrayLow: (parseFloat(detail.querySelector("#rg-ai-low").value) || 40) / 100,
+        aiGrayHigh: (parseFloat(detail.querySelector("#rg-ai-high").value) || 85) / 100
       };
       G.setConfig(patch);
       toast("运行规则已保存并即时生效");
@@ -271,6 +460,15 @@ window.MineLexiconAdmin = (function () {
         '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" style="width:110px;">' +
         '<span id="' + id + '-v" style="font-size:13px;color:#333;min-width:44px;text-align:right;">' + val + unit + '</span>' +
       '</div></div>';
+  }
+  function rowText(id, title, sub, val, ph) {
+    return '<div class="func-row">' +
+      '<div class="func-text" style="flex:1;">' +
+        '<span class="func-title">' + title + '</span>' +
+        '<span class="func-sub">' + sub + '</span>' +
+      '</div>' +
+      '<input type="text" id="' + id + '" value="' + esc(val) + '" placeholder="' + esc(ph || "") + '" style="flex:none;width:120px;padding:7px;border-radius:8px;border:1px solid #ccc;font-size:12px;">' +
+      '</div>';
   }
   function selRow(id, title, sub, val, options) {
     var opts = options.map(function (o) {
@@ -470,6 +668,7 @@ window.MineLexiconAdmin = (function () {
   window.MineApp.page = function (id) {
     if (id === "card-approve") { open("approve"); return true; }
     if (id === "card-pool") { open("pool"); return true; }
+    if (id === "card-train") { open("train"); return true; }
     if (id === "card-rules") { open("rules"); return true; }
     if (id === "card-lexicon") { open("lexicon"); return true; }
     return prevPage ? prevPage(id) : false;
