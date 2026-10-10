@@ -848,9 +848,11 @@ window.MineChat = (function () {
      规则：
      · 联系人发送消息时按「拼字卡发送」概率（默认 25%，可配置）发送拼字卡消息
      · 字卡总数在「拼字卡最少/最多条数」之间随机（默认 1~3 条，可配置）
-     · 字卡间衔接符随机均等：直接连 / 空格 / 逗号 / 句号 / 感叹号 / 圆括号(包裹后卡) / emoji 字卡
-     · 每条消息 50% 概率随机切割其中一张字卡，切割符随机均等：
+     · 字卡间每个衔接点独立随机均等：直接连 / 空格 / 逗号 / 句号 / 感叹号 / 圆括号(包裹后卡) / emoji 字卡
+       —— 一条消息内可同时混用多种衔接符
+     · 每张字卡独立 10% 概率被切割，切割符随机均等：
        逗号 / 空格 / 感叹号 / emoji / 圆括号(包裹后半段)，例「我爱你」→「我，爱你」「我爱（你）」
+       —— 一条消息内可多张被切、可同时混用多种切割符
      · 只拼文字字卡与 emoji 字卡（图片/语音无法拼接） */
   var COMBO_EMOJI_FALLBACK = ["🤔", "😊", "🥰", "😘", "😄", "❤️", "✨", "😆", "👍", "😳"];
   function comboEmojiFrom(emojis) {
@@ -909,10 +911,11 @@ window.MineChat = (function () {
       picked.push(bag.splice(Math.floor(Math.random() * bag.length), 1)[0]);
     }
     if (picked.length === 0) return null;
-    /* 50% 概率随机切割其中一张字卡 */
-    if (Math.random() < 0.5 && picked.length > 0) {
-      var cutIdx = Math.floor(Math.random() * picked.length);
-      picked[cutIdx] = cutComboCard(picked[cutIdx], emojis);
+    /* 每张字卡独立 10% 概率被切割（切割符逗号/空格/感叹号/emoji/括号 随机均等，可混用） */
+    for (var i = 0; i < picked.length; i++) {
+      if (Math.random() < 0.10) {
+        picked[i] = cutComboCard(picked[i], emojis);
+      }
     }
     return joinComboCards(picked, emojis);
   }
