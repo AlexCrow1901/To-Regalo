@@ -1,0 +1,12 @@
+﻿cards.js ok
+contacts.js ok
+chat.js ok
+probabilities.js ok
+cards.js 语法 OK
+contacts.js 语法 OK
+chat.js 语法 OK
+probabilities.js 语法 OK
+cards.js 引用: cards.js?v8
+contacts.js 引用: contacts.js?v23
+chat.js 引用: chat.js?v59
+probabilities.js 引用: probabilities.js?v7

@@ -211,7 +211,9 @@ window.MineCards = (function () {
   function addAutoCard(cid, card) {
     if (!cid) return false;
     if (!state.autoPer[cid]) state.autoPer[cid] = [];
-    return addTo(state.autoPer[cid], card);
+    var ok = addTo(state.autoPer[cid], card);
+    if (ok) syncCardsToContact(cid, "autoCards", [card]);
+    return ok;
   }
   function addAutoCards(cid, raw) {
     if (!cid) return { added: 0, skipped: 0 };
@@ -221,14 +223,98 @@ window.MineCards = (function () {
   function removeAutoCard(cid, idx) {
     if (!cid || !state.autoPer[cid]) return false;
     if (idx < 0 || idx >= state.autoPer[cid].length) return false;
+    var removed = state.autoPer[cid][idx];
     state.autoPer[cid].splice(idx, 1);
     save();
+    removeCardFromContact(cid, "autoCards", removed);
     return true;
   }
+  /* ==================== 与联系人主页字卡的双向同步 ====================
+     联系人主页（MineContacts）维护 c.cards / c.autoCards，
+     个人中心（本模块 MineCards）维护 per[cid] / autoPer[cid]。
+     两处通过「按值同步」保持内容一致（各自排序互不影响）：
+       · 联系人主页增删字卡 → contacts.save() 调 syncContactCards() 合并到本模块
+       · 本模块增删（个人中心）→ 反向同步到联系人 c.cards / c.autoCards 并落盘
+     所有同步均为幂等操作（去重 + 存在判断），不会互相触发循环。 */
+  function syncCardsToContact(cid, target, cards) {
+    if (!cid) return;
+    try {
+      var ct = (C && C.findContact) ? C.findContact(cid) : null;
+      if (!ct) return;
+      var changed = false;
+      (cards || []).forEach(function (card) {
+        if (card === undefined || card === null) return;
+        if (!Array.isArray(ct[target]) || ct[target].indexOf(card) < 0) {
+          if (!Array.isArray(ct[target])) ct[target] = [];
+          ct[target].push(card);
+          changed = true;
+        }
+      });
+      if (changed && C && C.save) C.save();
+    } catch (e) {}
+  }
+  function removeCardFromContact(cid, target, card) {
+    if (!cid) return;
+    try {
+      var ct = (C && C.findContact) ? C.findContact(cid) : null;
+      if (!ct || !Array.isArray(ct[target])) return;
+      var idx = ct[target].indexOf(card);
+      if (idx < 0) return;
+      ct[target].splice(idx, 1);
+      if (C && C.save) C.save();
+    } catch (e) {}
+  }
+  /* 联系人主页 → 本模块：增量合并（不删除个人中心已有的字卡，幂等） */
+  function syncContactCards(cid, cards, autoCards) {
+    if (!cid) return;
+    var changed = false;
+    (cards || []).forEach(function (card) {
+      if (card === undefined || card === null) return;
+      if (!state.per[cid]) state.per[cid] = [];
+      if (state.per[cid].indexOf(card) < 0) {
+        state.per[cid].push(card);
+        changed = true;
+      }
+    });
+    if (changed) sortList(state.per[cid]);
+    var aChanged = false;
+    (autoCards || []).forEach(function (card) {
+      if (card === undefined || card === null) return;
+      if (!state.autoPer[cid]) state.autoPer[cid] = [];
+      if (state.autoPer[cid].indexOf(card) < 0) {
+        state.autoPer[cid].push(card);
+        aChanged = true;
+      }
+    });
+    if (aChanged) sortList(state.autoPer[cid]);
+    if (changed || aChanged) save();
+  }
+  /* 按值删除单独 / 自动回复字卡（供联系人主页删除同步使用，同时反向同步联系人） */
+  function removePerCardByValue(cid, card) {
+    if (!cid || !state.per[cid]) return false;
+    var idx = state.per[cid].indexOf(card);
+    if (idx < 0) return false;
+    state.per[cid].splice(idx, 1);
+    save();
+    removeCardFromContact(cid, "cards", card);
+    return true;
+  }
+  function removeAutoCardByValue(cid, card) {
+    if (!cid || !state.autoPer[cid]) return false;
+    var idx = state.autoPer[cid].indexOf(card);
+    if (idx < 0) return false;
+    state.autoPer[cid].splice(idx, 1);
+    save();
+    removeCardFromContact(cid, "autoCards", card);
+    return true;
+  }
+
   function addPerCard(cid, card) {
     if (!cid) return false;
     if (!state.per[cid]) state.per[cid] = [];
-    return addTo(state.per[cid], card);
+    var ok = addTo(state.per[cid], card);
+    if (ok) syncCardsToContact(cid, "cards", [card]);
+    return ok;
   }
   function addPerCards(cid, raw) {
     if (!cid) return { added: 0, skipped: 0 };
@@ -238,8 +324,10 @@ window.MineCards = (function () {
   function removePerCard(cid, idx) {
     if (!cid || !state.per[cid]) return false;
     if (idx < 0 || idx >= state.per[cid].length) return false;
+    var removed = state.per[cid][idx];
     state.per[cid].splice(idx, 1);
     save();
+    removeCardFromContact(cid, "cards", removed);
     return true;
   }
 
@@ -1037,9 +1125,12 @@ window.MineCards = (function () {
     addAutoCard: addAutoCard,
     addAutoCards: addAutoCards,
     removeAutoCard: removeAutoCard,
+    removeAutoCardByValue: removeAutoCardByValue,
     addPerCard: addPerCard,
     addPerCards: addPerCards,
     removePerCard: removePerCard,
+    removePerCardByValue: removePerCardByValue,
+    syncContactCards: syncContactCards,
     updateCard: updateCard,
     removeCardByScope: removeCardByScope,
     isImageCard: isImageCard,

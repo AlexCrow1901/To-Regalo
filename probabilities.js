@@ -27,6 +27,7 @@ window.MineProbs = (function () {
     groupSecond:  40,   // 群聊(≤2人)第二条回复概率
     groupThird:   15,   // 群聊(≥3人)第三条回复概率
     groupAll:      5,   // 群聊(≥3人)全员回复概率
+    genCard:      50,   // 组字卡发送概率：回复时使用「组字卡池」的概率（其余为原有字卡机制）
     /* —— 电话 —— */
     phoneIncoming:        0.5,  // 联系人主动来电概率
     phoneHangup:          2,    // 呼出时对方直接挂断概率
@@ -124,7 +125,8 @@ window.MineProbs = (function () {
         { key: "silentChance", name: "自动回复沉默", desc: "触发自动回复（而非普通回复）的概率" },
         { key: "groupSecond",  name: "群聊第二条回复", desc: "群聊出现第二条回复的概率（任意人数群聊均生效，需至少 2 人可回复）" },
         { key: "groupThird",   name: "群聊第三条回复", desc: "群聊出现第三条回复的概率（需至少 3 人可回复）" },
-        { key: "groupAll",     name: "群聊全员回复", desc: "群聊全部成员都回复的概率（需至少 4 人可回复）" }
+        { key: "groupAll",     name: "群聊全员回复", desc: "群聊全部成员都回复的概率（需至少 4 人可回复）" },
+        { key: "genCard",      name: "组字卡发送", desc: "联系人发送信息时使用「组字卡池」的概率（其余为原有字卡，默认各 50%）" }
       ]
     },
     {

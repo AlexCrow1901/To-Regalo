@@ -41,6 +41,19 @@ window.MineContacts = (function () {
   /* ---------------- 持久化 ---------------- */
   function save() {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+    syncMineCards();
+  }
+  /* 联系人主页字卡 → 个人中心（MineCards.per / autoPer）增量合并同步。
+     幂等（去重 + 存在判断），联系人主页添加的字卡在个人中心「单独字卡」中可见。 */
+  function syncMineCards() {
+    try {
+      if (!window.MineCards || !window.MineCards.syncContactCards) return;
+      var list = state.contacts || [];
+      for (var i = 0; i < list.length; i++) {
+        var c = list[i];
+        if (c && c.id) window.MineCards.syncContactCards(c.id, c.cards || [], c.autoCards || []);
+      }
+    } catch (e) {}
   }
   function load() {
     try {
@@ -1157,10 +1170,18 @@ window.MineContacts = (function () {
       var indices = Object.keys(batchSelected).map(Number).sort(function (a, b) { return b - a; });
       if (indices.length === 0) return;
       // 从后往前删除，避免索引偏移
+      var removed = [];
       indices.forEach(function (idx) {
+        removed.push(c.cards[idx]);
         c.cards.splice(idx, 1);
       });
       save();
+      // 同步删除个人中心（MineCards.per）中的同名卡
+      try {
+        if (window.MineCards && window.MineCards.removePerCardByValue) {
+          removed.forEach(function (card) { window.MineCards.removePerCardByValue(c.id, card); });
+        }
+      } catch (err) {}
       exitBatchMode();
     });
 
@@ -1289,10 +1310,18 @@ window.MineContacts = (function () {
     if (acDelBatchBtn) acDelBatchBtn.addEventListener("click", function () {
       var indices = Object.keys(acBatchSelected).map(Number).sort(function (a, b) { return b - a; });
       if (indices.length === 0) return;
+      var removed = [];
       indices.forEach(function (idx) {
+        removed.push(c.autoCards[idx]);
         c.autoCards.splice(idx, 1);
       });
       save();
+      // 同步删除个人中心（MineCards.autoPer）中的同名卡
+      try {
+        if (window.MineCards && window.MineCards.removeAutoCardByValue) {
+          removed.forEach(function (card) { window.MineCards.removeAutoCardByValue(c.id, card); });
+        }
+      } catch (err) {}
       exitAutoCardBatch();
     });
 
@@ -1309,8 +1338,15 @@ window.MineContacts = (function () {
         e.stopPropagation();
         var idx = parseInt(btn.getAttribute("data-del"), 10);
         if (c.cards && c.cards.length > idx) {
+          var removed = c.cards[idx];
           c.cards.splice(idx, 1);
           save();
+          // 同步删除个人中心（MineCards.per）中的同名字卡
+          try {
+            if (window.MineCards && window.MineCards.removePerCardByValue) {
+              window.MineCards.removePerCardByValue(c.id, removed);
+            }
+          } catch (err) {}
           pageEl.querySelector("#cards-section").innerHTML = renderCardsList(c);
           var head = pageEl.querySelector(".group-head .count");
           if (head) head.textContent = (c.cards || []).length;
@@ -1328,8 +1364,15 @@ window.MineContacts = (function () {
         e.stopPropagation();
         var idx = parseInt(btn.getAttribute("data-del-autocard"), 10);
         if (c.autoCards && c.autoCards.length > idx) {
+          var removed = c.autoCards[idx];
           c.autoCards.splice(idx, 1);
           save();
+          // 同步删除个人中心（MineCards.autoPer）中的同名字卡
+          try {
+            if (window.MineCards && window.MineCards.removeAutoCardByValue) {
+              window.MineCards.removeAutoCardByValue(c.id, removed);
+            }
+          } catch (err) {}
           pageEl.querySelector("#autocards-section").innerHTML = renderAutoCardsList(c);
           var head = pageEl.querySelector("#autocard-count");
           if (head) head.textContent = (c.autoCards || []).length;

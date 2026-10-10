@@ -102,7 +102,7 @@ window.MineChat = (function () {
     if (!contact || !contact.id) return;
     // 群聊合并群字卡，单聊用联系人字卡；无字卡时不发送（避免"……"占位，
     // 也不创建空的会话记录）
-    var card = group ? pickRandomCardForGroup(contact, group) : pickRandomCard(contact);
+    var card = group ? pickReplyCardForGroup(contact, group) : pickReplyCard(contact);
     if (!card) return;
     if (!conversations[convKey]) conversations[convKey] = [];
     var msgs = conversations[convKey];
@@ -809,11 +809,11 @@ window.MineChat = (function () {
     return pool[Math.floor(Math.random() * pool.length)];
   }
   /** 从联系人的字卡中随机抽取一条（10% 概率图片字卡，10% 概率 emoji 字卡）
-      字卡池 = 我的单独字卡(该联系人) + 我的公用字卡 + 联系人自带字卡 */
+      字卡池 = 我的单独字卡(该联系人) + 我的公用字卡 + 联系人自带字卡
+      （去重：联系人主页与个人中心已双向同步，防止同一张卡重复出现） */
   function pickRandomCard(contact) {
     if (!contact) return null;
-    var pool = mineCardPool(contact.id);
-    if (contact.cards && contact.cards.length) pool = pool.concat(contact.cards);
+    var pool = dedupe(mineCardPool(contact.id).concat(contact.cards || []));
     if (pool.length === 0) return null;
     return pickCardWithImageChance(pool);
   }
@@ -823,10 +823,53 @@ window.MineChat = (function () {
    * @param group    当前群聊对象
    */
   function pickRandomCardForGroup(contact, group) {
-    var pool = mineCardPool(contact ? contact.id : null);
-    if (contact && contact.cards) pool = pool.concat(contact.cards);
-    if (group && group.cards) pool = pool.concat(group.cards);
+    var pool = dedupe(mineCardPool(contact ? contact.id : null)
+      .concat(contact && contact.cards ? contact.cards : [])
+      .concat(group && group.cards ? group.cards : []));
     return pickCardWithImageChance(pool);
+  }
+  /* ---------------- 组字卡池（字卡生成器已通过/入池的字卡） ----------------
+     联系人发送信息时按「组字卡发送」概率（默认 50%，可配置）随机使用组字卡池，
+     其余概率继续使用原有字卡机制（我的字卡 + 联系人字卡 + 系统字卡），互不影响。 */
+  function genCardPool() {
+    if (!window.MineCardGenerator || !window.MineCardGenerator.getPool) return [];
+    var pool = window.MineCardGenerator.getPool();
+    if (!pool || pool.length === 0) return [];
+    var texts = [];
+    for (var i = 0; i < pool.length; i++) {
+      if (pool[i] && pool[i].text) texts.push(pool[i].text);
+    }
+    return texts;
+  }
+  function pickGenCard() {
+    var texts = genCardPool();
+    if (texts.length === 0) return null;
+    return texts[Math.floor(Math.random() * texts.length)];
+  }
+  /** 联系人回复来源决策：命中「组字卡发送」概率且组字卡池非空 → 组字卡；否则原有字卡 */
+  function pickReplyCard(contact) {
+    if (!contact) return null;
+    if (Math.random() < prob("genCard")) {
+      var gen = pickGenCard();
+      if (gen) return gen;
+    }
+    return pickRandomCard(contact);
+  }
+  function pickReplyCardForGroup(contact, group) {
+    if (Math.random() < prob("genCard")) {
+      var gen = pickGenCard();
+      if (gen) return gen;
+    }
+    return pickRandomCardForGroup(contact, group);
+  }
+  /** 数组去重（保持顺序，按值判重） */
+  function dedupe(list) {
+    var seen = {}, out = [];
+    for (var i = 0; i < list.length; i++) {
+      var v = list[i];
+      if (v !== undefined && v !== null && !seen[v]) { seen[v] = true; out.push(v); }
+    }
+    return out;
   }
   /** 读取单独"自动回复"字卡（仅自动回复场景使用） */
   function autoCardPool(contactId) {
@@ -840,11 +883,10 @@ window.MineChat = (function () {
     if (!contact) return null;
     var pool = autoCardPool(contact.id);
     if (pool.length > 0) {
-      if (contact.autoCards && contact.autoCards.length) pool = pool.concat(contact.autoCards);
+      pool = dedupe(pool.concat(contact.autoCards || []));
       return pickCardWithImageChance(pool);
     }
-    pool = mineCardPool(contact.id);
-    if (contact.autoCards && contact.autoCards.length) pool = pool.concat(contact.autoCards);
+    pool = dedupe(mineCardPool(contact.id).concat(contact.autoCards || []));
     if (pool.length === 0) return null;
     return pickCardWithImageChance(pool);
   }
@@ -853,13 +895,14 @@ window.MineChat = (function () {
   function pickRandomAutoCardForGroup(contact, group) {
     var pool = autoCardPool(contact ? contact.id : null);
     if (pool.length > 0) {
-      if (contact && contact.autoCards) pool = pool.concat(contact.autoCards);
-      if (group && group.autoCards) pool = pool.concat(group.autoCards);
+      pool = dedupe(pool
+        .concat(contact && contact.autoCards ? contact.autoCards : [])
+        .concat(group && group.autoCards ? group.autoCards : []));
       return pickCardWithImageChance(pool);
     }
-    pool = mineCardPool(contact ? contact.id : null);
-    if (contact && contact.autoCards) pool = pool.concat(contact.autoCards);
-    if (group && group.autoCards) pool = pool.concat(group.autoCards);
+    pool = dedupe(mineCardPool(contact ? contact.id : null)
+      .concat(contact && contact.autoCards ? contact.autoCards : [])
+      .concat(group && group.autoCards ? group.autoCards : []));
     if (pool.length === 0) return null;
     return pickCardWithImageChance(pool);
   }
@@ -1646,7 +1689,7 @@ window.MineChat = (function () {
         (function (m, d) {
           function doReply() {
             if (isViewingConv(curConvKey)) hideTyping();
-            var card = pickRandomCardForGroup(m, group);
+            var card = pickReplyCardForGroup(m, group);
             if (!card) return;
             var msgs = conversations[curConvKey];
             if (!msgs) return;
@@ -1718,7 +1761,7 @@ window.MineChat = (function () {
     var card = group ? pickRandomAutoCardForGroup(contact, group) : pickRandomAutoCard(contact);
     // 无自动回复字卡 → 回退到普通字卡（确保 100% 触发回复）
     if (!card) {
-      card = group ? pickRandomCardForGroup(contact, group) : pickRandomCard(contact);
+      card = group ? pickReplyCardForGroup(contact, group) : pickReplyCard(contact);
     }
     // 仍无任何字卡 → 保持沉默
     if (!card) return;
@@ -1799,7 +1842,7 @@ window.MineChat = (function () {
     var key = convKey || ctx.convKey;
     var msgs = conversations[key];
     if (!msgs) return;
-    var card = pickRandomCard(contact);
+    var card = pickReplyCard(contact);
     var senderName = (contact && contact.name) ? contact.name : "未知";
     var senderAvatar = (contact && contact.avatar) ? contact.avatar : null;
     var beforeLen = msgs.length;
