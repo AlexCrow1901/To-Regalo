@@ -298,6 +298,16 @@ window.MineSettings = (function () {
       '<button class="chat-bg-btn icon-only" id="set-test" aria-label="测试通知">' + iconSvg("bell", 16) + '</button>' +
       '</div>';
     html += '<div id="set-test-result"></div>';
+    // 字卡（生成器管理入口）
+    html += '<div class="group-head">字卡</div>';
+    html += funcRow("card-approve", "check", "字卡审批",
+      "生成候选字卡 · 人工审批待定项（拼音原文 + 还原结果 + 评分）");
+    html += funcRow("card-pool", "bookmark", "字卡池",
+      "已通过字卡列表 · 从公用字卡池移除");
+    html += funcRow("card-rules", "settings", "运行规则",
+      "两路占比 / 置信度阈值 / 批量 / 限流 / 实时发送");
+    html += funcRow("card-lexicon", "book", "词库管理",
+      "字词开关 / 增删 / 搜索 / A-Z 排序查看");
     // 应用图标自定义
     html += '<div class="group-head">应用图标</div>';
     html += iconCard();
@@ -345,6 +355,17 @@ window.MineSettings = (function () {
         '<input type="checkbox" id="' + id + '"' + (checked ? ' checked' : '') + '>' +
         '<span class="proactive-switch-track"></span>' +
       '</label>' +
+      '</div>';
+  }
+  /* 功能入口行（点击跳转对应页面） */
+  function funcRow(id, icon, title, sub) {
+    return '<div class="func-row">' +
+      '<div class="func-icon">' + iconSvg(icon, 20) + '</div>' +
+      '<div class="func-text">' +
+        '<span class="func-title">' + title + '</span>' +
+        '<span class="func-sub">' + sub + '</span>' +
+      '</div>' +
+      '<button class="chat-bg-btn icon-only" id="set-' + id + '" aria-label="' + title + '">' + iconSvg("eye", 16) + '</button>' +
       '</div>';
   }
   /* 应用图标卡片（排版与开关行一致：小预览 + 一行文字 + 右侧按钮） */
@@ -689,6 +710,19 @@ window.MineSettings = (function () {
         }
       });
     }
+    /* 字卡入口：审批 / 字卡池 / 运行规则 / 词库管理（lexicon-admin.js 挂载的页面）
+       必须先 switchPage 切换显示，再 page 渲染内容（与主屏图标点击路径一致） */
+    [["card-approve", "card-approve"], ["card-pool", "card-pool"], ["card-rules", "card-rules"], ["card-lexicon", "card-lexicon"]].forEach(function (pair) {
+      var btn = pageEl.querySelector("#set-" + pair[0]);
+      if (btn) {
+        btn.addEventListener("click", function () {
+          if (window.MineApp && MineApp.page) {
+            if (MineApp.switchPage) MineApp.switchPage("detail", pair[1]);
+            MineApp.page(pair[1]);
+          }
+        });
+      }
+    });
     /* 版本更新：手动检查更新 */
     var checkUpdateBtn = pageEl.querySelector("#set-check-update");
     if (checkUpdateBtn) {

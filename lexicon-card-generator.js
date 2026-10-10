@@ -136,11 +136,11 @@ window.MineCardGenerator = (function () {
        · 名词分话题(subjNoun：天气/心情)与宾语(objNoun：饭/水/猫)，避免"山饿"类错配
      抽词规则：命名槽 → 白名单随机；白名单词缺失时回退 posIndex 抽词。 */
   var SLOTS = {
-    subj1: ["我", "咱们", "我们", "大家", "自己"],               /* 第一人称主语 */
+    subj1: ["我", "咱们", "我们", "大家"],               /* 第一人称主语（"自己"作反身代词易错配，已剔除） */
     subj2: ["你", "他", "她", "你们", "他们"],                   /* 第二/三人称主语 */
     obj1:  ["你", "他", "她", "你们", "他们"],                   /* 人称宾语 */
     vTrans:["想", "爱", "懂", "陪", "等", "抱", "亲", "看", "听", "找", "送", "接", "帮", "问", "教", "约", "祝", "谢谢"],
-    vActS: ["吃", "喝", "睡", "买", "玩", "做", "走", "去", "来", "回", "洗", "穿", "逛", "唱", "跳", "跑", "笑", "哭"],  /* 单字动作，可接宾语 */
+    vActS: ["吃", "喝", "买", "玩", "做", "走", "去", "来", "回", "洗", "穿", "逛", "唱", "跳", "跑", "笑", "哭", "看", "听", "说", "问", "找"],  /* 单字动作，可接宾语（"睡"已剔除，避免"睡衣服"类错配） */
     vAct2: ["上班", "下班", "睡觉", "吃饭", "喝水", "散步", "锻炼", "运动", "旅行", "旅游", "回家", "出门", "聊天",
             "洗澡", "逛街", "熬夜", "打车", "加班", "做饭", "亲亲", "抱抱", "摸摸", "喝茶", "休息", "放假", "加油", "起床"], /* 双字动作，自带宾语 */
     vState:["想", "爱", "懂", "喜欢", "害怕", "担心", "放心", "希望", "相信"],  /* 心理/状态，配程度副词 */
@@ -377,6 +377,11 @@ window.MineCardGenerator = (function () {
         item.status = "auto";
         item.judgedBy = "ai";
         if (cfg.autoAddToPool) addToPublicPool(gen.text);
+        /* 实时发送联动：指定了联系人且开启实时发送 → 直接作为对方消息入会话 */
+        if (cfg.realtimeSend && cid !== "global" && window.MineChat && window.MineChat.sendGeneratedCard) {
+          var sr = window.MineChat.sendGeneratedCard(cid, gen.text);
+          item.sentTo = sr && sr.ok ? cid : null;
+        }
         autoN++;
       } else if (ev.conf >= cfg.manualLow) {
         item.status = "pending";               /* 人工审批队列 */
@@ -482,7 +487,11 @@ window.MineCardGenerator = (function () {
     setConfig: setConfigAPI,
     getStats: getStats,
     resetLast: resetLast,
+    /* 词库管理页：自定义词增删查 */
+    addCustomWord: addCustomWord,
+    removeCustomWord: removeCustomWord,
+    getCustomWords: getCustomWords,
     templates: TEMPLATES.length,
-    version: "1.0.0"
+    version: "1.1.0"
   };
 })();

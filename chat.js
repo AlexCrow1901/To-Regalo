@@ -146,6 +146,40 @@ window.MineChat = (function () {
       }
     }
   }
+  /** 直接向联系人会话发送指定文本（字卡生成器 auto 通过 → 实时发送联动）
+      复用主动消息的追加消息 / 未读计数 / 系统通知机制 */
+  function sendGeneratedCard(contactId, text) {
+    if (!contactId || !text) return { ok: false, reason: "bad-args" };
+    var contact = C.findContact(contactId);
+    if (!contact || !contact.id) return { ok: false, reason: "no-contact" };
+    var convKey = "contact:" + contact.id;
+    if (!conversations[convKey]) conversations[convKey] = [];
+    var msgs = conversations[convKey];
+    var senderName = contact.name || "未知";
+    var senderAvatar = contact.avatar || null;
+    var beforeLen = msgs.length;
+    msgs.push({
+      id: uid(),
+      from: contact.id,
+      text: text,
+      time: Date.now(),
+      isProactive: true,
+      isGenerated: true,
+      senderName: senderName,
+      senderAvatar: senderAvatar
+    });
+    save();
+    // 未查看该会话时增加未读计数（并触发后台系统通知）
+    if (!isViewingConv(convKey)) {
+      incrementUnread(convKey);
+      if (window.MineNotify) MineNotify.refreshBadges();
+    }
+    // 仅在正在查看该会话时才追加 DOM
+    if (isViewingConv(convKey)) {
+      for (var j = beforeLen; j < msgs.length; j++) appendMessage(msgs[j]);
+    }
+    return { ok: true, convKey: convKey };
+  }
   /** 主动消息调度器：每 20 秒扫描一次
       · 首次遇到联系人/群成员 → 为其创建下次发送计划（立即计时）
       · 到期 → 发送一条主动消息并重新计时
@@ -2371,7 +2405,9 @@ window.MineChat = (function () {
     setConvBg: setConvBg,
     getConvBg: getConvBg,
     /* 主动消息：设置变更后重排对应联系人的发送计划（contacts.js 调用） */
-    refreshProactive: refreshProactive
+    refreshProactive: refreshProactive,
+    /* 字卡生成器联动：直接向联系人会话发送指定文本 */
+    sendGeneratedCard: sendGeneratedCard
   };
 
   /* 模块启动：加载主动消息调度状态并启动调度器（立即执行一次以建立初始计划，
