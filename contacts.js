@@ -762,9 +762,9 @@ window.MineContacts = (function () {
       var proMinL = pageEl.querySelector("#proactive-min-label");
       var proMaxL = pageEl.querySelector("#proactive-max-label");
 
-      // 设置变更后通知聊天模块刷新调度
+      // 设置变更后通知聊天模块刷新调度（传入联系人 id，只重排该联系人的计划）
       var proNotifyChat = function () {
-        if (window.MineChat && MineChat.refreshProactive) MineChat.refreshProactive();
+        if (window.MineChat && MineChat.refreshProactive) MineChat.refreshProactive(c.id);
       };
       // 刷新"主动消息"行状态标签（始终已开启）
       var proRefreshState = function () {

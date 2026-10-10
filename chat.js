@@ -59,12 +59,159 @@ window.MineChat = (function () {
     // 加载会话背景图
     loadBg();
     loadChatFontColor();
+    // 加载主动消息调度状态
+    loadProactive();
   }
   function save() {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(conversations)); } catch (e) {}
   }
   function saveUnread() {
     try { localStorage.setItem(UNREAD_KEY, JSON.stringify(unreadCounts)); } catch (e) {}
+  }
+  /* ==================== 主动消息（联系人主动发消息）调度 ====================
+     联系人详情页提供"主动消息"设置（proactiveMin / proactiveMax，单位为分钟），
+     本模块负责调度实现：每个联系人（群聊中每个成员独立计算）在随机间隔后
+     主动发送一条字卡消息，发送后重新计时。
+     修复说明：此前仅有设置 UI（contacts.js 调用 MineChat.refreshProactive），
+     缺少调度实现，导致联系人从不主动发消息；现补齐持久化调度状态 +
+     定时扫描 + 到期发送三个环节。
+     调度状态存于 localStorage "mine.chat.proactive.v1"，刷新页面不重置计时：
+       { "c:<联系人id>": 下次发送时间戳, "g:<群id>:<成员id>": 下次发送时间戳 } */
+  var PROACTIVE_KEY = "mine.chat.proactive.v1";
+  var proactiveMap = {};
+  function loadProactive() {
+    try {
+      var raw = localStorage.getItem(PROACTIVE_KEY);
+      if (raw) proactiveMap = JSON.parse(raw) || {};
+    } catch (e) {}
+    if (!proactiveMap || typeof proactiveMap !== "object") proactiveMap = {};
+  }
+  function saveProactive() {
+    try { localStorage.setItem(PROACTIVE_KEY, JSON.stringify(proactiveMap)); } catch (e) {}
+  }
+  /** 按联系人的主动消息设置生成随机间隔（分钟），区间 [min, max] */
+  function proactiveIntervalMinutes(c) {
+    var min = (c && c.proactiveMin !== undefined) ? Number(c.proactiveMin) : 1;
+    var max = (c && c.proactiveMax !== undefined) ? Number(c.proactiveMax) : 720;
+    if (isNaN(min) || min < 0) min = 1;
+    if (isNaN(max) || max < min) max = min;
+    return min + Math.random() * (max - min);
+  }
+  /** 发送一条主动消息（复用字卡抽取 / emoji 附加 / 未读计数 / 系统通知机制） */
+  function sendProactiveMessage(contact, group, convKey) {
+    if (!contact || !contact.id) return;
+    // 群聊合并群字卡，单聊用联系人字卡；无字卡时不发送（避免"……"占位，
+    // 也不创建空的会话记录）
+    var card = group ? pickRandomCardForGroup(contact, group) : pickRandomCard(contact);
+    if (!card) return;
+    if (!conversations[convKey]) conversations[convKey] = [];
+    var msgs = conversations[convKey];
+    var senderName = contact.name || "未知";
+    var senderAvatar = contact.avatar || null;
+    var beforeLen = msgs.length;
+    msgs.push({
+      id: uid(),
+      from: contact.id,
+      text: card,
+      time: Date.now(),
+      isProactive: true,
+      senderName: senderName,
+      senderAvatar: senderAvatar
+    });
+    // 文字字卡有概率附加 1~3 条 emoji（图片/语音字卡不附加）
+    if (!isImageCard(card) && !isAudioCard(card) && !isEmojiCard(card)) {
+      var emojis = pickEmojiAttachments(contact.cards || []);
+      for (var i = 0; i < emojis.length; i++) {
+        msgs.push({
+          id: uid(),
+          from: contact.id,
+          text: emojis[i],
+          time: Date.now(),
+          isProactive: true,
+          senderName: senderName,
+          senderAvatar: senderAvatar
+        });
+      }
+    }
+    save();
+    // 未查看该会话时增加未读计数（并触发后台系统通知）
+    if (!isViewingConv(convKey)) {
+      incrementUnread(convKey);
+      if (window.MineNotify) MineNotify.refreshBadges();
+    }
+    // 仅在正在查看该会话时才追加 DOM
+    if (isViewingConv(convKey)) {
+      for (var j = beforeLen; j < msgs.length; j++) {
+        appendMessage(msgs[j]);
+      }
+    }
+  }
+  /** 主动消息调度器：每 20 秒扫描一次
+      · 首次遇到联系人/群成员 → 为其创建下次发送计划（立即计时）
+      · 到期 → 发送一条主动消息并重新计时
+      · 已删除的联系人 / 主动消息被关闭（proactiveOn === false）→ 自动跳过 */
+  function proactiveTick() {
+    if (!C || !C.loadData) return;
+    C.loadData();
+    var st = C.getState ? C.getState() : null;
+    if (!st) return;
+    var now = Date.now();
+    var changed = false;
+    /* 一对一联系人 */
+    (st.contacts || []).forEach(function (c) {
+      if (!c || !c.id) return;
+      if (c.proactiveOn === false) return;
+      var key = "c:" + c.id;
+      var nextAt = proactiveMap[key];
+      if (nextAt === undefined) {
+        proactiveMap[key] = now + proactiveIntervalMinutes(c) * 60000;
+        changed = true;
+        return;
+      }
+      if (now >= nextAt) {
+        sendProactiveMessage(c, null, "contact:" + c.id);
+        proactiveMap[key] = now + proactiveIntervalMinutes(c) * 60000;
+        changed = true;
+      }
+    });
+    /* 群聊成员（每个成员独立计算，同群成员互不影响） */
+    (st.groups || []).forEach(function (g) {
+      if (!g || !g.id) return;
+      (g.members || []).forEach(function (mid) {
+        var m = C.findContact(mid);
+        if (!m || !m.id) return;
+        if (m.proactiveOn === false) return;
+        var key = "g:" + g.id + ":" + m.id;
+        var nextAt = proactiveMap[key];
+        if (nextAt === undefined) {
+          proactiveMap[key] = now + proactiveIntervalMinutes(m) * 60000;
+          changed = true;
+          return;
+        }
+        if (now >= nextAt) {
+          sendProactiveMessage(m, g, "group:" + g.id);
+          proactiveMap[key] = now + proactiveIntervalMinutes(m) * 60000;
+          changed = true;
+        }
+      });
+    });
+    if (changed) saveProactive();
+  }
+  /** 设置变更后重排主动消息计划
+      · 传入联系人 id → 只重排该联系人本人及其在各群中的成员计划
+      · 不传 → 全部重排（下次扫描按当前设置重新计时） */
+  function refreshProactive(contactId) {
+    if (contactId) {
+      delete proactiveMap["c:" + contactId];
+      Object.keys(proactiveMap).forEach(function (k) {
+        if (k.lastIndexOf(":") > 0 && k.substring(k.lastIndexOf(":") + 1) === contactId) {
+          delete proactiveMap[k];
+        }
+      });
+    } else {
+      proactiveMap = {};
+    }
+    saveProactive();
   }
   /* ==================== 每个会话的自定义背景图 ====================
      chatBg: { "contact:c1": "data:image/...", "group:g1": "data:image/..." }
@@ -2222,8 +2369,16 @@ window.MineChat = (function () {
     refreshConvListBadges: openConvList,
     /* 会话背景读写（背景管理器按联系人/群聊设置背景时调用） */
     setConvBg: setConvBg,
-    getConvBg: getConvBg
+    getConvBg: getConvBg,
+    /* 主动消息：设置变更后重排对应联系人的发送计划（contacts.js 调用） */
+    refreshProactive: refreshProactive
   };
+
+  /* 模块启动：加载主动消息调度状态并启动调度器（立即执行一次以建立初始计划，
+     之后每 20 秒扫描一次；联系人/群成员到点即主动发送消息） */
+  loadProactive();
+  proactiveTick();
+  setInterval(proactiveTick, 20000);
 
   /* 模块启动即预加载会话背景（IndexedDB 异步），
      避免首次进入主屏/会话时背景尚未从存储恢复 */
