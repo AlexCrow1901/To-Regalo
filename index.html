@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="To Regalo" />
-  <meta name="app-version" content="1.0.8" />
+  <meta name="app-version" content="1.0.9" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>To Regalo</title>
@@ -116,20 +116,20 @@
   <script src="background.js?v14"></script>
   <script src="probabilities.js?v8"></script>
   <script src="contacts.js?v24"></script>
-  <script src="cards.js?v10"></script>
+  <script src="cards.js?v11"></script>
   <!-- 字卡生成器：词库 → 引擎（拼音还原+评分）→ 生成器（双路生成+双轨审批），依赖 MineCards -->
   <script src="lexicon.js?v1"></script>
   <script src="lexicon-engine.js?v1"></script>
   <script src="lexicon-card-generator.js?v5"></script>
   <!-- 字卡管理界面（审批 / 字卡池 / 运行规则 / 词库管理） -->
-  <script src="lexicon-admin.js?v4"></script>
+  <script src="lexicon-admin.js?v5"></script>
   <script src="chat.js?v61"></script>
   <!-- 电话模块（依赖 MineContacts / MineIcons） -->
   <script src="phone.js?v5"></script>
   <script src="companion.js?v10"></script>
   <script src="profile.js?v15"></script>
-  <script src="mail.js?v10"></script>
-  <script src="treehole.js?v6"></script>
+  <script src="mail.js?v11"></script>
+  <script src="treehole.js?v7"></script>
   <script src="radio.js?v4"></script>
   <script src="netease.js?v4"></script>
   <script src="foodie.js?v3"></script>
@@ -140,10 +140,10 @@
   <!-- 聊天气泡 / 系统主题 上传管理器（依赖 MineTheme / MineBackground） -->
   <script src="bubble-manager.js?v1"></script>
   <!-- 文件管理（数据导出 / 清除 / 存储扩容） -->
-  <script src="files.js?v2"></script>
+  <script src="files.js?v3"></script>
   <!-- 浏览器（入口 + 基础浏览壳） -->
   <script src="browser.js?v2"></script>
-  <script src="app.js?v17"></script>
+  <script src="app.js?v18"></script>
   <script>
     // 状态栏 wifi 图标 / 搜索图标（等 icons.js 就绪后注入）
     document.getElementById("status-wifi").innerHTML = MineIcons.svg("wifi", 16);

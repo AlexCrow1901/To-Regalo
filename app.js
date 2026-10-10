@@ -362,6 +362,48 @@
       if (bannerShown) location.reload();
     });
   }
+  /* ---------------- 滚动保持渲染（防"操作后跳回顶部"） ----------------
+     交互操作触发的全量重渲染会重建页面内容，导致滚动位置丢失、回到顶端。
+     MineScroll.render(container, html, keepTop, bindFn) 在重渲染前保存滚动位置，
+     渲染后恢复（内容高度变化时自动收敛到新最大值）：
+       container  内容容器元素（pageEl / detail / body 等）
+       html       新渲染内容
+       keepTop    true = 同视图交互重渲染（保持滚动位置）；false = 视图切换（回到顶部）
+       bindFn     渲染后的事件绑定函数（可选）
+     滚动容器优先取 container 内 .scroll 元素，不存在则取 container 自身。 */
+  window.MineScroll = (function () {
+    "use strict";
+    function scrollElOf(container) {
+      if (!container || !container.querySelector) return container || null;
+      var sc = container.querySelector(".scroll");
+      return sc || container;
+    }
+    function saveTop(container) {
+      var el = scrollElOf(container);
+      return el ? (el.scrollTop || 0) : 0;
+    }
+    function restoreTop(container, saved) {
+      if (!container || !saved) return;
+      /* 延迟到当前同步渲染链完成后恢复：页面骨架先渲染、列表等内容随后由各模块
+         局部填充（如 renderPendingList），立即恢复时 scrollHeight 尚小会被 clamp 到 0 */
+      setTimeout(function () {
+        var el = scrollElOf(container);
+        if (!el) return;
+        /* 强制同步布局，确保 scrollHeight 反映最终内容 */
+        void el.offsetHeight;
+        var max = Math.max(0, (el.scrollHeight || 0) - (el.clientHeight || 0));
+        el.scrollTop = Math.min(saved, max);
+      }, 0);
+    }
+    function render(container, html, keepTop, bindFn) {
+      if (!container) return;
+      var saved = keepTop ? saveTop(container) : 0;
+      container.innerHTML = html;
+      if (bindFn) { try { bindFn(); } catch (e) {} }
+      if (keepTop && saved > 0) restoreTop(container, saved);
+    }
+    return { render: render };
+  })();
   /* ---------------- 公共方法 ---------------- */
   APP.goHome = goHome;
   APP.switchPage = switchPage;

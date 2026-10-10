@@ -489,8 +489,8 @@ window.MineCards = (function () {
       content = renderSysTab();
     }
 
-    body.innerHTML = tabs + content;
-    bindEvents(body);
+    /* 弹层内交互重渲染（删除/添加/tab 切换）保持滚动位置，避免跳回顶部 */
+    window.MineScroll.render(body, tabs + content, true, function () { bindEvents(body); });
   }
 
   /* ---- 公用字卡 tab ---- */

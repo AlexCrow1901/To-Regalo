@@ -872,6 +872,7 @@ window.MineTreeHole = (function () {
   /* ==================== 事件绑定 ==================== */
   function render() {
     if (!pageEl) return;
+    var prevView = currentView;
     var html;
 
     if (currentView === "main") html = viewMain();
@@ -881,8 +882,9 @@ window.MineTreeHole = (function () {
     else if (currentView === "templates") html = viewTemplates();
     else html = viewMain();
 
-    pageEl.innerHTML = html;
-    bindEvents();
+    /* 同视图交互重渲染（添加选项/保存等）保持滚动位置，视图切换回到顶部 */
+    var keepTop = (currentView === prevView);
+    window.MineScroll.render(pageEl, html, keepTop, bindEvents);
 
     if (window.MineApp && MineApp.switchPage) {
       MineApp.switchPage("detail");

@@ -940,6 +940,7 @@ window.MineMail = (function () {
   /* ==================== 事件绑定 ==================== */
   function render() {
     if (!pageEl) return;
+    var prevView = currentView;
     var html;
 
     if (currentView === "main") html = viewMain();
@@ -950,8 +951,9 @@ window.MineMail = (function () {
     else if (currentView === "compose") html = viewCompose(composeData);
     else html = viewMain();
 
-    pageEl.innerHTML = html;
-    bindEvents();
+    /* 同视图交互重渲染（标记已读/删除/回复等）保持滚动位置，视图切换回到顶部 */
+    var keepTop = (currentView === prevView);
+    window.MineScroll.render(pageEl, html, keepTop, bindEvents);
 
     if (window.MineApp && MineApp.switchPage) {
       MineApp.switchPage("detail");

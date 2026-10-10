@@ -254,7 +254,7 @@ window.MineFiles = (function () {
       function () {
         removeKeys(mod.keys);
         showToast("已清除「" + mod.name + "」，刷新页面后生效");
-        renderPage();
+        renderPage(true);
       }
     );
   }
@@ -320,7 +320,7 @@ window.MineFiles = (function () {
   }
 
   /* ---------------- 渲染页面 ---------------- */
-  function renderPage() {
+  function renderPage(keepTop) {
     var detail = document.getElementById("page-detail");
     if (!detail) return;
     var rowsHtml = "";
@@ -396,20 +396,22 @@ window.MineFiles = (function () {
           '「清除」后需刷新页面才完全生效；「清空」将自动刷新。' +
         '</div>' +
       '</div>';
-    detail.innerHTML = html;
-    var style = document.getElementById("fs-mini-style");
-    if (!style) {
-      style = document.createElement("style");
-      style.id = "fs-mini-style";
-      style.textContent =
-        ".fs-mini-btn{width:34px;height:34px;margin-left:8px;border-radius:10px;border:1px solid rgba(160,180,200,0.18);" +
-        "background:rgba(150,170,190,0.08);color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;}" +
-        ".fs-mini-btn.is-danger{color:#c98a8a;}" +
-        ".fs-mini-btn:active{transform:scale(0.94);}";
-      document.head.appendChild(style);
-    }
-    bindEvents(detail);
-    refreshQuota();
+    /* 操作后重渲染（清除模块等）保持滚动位置，进入页面时回到顶部 */
+    window.MineScroll.render(detail, html, !!keepTop, function () {
+      var style = document.getElementById("fs-mini-style");
+      if (!style) {
+        style = document.createElement("style");
+        style.id = "fs-mini-style";
+        style.textContent =
+          ".fs-mini-btn{width:34px;height:34px;margin-left:8px;border-radius:10px;border:1px solid rgba(160,180,200,0.18);" +
+          "background:rgba(150,170,190,0.08);color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;}" +
+          ".fs-mini-btn.is-danger{color:#c98a8a;}" +
+          ".fs-mini-btn:active{transform:scale(0.94);}";
+        document.head.appendChild(style);
+      }
+      bindEvents(detail);
+      refreshQuota();
+    });
   }
 
   function findMod(key) {

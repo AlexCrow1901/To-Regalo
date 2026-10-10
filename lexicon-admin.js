@@ -49,6 +49,8 @@ window.MineLexiconAdmin = (function () {
   /* 词库分组展开状态 */
   var lexState = { search: "", expanded: {}, showCount: {}, loadedMore: {} };
 
+  /* 最近一次渲染的视图（用于判断同视图重渲染 → 保持滚动，视图切换 → 回到顶部） */
+  var lastRenderedView = "";
   /* ==================== 页面骨架 ==================== */
   function pageShell(view, inner) {
     var navBar =
@@ -68,8 +70,9 @@ window.MineLexiconAdmin = (function () {
       '</div>';
     var detail = document.getElementById("page-detail");
     if (!detail) return;
-    detail.innerHTML = html;
-    bindShell(detail, view);
+    var keepTop = (view === lastRenderedView);
+    lastRenderedView = view;
+    window.MineScroll.render(detail, html, keepTop, function () { bindShell(detail, view); });
   }
   function bindShell(detail, view) {
     var back = detail.querySelector(".nav-btn[data-act=back]");
