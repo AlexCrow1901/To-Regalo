@@ -97,7 +97,7 @@ window.MineCompanion = (function () {
     var now = new Date();
     var halfDayIndex = Math.floor(now.getTime() / 43200000); // 43200000ms = 12小时
     var pool = QUOTES.concat(userQuotes);
-    if (pool.length === 0) return { text: "静候灵感降临。", author: "Mine" };
+    if (pool.length === 0) return { text: "静候灵感降临。", author: "To Regalo" };
     // 用时间窗口作为种子做伪随机，确保同一窗口内结果一致
     var seed = halfDayIndex;
     var rand = function () {

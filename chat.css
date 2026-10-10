@@ -1556,17 +1556,20 @@
   max-width: 180px;
 }
 
-/* ========================================================================
-   每个会话的自定义背景图
-   ======================================================================== */
-.chat-messages.has-custom-bg {
+/* 每个会话的自定义背景图。
+   使用 #page-chat 提升特异性：主题（theme-neumorphism 等）的
+   body.theme-neumorphism .chat-messages { background: var(--c-charcoal) }
+   特异性 (0,2,1) 高于 .chat-messages.has-custom-bg (0,2,0)，
+   会把自定义背景图覆盖成主题底色 —— 这里必须高于它才能真实生效。 */
+#page-chat .chat-messages.has-custom-bg {
   background-image: var(--chat-bg-image, none);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-color: transparent;
 }
 /* 有自定义背景时，消息区域叠加半透明遮罩保证可读性 */
-.chat-messages.has-custom-bg::before {
+#page-chat .chat-messages.has-custom-bg::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -1574,7 +1577,7 @@
   pointer-events: none;
   z-index: 0;
 }
-.chat-messages.has-custom-bg > * {
+#page-chat .chat-messages.has-custom-bg > * {
   position: relative;
   z-index: 1;
 }

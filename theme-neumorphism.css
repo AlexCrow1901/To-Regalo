@@ -934,7 +934,7 @@ body.theme-neumorphism .chat-date-sep {
   color: var(--t-tertiary);
 }
 
-/* 消息气泡 - 双方统一奶油风 */
+/* 消息气泡 - 双方统一奶油风（自定义气泡上传后由 --bubble-* 变量接管） */
 body.theme-neumorphism .msg-bubble {
   font-size: 15px;
   line-height: 1.6;
@@ -942,7 +942,7 @@ body.theme-neumorphism .msg-bubble {
   border-radius: var(--r-lg);
   border: none;
   box-shadow: var(--sh-neu-out);
-  background: var(--c-graphite);
+  background: var(--bubble-them-bg, var(--c-graphite));
   color: var(--t-primary);
   /* 文字排版：左对齐、无多余间距、中文自然换行 */
   text-align: left !important;
@@ -971,7 +971,7 @@ body.theme-neumorphism .msg-row.is-me .msg-content .msg-bubble {
 }
 /* 对方气泡 */
 body.theme-neumorphism .msg-bubble.is-them {
-  background: var(--c-graphite);
+  background: var(--bubble-them-bg, var(--c-graphite));
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border: none;
@@ -981,7 +981,7 @@ body.theme-neumorphism .msg-bubble.is-them {
 }
 /* 我的气泡 - 同样奶油风，仅通过位置区分 */
 body.theme-neumorphism .msg-bubble.is-me {
-  background: var(--c-graphite);
+  background: var(--bubble-me-bg, var(--c-graphite));
   border: none;
   color: var(--t-primary);
   border-bottom-right-radius: var(--r-sm);

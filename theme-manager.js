@@ -225,7 +225,7 @@ window.MineTheme = (function () {
       '<div class="neu-hero-avatar">' + avatarHTML + '</div>' +
       '<div class="neu-hero-info">' +
         '<div class="neu-hero-name">' + escapeHtml(profile.name) + '</div>' +
-        '<div class="neu-hero-subtitle">Mine</div>' +
+        '<div class="neu-hero-subtitle" style="font-style:italic;font-family:Georgia,\'Times New Roman\',serif;letter-spacing:0.02em;">To Regalo</div>' +
         '<div class="neu-hero-quote">She walks with moonlight in her heart, and stars in her dreams.</div>' +
       '</div>';
 

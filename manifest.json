@@ -1,7 +1,7 @@
 {
-  "name": "Mine",
-  "short_name": "Mine",
-  "description": "Mine — 聊天、通讯录、陪伴、朋友圈一体化本地生活应用，支持离线使用与系统通知。",
+  "name": "To Regalo",
+  "short_name": "To Regalo",
+  "description": "To Regalo — 聊天、通讯录、陪伴、朋友圈一体化本地生活应用，支持离线使用与系统通知。",
   "lang": "zh-CN",
   "start_url": "./index.html",
   "scope": "./",

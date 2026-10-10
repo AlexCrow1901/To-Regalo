@@ -17,7 +17,7 @@
    说明：通知是否弹出仍受浏览器通知权限 + 手机系统通知设置控制。
    版本：v4（缓存名含版本，升级时浏览器自动更新）
    ======================================================================== */
-var CACHE_NAME = "mine-cache-v10";
+var CACHE_NAME = "mine-cache-v11";
 
 /* 核心资源全量预缓存（版本号与 index.html 中的 ?vN 保持一致；
    版本升级时同步更新本列表，确保离线时拉到的都是最新文件） */
@@ -34,7 +34,7 @@ var CORE_ASSETS = [
   "home.css?v7",
   "components.css?v21",
   "contacts.css?v9",
-  "chat.css?v38",
+  "chat.css?v39",
   "companion.css?v3",
   "profile.css?v6",
   "mail.css?v4",
@@ -45,11 +45,11 @@ var CORE_ASSETS = [
   "contact-moments.css?v2",
   "phone.css?v1",
   "notify.css?v1",
-  "theme-neumorphism.css?v6",
+  "theme-neumorphism.css?v7",
   "storage.js?v3",
   "utils.js?v8",
   "notify.js?v1",
-  "keepalive.js?v7",
+  "keepalive.js?v8",
   "settings.js?v15",
   "icons.js?v22",
   "background.js?v14",
@@ -62,8 +62,8 @@ var CORE_ASSETS = [
   "lexicon-admin.js?v2",
   "chat.js?v60",
   "phone.js?v5",
-  "companion.js?v9",
-  "profile.js?v14",
+  "companion.js?v10",
+  "profile.js?v15",
   "mail.js?v10",
   "treehole.js?v6",
   "radio.js?v4",
@@ -71,8 +71,10 @@ var CORE_ASSETS = [
   "foodie.js?v3",
   "moments.js?v4",
   "contact-moments.js?v1",
-  "theme-manager.js?v6",
+  "theme-manager.js?v7",
+  "bubble-manager.js?v1",
   "files.js?v2",
+  "browser.js?v2",
   "app.js?v17",
   "sw.js"
 ];
@@ -293,7 +295,7 @@ self.addEventListener("periodicsync", function (e) {
     var AGG_MAX_SHOW = 4;
     var show = items.slice(-AGG_MAX_SHOW);
     var body = show.join("\n");
-    var title = snap.name || "Mine";
+    var title = snap.name || "To Regalo";
     if (n > 1) {
       title = title + "（" + n + " 条新消息）";
       if (n > AGG_MAX_SHOW) body += "\n… 共 " + n + " 条新消息";

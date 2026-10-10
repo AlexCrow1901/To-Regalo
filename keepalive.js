@@ -353,10 +353,10 @@ window.MineKeepalive = (function () {
     psyncWriteChain = psyncWriteChain.then(function () {
       return psyncGet(PSYNC_SNAP_KEY).then(function (snap) {
         if (!snap || typeof snap !== "object") {
-          snap = { v: 1, ts: Date.now(), name: "Mine", convKey: convKey || null, texts: [] };
+          snap = { v: 1, ts: Date.now(), name: "To Regalo", convKey: convKey || null, texts: [] };
         }
         if (Date.now() - (snap.ts || 0) > PSYNC_SNAP_TTL) {
-          snap = { v: 1, ts: Date.now(), name: snap.name || "Mine", convKey: convKey || snap.convKey || null, texts: [] };
+          snap = { v: 1, ts: Date.now(), name: snap.name || "To Regalo", convKey: convKey || snap.convKey || null, texts: [] };
         }
         snap.ts = Date.now();
         /* 全量查重：最近 30 分钟内的同文本不重复入 */
@@ -524,7 +524,7 @@ window.MineKeepalive = (function () {
       };
       if (opts && opts.image) o.icon = opts.image;
       if (opts && opts.vibrate) o.vibrate = opts.vibrate;
-      var n = new Notification(title || "Mine", o);
+      var n = new Notification(title || "To Regalo", o);
       n.onclick = function () {
         try { window.focus(); } catch (e) {}
         try { n.close(); } catch (e) {}
@@ -563,7 +563,7 @@ window.MineKeepalive = (function () {
           };
           if (it.opts && it.opts.image) o.icon = it.opts.image;
           if (it.opts && it.opts.vibrate) o.vibrate = it.opts.vibrate;
-          registration.showNotification(it.title || "Mine", o).catch(function () {
+          registration.showNotification(it.title || "To Regalo", o).catch(function () {
             pending.push(it);
           });
         });
@@ -608,7 +608,7 @@ window.MineKeepalive = (function () {
     if (!text) text = "(新消息)";
     if (!aggByConv[convKey]) {
       aggByConv[convKey] = {
-        title: title || "Mine",
+        title: title || "To Regalo",
         convKey: opts.convKey || null,
         kind: opts.kind || "msg",
         image: opts.image || null,

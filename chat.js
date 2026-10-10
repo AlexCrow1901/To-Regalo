@@ -357,7 +357,9 @@ window.MineChat = (function () {
     var bg = getConvBg(ctx.convKey);
     var msgArea = pageEl.querySelector(".chat-messages");
     if (bg) {
-      pageEl.style.setProperty("--chat-bg-image", "url(" + bg + ")");
+      /* dataURL 含 ; ' 等字符，url() 必须加引号，否则 CSS 解析失败、
+         自定义背景不生效（表现为被主题底色覆盖） */
+      pageEl.style.setProperty("--chat-bg-image", "url(\"" + bg + "\")");
       if (msgArea) msgArea.classList.add("has-custom-bg");
     } else {
       pageEl.style.removeProperty("--chat-bg-image");

@@ -101,7 +101,7 @@ window.MineProfile = (function () {
       '<div class="func-icon">' + I.svg("chat", 20) + '</div>' +
       '<div class="func-text">' +
         '<span class="func-title">聊天气泡</span>' +
-        '<span class="func-sub">自定义聊天气泡样式（即将上线）</span>' +
+        '<span class="func-sub">上传图片作为双方聊天气泡皮肤，可随时清除</span>' +
       '</div>' +
       '<span class="chevron">' + I.svg("back", 18) + '</span>' +
       '</div>';
@@ -109,7 +109,7 @@ window.MineProfile = (function () {
       '<div class="func-icon">' + I.svg("droplet", 20) + '</div>' +
       '<div class="func-text">' +
         '<span class="func-title">系统主题</span>' +
-        '<span class="func-sub">自定义系统主题（即将上线）</span>' +
+        '<span class="func-sub">上传图片作为全局主题背景，可随时清除</span>' +
       '</div>' +
       '<span class="chevron">' + I.svg("back", 18) + '</span>' +
       '</div>';
@@ -186,17 +186,17 @@ window.MineProfile = (function () {
       });
     }
 
-    // 聊天气泡 / 系统主题入口（本期占位，后期支持增删导入）
+    // 聊天气泡 / 系统主题入口 → 打开上传管理器
     var bubbleBtn = pageEl.querySelector('[data-act="open-bubble"]');
     if (bubbleBtn) {
       bubbleBtn.addEventListener("click", function () {
-        showToast("聊天气泡即将上线，敬请期待");
+        if (window.MineLook) window.MineLook.openBubbleManager();
       });
     }
     var themeBtn = pageEl.querySelector('[data-act="open-theme"]');
     if (themeBtn) {
       themeBtn.addEventListener("click", function () {
-        showToast("系统主题即将上线，敬请期待");
+        if (window.MineLook) window.MineLook.openThemeManager();
       });
     }
 

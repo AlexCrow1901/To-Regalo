@@ -76,7 +76,7 @@ window.MineBrowser = (function () {
         '<div class="browser-body">' +
           '<iframe class="browser-frame" id="browser-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" referrerpolicy="no-referrer"></iframe>' +
           '<div class="browser-start" id="browser-start">' +
-            '<div class="browser-start-title">Mine 浏览器</div>' +
+            '<div class="browser-start-title" style="font-style:italic;font-family:Georgia,\'Times New Roman\',serif;">To Regalo 浏览器</div>' +
             '<div class="browser-start-sub">在顶部输入网址开始浏览 · 更多功能敬请期待</div>' +
             '<div class="browser-quick">' +
               QUICK.map(function (q) {
