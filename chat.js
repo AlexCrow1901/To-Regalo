@@ -844,10 +844,85 @@ window.MineChat = (function () {
     if (texts.length === 0) return null;
     return texts[Math.floor(Math.random() * texts.length)];
   }
-  /** 联系人回复来源决策：命中「组字卡发送」概率 → 先实时组新卡（系统审批，通过即发），
-      失败/低分回退到已通过字卡池；其余概率使用原有字卡（我的字卡 + 联系人字卡 + 系统字卡）。 */
+  /* ==================== 拼字卡（多张字卡随机拼接发送） ====================
+     规则：
+     · 联系人发送消息时按「拼字卡发送」概率（默认 25%，可配置）发送拼字卡消息
+     · 字卡总数在「拼字卡最少/最多条数」之间随机（默认 1~3 条，可配置）
+     · 字卡间衔接符随机均等：直接连 / 空格 / 逗号 / 句号 / 感叹号 / 圆括号(包裹后卡) / emoji 字卡
+     · 每条消息 50% 概率随机切割其中一张字卡，切割符随机均等：
+       逗号 / 空格 / 感叹号 / emoji / 圆括号(包裹后半段)，例「我爱你」→「我，爱你」「我爱（你）」
+     · 只拼文字字卡与 emoji 字卡（图片/语音无法拼接） */
+  var COMBO_EMOJI_FALLBACK = ["🤔", "😊", "🥰", "😘", "😄", "❤️", "✨", "😆", "👍", "😳"];
+  function comboEmojiFrom(emojis) {
+    if (emojis && emojis.length > 0) {
+      return emojis[Math.floor(Math.random() * emojis.length)];
+    }
+    return COMBO_EMOJI_FALLBACK[Math.floor(Math.random() * COMBO_EMOJI_FALLBACK.length)];
+  }
+  /** 切割单张字卡：随机位置插入随机分隔符（逗号/空格/感叹号/emoji/括号包裹） */
+  function cutComboCard(card, emojis) {
+    var chars = Array.from(card);
+    if (chars.length < 2) return card;
+    var pos = 1 + Math.floor(Math.random() * (chars.length - 1));
+    var k = Math.floor(Math.random() * 5);
+    if (k === 4) {
+      return chars.slice(0, pos).join("") + "（" + chars.slice(pos).join("") + "）";
+    }
+    var sep = k === 0 ? "，" : (k === 1 ? " " : (k === 2 ? "！" : comboEmojiFrom(emojis)));
+    return chars.slice(0, pos).join("") + sep + chars.slice(pos).join("");
+  }
+  /** 拼接多张字卡：卡间随机衔接符（直接/空格/逗号/句号/感叹号/括号/emoji 均等） */
+  function joinComboCards(picked, emojis) {
+    var out = picked[0];
+    for (var i = 1; i < picked.length; i++) {
+      var j = Math.floor(Math.random() * 7);
+      if (j === 0) out += picked[i];
+      else if (j === 1) out += " " + picked[i];
+      else if (j === 2) out += "，" + picked[i];
+      else if (j === 3) out += "。" + picked[i];
+      else if (j === 4) out += "！" + picked[i];
+      else if (j === 5) out += "（" + picked[i] + "）";
+      else out += comboEmojiFrom(emojis) + picked[i];
+    }
+    return out;
+  }
+  /** 生成一条拼字卡消息；无可用字卡返回 null */
+  function buildComboCard(contactId) {
+    var pool = mineCardPool(contactId);
+    if (!pool || pool.length === 0) return null;
+    var texts = filterTextCards(pool);
+    var emojis = filterEmojiCards(pool);
+    var source = texts.length > 0 ? texts : (emojis.length > 0 ? emojis : []);
+    if (source.length === 0) return null;
+    /* 条数：comboCountMin ~ comboCountMax（整数，防御 min>max） */
+    var min = Math.round(prob("comboCountMin") * 100);
+    var max = Math.round(prob("comboCountMax") * 100);
+    if (!min || min < 1) min = 1;
+    if (!max || max < 1) max = 3;
+    if (min > max) { var t = min; min = max; max = t; }
+    if (max > 8) max = 8;
+    var count = min + Math.floor(Math.random() * (max - min + 1));
+    /* 随机取 count 张（不重复） */
+    var bag = source.slice();
+    var picked = [];
+    for (var i = 0; i < count && bag.length > 0; i++) {
+      picked.push(bag.splice(Math.floor(Math.random() * bag.length), 1)[0]);
+    }
+    if (picked.length === 0) return null;
+    /* 50% 概率随机切割其中一张字卡 */
+    if (Math.random() < 0.5 && picked.length > 0) {
+      var cutIdx = Math.floor(Math.random() * picked.length);
+      picked[cutIdx] = cutComboCard(picked[cutIdx], emojis);
+    }
+    return joinComboCards(picked, emojis);
+  }
+  /** 联系人回复来源决策：拼字卡（默认25%）→ 组字卡（默认50%）→ 原有字卡。 */
   function pickReplyCard(contact) {
     if (!contact) return null;
+    if (Math.random() < prob("comboCard")) {
+      var combo = buildComboCard(contact.id);
+      if (combo) return combo;
+    }
     if (Math.random() < prob("genCard")) {
       /* 实时组字卡（系统审批）：评分 ≥ 阈值直接发出，只用于该次实时聊天，不入池 */
       if (window.MineCardGenerator && window.MineCardGenerator.realtimeCard) {
@@ -860,6 +935,10 @@ window.MineChat = (function () {
     return pickRandomCard(contact);
   }
   function pickReplyCardForGroup(contact, group) {
+    if (contact && Math.random() < prob("comboCard")) {
+      var combo = buildComboCard(contact.id);
+      if (combo) return combo;
+    }
     if (Math.random() < prob("genCard")) {
       if (window.MineCardGenerator && window.MineCardGenerator.realtimeCard) {
         var live = window.MineCardGenerator.realtimeCard(contact.id);
@@ -889,6 +968,10 @@ window.MineChat = (function () {
       未设置时回退原行为（单独字卡 + 公用字卡 + autoCards） */
   function pickRandomAutoCard(contact) {
     if (!contact) return null;
+    if (Math.random() < prob("comboCard")) {
+      var combo = buildComboCard(contact.id);
+      if (combo) return combo;
+    }
     var pool = autoCardPool(contact.id);
     if (pool.length > 0) {
       pool = dedupe(pool.concat(contact.autoCards || []));
@@ -901,6 +984,10 @@ window.MineChat = (function () {
   /** 群聊中合并自动回复字卡后随机抽取
       （单独"自动回复"字卡 + 个人/群 autoCards；未设置时回退单独+公用+autoCards） */
   function pickRandomAutoCardForGroup(contact, group) {
+    if (contact && Math.random() < prob("comboCard")) {
+      var combo = buildComboCard(contact.id);
+      if (combo) return combo;
+    }
     var pool = autoCardPool(contact ? contact.id : null);
     if (pool.length > 0) {
       pool = dedupe(pool

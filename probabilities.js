@@ -28,6 +28,9 @@ window.MineProbs = (function () {
     groupAll:      5,   // 群聊(≥3人)全员回复概率
     genCard:      50,   // 组字卡发送概率：回复时使用「组字卡池」的概率（其余为原有字卡机制）
     recallGenerated: 10, // 实时组卡二次复核：系统审批通过后联系人撤回该条消息的概率
+    comboCard:    25,   // 拼字卡发送概率：联系人发送消息时使用「多张字卡随机拼接」的概率（其余走组字卡/原有字卡）
+    comboCountMin: 1,   // 拼字卡最少使用字卡条数
+    comboCountMax: 3,   // 拼字卡最多使用字卡条数
     /* —— 电话 —— */
     phoneIncoming:        0.5,  // 联系人主动来电概率
     phoneHangup:          2,    // 呼出时对方直接挂断概率
@@ -126,7 +129,10 @@ window.MineProbs = (function () {
         { key: "groupThird",   name: "群聊第三条回复", desc: "群聊出现第三条回复的概率（需至少 3 人可回复）" },
         { key: "groupAll",     name: "群聊全员回复", desc: "群聊全部成员都回复的概率（需至少 4 人可回复）" },
         { key: "genCard",      name: "组字卡发送", desc: "联系人发送信息时使用「组字卡池」的概率（其余为原有字卡，默认各 50%）" },
-        { key: "recallGenerated", name: "组字卡撤回", desc: "实时组卡系统审批通过后，联系人驳回并撤回该条消息的概率（撤回后消息显示为「（撤回）」，点击气泡可展开/收起内容）" }
+        { key: "recallGenerated", name: "组字卡撤回", desc: "实时组卡系统审批通过后，联系人驳回并撤回该条消息的概率（撤回后消息显示为「（撤回）」，点击气泡可展开/收起内容）" },
+        { key: "comboCard",    name: "拼字卡发送", desc: "联系人发送信息时使用「多张字卡随机拼接」消息的概率（默认 25%，其余走组字卡/原有字卡）" },
+        { key: "comboCountMin", name: "拼字卡最少条数", desc: "拼字卡消息最少使用多少张字卡（默认 1 条）", unit: "条" },
+        { key: "comboCountMax", name: "拼字卡最多条数", desc: "拼字卡消息最多使用多少张字卡（默认 3 条，范围 1~8）", unit: "条" }
       ]
     },
     {
@@ -167,25 +173,32 @@ window.MineProbs = (function () {
       '</div>';
 
     var html = tabs +
-      '<div class="card-hint">修改范围为 0~100%，支持一位小数（如 0.5%），点击加减号或直接输入数字，立即生效</div>';
+      '<div class="card-hint">概率修改范围为 0~100%，支持一位小数（如 0.5%）；拼字卡条数项为 1~8 条整数。点击加减号或直接输入数字，立即生效</div>';
     GROUPS.forEach(function (g) {
       if (g.key !== currentTab) return;
       html += '<div class="prob-group-title">' + g.title + '</div>';
       html += '<div class="prob-list">' + g.items.map(function (it) {
         var val = state[it.key];
+        var unit = it.unit || "%";
+        var isCount = unit === "条";
+        var min = isCount ? 1 : 0;
+        var max = isCount ? 8 : 100;
+        var step = isCount ? 1 : 0.1;
         return '<div class="prob-item">' +
           '<div class="prob-head">' +
             '<span class="prob-name">' + it.name + '</span>' +
-            '<span class="prob-value">' + fmt(val) + '%</span>' +
+            '<span class="prob-value">' + fmt(val) + unit + '</span>' +
           '</div>' +
           '<div class="prob-desc">' + it.desc + '</div>' +
           '<div class="prob-ctl">' +
             '<button class="prob-step" data-step="' + it.key + '" data-delta="-1" aria-label="减">' + I.svg("minus", 18) + '</button>' +
-            '<input type="number" class="prob-input" data-key="' + it.key + '" min="0" max="100" step="0.1" value="' + fmt(val) + '">' +
-            '<span class="prob-unit">%</span>' +
+            '<input type="number" class="prob-input" data-key="' + it.key + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + fmt(val) + '">' +
+            '<span class="prob-unit">' + unit + '</span>' +
             '<button class="prob-step" data-step="' + it.key + '" data-delta="1" aria-label="加">' + I.svg("plus", 18) + '</button>' +
-            '<button class="prob-step" data-step="' + it.key + '" data-delta="-5" aria-label="减5">' + I.svg("minus", 18) + '5</button>' +
-            '<button class="prob-step" data-step="' + it.key + '" data-delta="5" aria-label="加5">' + I.svg("plus", 18) + '5</button>' +
+            (isCount
+              ? ''
+              : '<button class="prob-step" data-step="' + it.key + '" data-delta="-5" aria-label="减5">' + I.svg("minus", 18) + '5</button>' +
+                '<button class="prob-step" data-step="' + it.key + '" data-delta="5" aria-label="加5">' + I.svg("plus", 18) + '5</button>') +
           '</div>' +
         '</div>';
       }).join("") + '</div>';
@@ -217,7 +230,7 @@ window.MineProbs = (function () {
         var input = container.querySelector('[data-key="' + key + '"]');
         if (input) input.value = fmt(get(key));
         var row = input ? input.closest(".prob-item") : null;
-        if (row) row.querySelector(".prob-value").textContent = fmt(get(key)) + "%";
+        if (row) row.querySelector(".prob-value").textContent = fmt(get(key)) + (row.querySelector(".prob-unit").textContent || "%");
       });
     });
 
@@ -230,7 +243,7 @@ window.MineProbs = (function () {
         set(key, v);
         input.value = fmt(get(key));
         var row = input.closest(".prob-item");
-        if (row) row.querySelector(".prob-value").textContent = fmt(get(key)) + "%";
+        if (row) row.querySelector(".prob-value").textContent = fmt(get(key)) + (row.querySelector(".prob-unit").textContent || "%");
       };
       input.addEventListener("change", commit);
       input.addEventListener("blur", commit);
