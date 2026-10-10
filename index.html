@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Mine" />
-  <meta name="app-version" content="1.0.1" />
+  <meta name="app-version" content="1.0.2" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>Mine</title>
@@ -117,6 +117,10 @@
   <script src="probabilities.js?v7"></script>
   <script src="contacts.js?v23"></script>
   <script src="cards.js?v8"></script>
+  <!-- 字卡生成器：词库 → 引擎（拼音还原+评分）→ 生成器（双路生成+双轨审批），依赖 MineCards -->
+  <script src="lexicon.js?v1"></script>
+  <script src="lexicon-engine.js?v1"></script>
+  <script src="lexicon-card-generator.js?v1"></script>
   <script src="chat.js?v58"></script>
   <!-- 电话模块（依赖 MineContacts / MineIcons） -->
   <script src="phone.js?v5"></script>
