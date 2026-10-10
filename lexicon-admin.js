@@ -183,8 +183,8 @@ window.MineLexiconAdmin = (function () {
       if (r.blocked) {
         res.innerHTML = '<div class="card-hint">已达每小时上限（' + r.limit + ' 个），请 ' + r.nextIn + ' 分钟后再试</div>';
       } else {
-        res.innerHTML = '<div class="card-hint">已生成 ' + r.created + ' 个：自动通过 ' + r.auto +
-          ' · 待审批 ' + r.pending + ' · 丢弃 ' + r.dropped + (r.dup ? ' · 重复跳过 ' + r.dup : '') + '</div>';
+        res.innerHTML = '<div class="card-hint">已生成 ' + r.created + ' 个：待审批 ' + r.pending +
+          ' · 丢弃 ' + r.dropped + (r.dup ? ' · 重复跳过 ' + r.dup : '') + '（后台组卡全部人工审批，无自动通过）</div>';
         renderPendingList();
       }
     });
@@ -275,7 +275,7 @@ window.MineLexiconAdmin = (function () {
     var routeTag = it.route === "pinyin"
       ? '<span style="background:#fdf0e6;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">拼音</span>'
       : '<span style="background:#e8f1fb;color:#2563a8;padding:1px 6px;border-radius:4px;font-size:11px;">模板</span>';
-    var src = it.judgedBy === "manual" ? "人工批准" : "AI 自动通过";
+    var src = (it.source === "realtime" || it.judgedBy === "ai") ? "实时字卡" : "人工批准";
     var owner = it.contactId && it.contactId !== "global"
       ? '<span style="background:#f3f0fa;color:#6c4ab6;padding:1px 6px;border-radius:4px;font-size:11px;">' + esc(contactName(it.contactId)) + '专用</span>'
       : '<span style="background:#eafaf1;color:#1d8348;padding:1px 6px;border-radius:4px;font-size:11px;">公用</span>';
@@ -318,19 +318,21 @@ window.MineLexiconAdmin = (function () {
       if (kw && it.text.indexOf(kw) < 0) return false;
       return true;
     });
-    /* 分两栏：自动通过 / 人工批准 */
-    var autoList = list.filter(function (it) { return it.judgedBy !== "manual"; });
-    var manualList = list.filter(function (it) { return it.judgedBy === "manual"; });
+    /* 分两栏：实时字卡（实时组卡入池，均经你审批）/ 人工批准（后台组卡入池，经你审批） */
+    var autoList = list.filter(function (it) { return it.source === "realtime" || it.judgedBy === "ai"; });
+    var manualList = list.filter(function (it) { return it.source !== "realtime" && it.judgedBy !== "ai"; });
+    var poolAuto = pool.filter(function (it) { return it.source === "realtime" || it.judgedBy === "ai"; }).length;
+    var poolManual = pool.length - poolAuto;
     var inner =
       '<div class="group-head">统计</div>' +
-      '<div class="card-hint">自动通过 ' + stats.auto + ' · 人工批准 ' + stats.approved +
+      '<div class="card-hint">实时字卡 ' + poolAuto + ' · 人工批准 ' + poolManual +
         ' · 待审批 ' + stats.pending + ' · 拒绝 ' + stats.rejected + ' · 丢弃 ' + stats.dropped + '</div>' +
       '<div class="group-head">筛选</div>' +
       '<div style="padding:0 12px 6px;display:flex;gap:6px;flex-wrap:wrap;">' +
         '<select id="pl-filter" style="flex:1;min-width:110px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' + opts + '</select>' +
         '<input id="pl-search" placeholder="搜索已通过字卡…" value="' + esc(poolState.kw) + '" style="flex:1.4;min-width:140px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
       '</div>' +
-      '<div class="group-head">自动通过（' + autoList.length + ' / ' + pool.length + '）</div>' +
+      '<div class="group-head">实时字卡（' + autoList.length + ' / ' + pool.length + '）</div>' +
       '<div id="cg-pool-auto"></div>' +
       '<div class="group-head">人工批准（' + manualList.length + '）</div>' +
       '<div id="cg-pool-manual"></div>';
@@ -348,7 +350,7 @@ window.MineLexiconAdmin = (function () {
     });
     if (!list.length) {
       var box = detail.querySelector("#cg-pool-auto");
-      if (box) box.innerHTML = '<div class="card-hint">' + (pool.length ? '没有符合条件的字卡，试试调整筛选/搜索。' : '还没有通过的字卡。去「字卡审批」生成一批，或调低自动阈值让更多候选自动通过。') + '</div>';
+      if (box) box.innerHTML = '<div class="card-hint">' + (pool.length ? '没有符合条件的字卡，试试调整筛选/搜索。' : '还没有通过的字卡。实时组卡或后台组卡经你审批通过后会出现在这里。') + '</div>';
       return;
     }
     renderPoolItems(detail.querySelector("#cg-pool-auto"), autoList);
@@ -440,17 +442,15 @@ window.MineLexiconAdmin = (function () {
     var inner =
       '<div class="group-head">生成比例</div>' +
       row("rg-template", "模板路占比", "句法模板生成的字卡比例（其余为拼音路）", cfg.templateRatio * 100, "%", 0, 100, 5) +
-      '<div class="group-head">置信度阈值（AI 评分审批）</div>' +
-      row("rg-auto", "自动通过阈值", "评分 ≥ 此值：自动通过（实时发送 + 入池）", cfg.autoThreshold * 100, "%", 50, 100, 5) +
-      row("rg-manual", "人工审批下限", "评分 ≥ 此值且 < 自动阈值：进入人工审批", cfg.manualLow * 100, "%", 30, 70, 5) +
-      '<div class="card-hint" style="margin:0 12px;">分档：≥' + Math.round(cfg.autoThreshold * 100) + '% 实时发送 · ' +
-        Math.round(cfg.manualLow * 100) + '%~' + Math.round(cfg.autoThreshold * 100) + '% 人工审批 · <' +
-        Math.round(cfg.manualLow * 100) + '% 丢弃</div>' +
+      '<div class="group-head">置信度阈值（评分审批）</div>' +
+      row("rg-auto", "实时组卡阈值", "评分 ≥ 此值：实时组卡通过并实时发送（入池仍需你审批）", cfg.autoThreshold * 100, "%", 50, 100, 5) +
+      row("rg-manual", "人工审批下限", "评分 ≥ 此值：后台组卡进入人工审批（低分丢弃）", cfg.manualLow * 100, "%", 30, 70, 5) +
+      '<div class="card-hint" style="margin:0 12px;">后台组卡：≥' + Math.round(cfg.manualLow * 100) + '% 人工审批 · <' +
+        Math.round(cfg.manualLow * 100) + '% 丢弃；实时组卡：≥' + Math.round(cfg.autoThreshold * 100) +
+        '% 实时发送（发送后转入待审批，你通过才入池）</div>' +
       '<div class="group-head">运行规则</div>' +
       selRow("rg-batch", "每次生成数量", "单次「生成一批」的候选数", cfg.batchSize, [1, 2, 3, 5, 10]) +
       selRow("rg-max", "每小时候选数上限", "每个联系人每小时最多生成的候选数", cfg.maxPerHour, [5, 10, 20, 50, 100]) +
-      switchRow("rg-pool", "自动入字卡池", "自动通过的字卡写入公用字卡池（聊天/主动消息可用）", cfg.autoAddToPool) +
-      switchRow("rg-send", "实时发送", "自动通过的字卡立即作为该联系人消息发送", cfg.realtimeSend) +
       '<div class="group-head">本地训练</div>' +
       selRow("rg-train-batch", "训练批量", "攒满多少条人工审批样本后自动批量训练一次", cfg.trainBatchSize, [10, 20, 30, 50]) +
       '<div class="group-head">后台组卡调度</div>' +
@@ -467,7 +467,7 @@ window.MineLexiconAdmin = (function () {
       rowText("rg-ai-key", "API Key", "存储在本机浏览器（请注意保管，勿外泄）", cfg.aiApiKey, "") +
       '<div class="group-head">AI 灰色区间</div>' +
       row("rg-ai-low", "灰色区间下限", "评分低于此值不送 AI（直接按本地分处理）", Math.round((cfg.aiGrayLow || 0.4) * 100), "%", 10, 60, 5) +
-      row("rg-ai-high", "灰色区间上限", "评分高于此值不送 AI（自动通过）", Math.round((cfg.aiGrayHigh || 0.85) * 100), "%", 60, 95, 5) +
+      row("rg-ai-high", "灰色区间上限", "评分高于此值不送 AI（直接按本地分处理）", Math.round((cfg.aiGrayHigh || 0.85) * 100), "%", 60, 95, 5) +
       '<div style="padding:14px 12px;">' +
         '<button id="rg-save" style="width:100%;padding:12px;border-radius:10px;background:#4a90d9;color:#fff;border:none;font-size:14px;">' + iconSvg("check", 14) + ' 保存运行规则</button>' +
       '</div>' +
@@ -482,8 +482,6 @@ window.MineLexiconAdmin = (function () {
         manualLow: (parseFloat(detail.querySelector("#rg-manual").value) || 50) / 100,
         batchSize: parseInt(detail.querySelector("#rg-batch").value, 10) || 3,
         maxPerHour: parseInt(detail.querySelector("#rg-max").value, 10) || 10,
-        autoAddToPool: detail.querySelector("#rg-pool").checked,
-        realtimeSend: detail.querySelector("#rg-send").checked,
         trainBatchSize: parseInt(detail.querySelector("#rg-train-batch").value, 10) || 20,
         backlogMax: parseInt(detail.querySelector("#rg-backlog-max").value, 10) || 20,
         reqTimeout: parseInt(detail.querySelector("#rg-req-timeout").value, 10) || 15,

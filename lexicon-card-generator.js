@@ -745,18 +745,9 @@ window.MineCardGenerator = (function () {
         item.conf = Math.max(0, Math.min(1, ai.conf));
         item.aiNote = ai.note || null;
       }
-      /* 分档用最终分数（AI 启用且返回时以 AI 分为准，否则为本地分） */
-      if (item.conf >= cfg.autoThreshold) {
-        item.status = "auto";
-        item.judgedBy = "ai";
-        if (cfg.autoAddToPool) addToPublicPool(gen.text);
-        /* 实时发送联动：指定了联系人且开启实时发送 → 直接作为对方消息入会话 */
-        if (cfg.realtimeSend && cid !== "global" && window.MineChat && window.MineChat.sendGeneratedCard) {
-          var sr = window.MineChat.sendGeneratedCard(cid, gen.text);
-          item.sentTo = sr && sr.ok ? cid : null;
-        }
-        autoN++;
-      } else if (item.conf >= cfg.manualLow) {
+      /* 后台组卡全部人工审批（无自动通过）：评分 ≥ 人工下限 → 进待审批队列；低分丢弃。
+         autoThreshold 仅用于实时组卡（realtimeCard）的实时发出判定。 */
+      if (item.conf >= cfg.manualLow) {
         item.status = "pending";               /* 人工审批队列 */
         item.judgedBy = "ai";
         pendingN++;
@@ -825,10 +816,10 @@ window.MineCardGenerator = (function () {
     saveLast(last);
   }
 
-  /* ==================== 实时聊天组卡（系统审批，不入池） ====================
-     联系人在实时聊天中组字卡：走系统审批（评分 ≥ 自动阈值 → 通过可发出），
-     只存在于该次实时聊天，不自动入字卡池；低分被系统拦截。
-     模板路自动通过并发出 → 弱正训练样本（权重 0.5）；低分拦截不计入训练。
+  /* ==================== 实时聊天组卡（系统审批即发，入池需你审批） ====================
+     联系人在实时聊天中组字卡：系统审批（评分 ≥ 自动阈值 → 通过）后**实时发出**，
+     聊天体验不变；但该卡**不会自动入池**，转为待审批（来源标记「实时字卡」），
+     你审批通过后才进入字卡池（实时字卡栏）；低分被系统拦截。
      发送动作由 chat.js 调用方完成（sendGeneratedCard）。 */
   function realtimeCard(cid) {
     var cfg = getConfig();
@@ -840,7 +831,7 @@ window.MineCardGenerator = (function () {
       text: gen.text, input: gen.input, route: gen.route,
       syntax: ev.syntax, fluency: ev.fluency, conf: ev.conf,
       restoreConf: gen.restoreConf || null, candidates: gen.candidates || [],
-      status: "auto", judgedBy: "ai", source: "realtime",
+      status: "pending", judgedBy: null, source: "realtime",
       contactId: cid || "global",
       createdAt: Date.now(),
       genWords: gen.words || []
@@ -848,10 +839,24 @@ window.MineCardGenerator = (function () {
     if (ev.conf >= cfg.autoThreshold) {
       item.sentTo = cid || null;
       var items = getItems();
-      items.push(item);
-      saveItems(items);
-      /* 弱正样本：系统自动通过并实际发出（只模板路） */
-      trainCollect(item, 1, 0.5);
+      /* 实时发出（系统审批通过即发，仅实时聊天使用，不入池） */
+      /* 去重：待审批/已入池已有同文本卡则不重复添加（避免审批堆积） */
+      var dup = items.some(function (it) {
+        return it.text === gen.text && (it.status === "pending" || it.status === "approved" || it.status === "auto");
+      });
+      if (!dup) {
+        items.push(item);
+        saveItems(items);
+        /* 审批通知：与后台组卡一致 */
+        var N = window.MineKeepalive;
+        if (N && N.notify) {
+          try {
+            N.notify("字卡审批", "联系人实时发送了一张字卡，待你审批", { kind: "cards-approve" });
+          } catch (e) {}
+        }
+      } else {
+        saveItems(items);
+      }
       return { ok: true, text: gen.text, conf: ev.conf, item: item };
     }
     /* 低分拦截：记录为 dropped 供统计，不计入训练 */
