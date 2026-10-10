@@ -1032,6 +1032,27 @@
   vertical-align: middle;
 }
 
+/* 撤回消息（联系人二次复核驳回）：默认只显示「（撤回）」，点击气泡展开/收起内容 */
+.msg-bubble.is-recalled {
+  cursor: pointer;
+  color: var(--t-tertiary);
+  background: rgba(160, 176, 188, 0.10);
+  font-style: italic;
+}
+.recalled-tag {
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.recalled-text {
+  display: none;
+  font-style: normal;
+  color: var(--t-secondary);
+}
+.msg-bubble.is-recalled.is-revealed .recalled-text {
+  display: inline;
+}
+
 /* 自动回复字卡样式（管理列表中） */
 .autocard-item {
   border-left: 2px solid rgba(160, 176, 188, 0.25);

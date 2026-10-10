@@ -158,6 +158,9 @@ window.MineChat = (function () {
     var senderName = contact.name || "未知";
     var senderAvatar = contact.avatar || null;
     var beforeLen = msgs.length;
+    /* 联系人二次复核：系统审批通过后，联系人仍有概率（默认 10%）驳回并撤回消息。
+       撤回消息保留原文（用户点击气泡可展开/收起），仅标记 recalled。 */
+    var recalled = Math.random() < prob("recallGenerated");
     msgs.push({
       id: uid(),
       from: contact.id,
@@ -165,6 +168,7 @@ window.MineChat = (function () {
       time: Date.now(),
       isProactive: true,
       isGenerated: true,
+      recalled: recalled || undefined,
       senderName: senderName,
       senderAvatar: senderAvatar
     });
@@ -778,12 +782,12 @@ window.MineChat = (function () {
    * · 图片字卡概率 imageCard（默认 5%）
    * · emoji 字卡概率 emojiCard（默认 10%）
    * · 语音字卡概率 audioCard（默认 3%）
-   * · 系统字卡概率 sysCard（默认 10%，所有联系人可用）
    * · 其余从文字字卡随机抽取；无文字字卡则从全池随机抽取
+   * 说明：v1.0.10 起「系统字卡」已并入「我的字卡」统一池（getReplyPool 含 sys），
+   *       不再按独立 sysCard 概率抽取。
    */
   function pickCardWithImageChance(pool) {
     if (!pool || pool.length === 0) return null;
-    var sysCards = window.MineCards && window.MineCards.getSysCards ? window.MineCards.getSysCards() : [];
     var imageCards = filterImageCards(pool);
     var emojiCards = filterEmojiCards(pool);
     var audioCards = filterAudioCards(pool);
@@ -797,16 +801,8 @@ window.MineChat = (function () {
     if (audioCards.length > 0 && Math.random() < prob("audioCard")) {
       return audioCards[Math.floor(Math.random() * audioCards.length)];
     }
-    /* 系统字卡：所有联系人均可使用，独立发送概率（可配置） */
-    if (sysCards.length > 0 && Math.random() < prob("sysCard")) {
-      return sysCards[Math.floor(Math.random() * sysCards.length)];
-    }
     if (textCards.length > 0) {
       return textCards[Math.floor(Math.random() * textCards.length)];
-    }
-    /* 兜底：仅剩系统字卡时使用 */
-    if (sysCards.length > 0) {
-      return sysCards[Math.floor(Math.random() * sysCards.length)];
     }
     return pool[Math.floor(Math.random() * pool.length)];
   }
@@ -1200,6 +1196,14 @@ window.MineChat = (function () {
     if (msg.isAutoReply) {
       autoTag = '<span class="auto-reply-tag">自动回复</span>';
     }
+    // 撤回消息（联系人二次复核驳回）：默认显示"（撤回）"，点击气泡展开/收起内容
+    var recalledWrap = "";
+    if (msg.recalled) {
+      bubbleClass += " is-recalled";
+      recalledWrap = '<span class="recalled-tag">（撤回）</span>' +
+        '<span class="recalled-text">' + bubbleText + '</span>';
+      bubbleText = "";
+    }
     // 已读对勾（仅我的消息且已读时才显示）
     var readMark = "";
     if (isMe && msg.read) {
@@ -1209,7 +1213,7 @@ window.MineChat = (function () {
       (isMe ? "" : avatarHTML) +
       '<div class="msg-content">' +
         senderNameHTML +
-        '<div class="msg-bubble ' + bubbleClass + '">' + autoTag + bubbleText + '</div>' +
+        '<div class="msg-bubble ' + bubbleClass + '">' + autoTag + (recalledWrap || bubbleText) + '</div>' +
         '<div class="msg-time">' + readMark +
         '<span class="time-text" data-time="' + fmtTime(msg.time) + '" data-date="' + fmtDateSep(msg.time) + '">' + fmtTime(msg.time) + '</span>' +
         '</div>' +
@@ -1357,6 +1361,12 @@ window.MineChat = (function () {
         timeEl.textContent = timeEl.getAttribute("data-time");
         timeEl.setAttribute("data-show", "time");
       }
+    });
+    // 点击撤回消息气泡 → 展开/收起撤回内容
+    msgContainer.addEventListener("click", function (e) {
+      var bubble = e.target.closest ? e.target.closest(".msg-bubble.is-recalled") : null;
+      if (!bubble) return;
+      bubble.classList.toggle("is-revealed");
     });
     // 点击对方头像 → 跳转到联系人主页
     msgContainer.addEventListener("click", function (e) {

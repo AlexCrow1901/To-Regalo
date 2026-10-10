@@ -424,6 +424,15 @@ window.MineCardGenerator = (function () {
       backlog[cid] = now;
     });
     saveBacklog(backlog);
+    /* 有新的后台组卡进入待审批 → 发送通知（与联系人消息通知一致） */
+    if (made > 0) {
+      var N = window.MineKeepalive;
+      if (N && N.notify) {
+        try {
+          N.notify("字卡审批", "联系人生成了 " + made + " 张新字卡，待你审批", { kind: "cards-approve" });
+        } catch (e) {}
+      }
+    }
     return { made: made, requests: reqMade, autoed: exp.autoed, backlogMax: cfg.backlogMax };
   }
 

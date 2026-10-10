@@ -155,8 +155,12 @@ window.MineLexiconAdmin = (function () {
     var reqs = G.getLimitRequests();
     var inner =
       (reqs.length ? '<div class="group-head">上限调整申请（' + reqs.length + '）</div>' + '<div id="cg-limit-reqs"></div>' : '') +
-      '<div class="group-head">生成字卡</div>' +
-      '<div class="card-hint">选择联系人后生成：评分 ≥ 自动阈值 的字卡将实时发送给对方并入字卡池；中等分进入下方待审批队列；低分自动丢弃。生成频率受「每小时候选数」限制。</div>' +
+      '<div class="group-head">待人工审批（' + pending.length + '）</div>' +
+      '<div class="card-hint">联系人随时主动组字卡，新卡到达时会收到通知 · 全部由你人工审批：通过后进入对应联系人字卡池，拒绝则丢弃</div>' +
+      '<div id="cg-pending-list"></div>' +
+      '<div class="list-sep"></div>' +
+      '<div class="group-head">手动生成（测试用）</div>' +
+      '<div class="card-hint">选择联系人手动触发一批组字卡，用于调试/体验；日常字卡由联系人主动组卡产生。</div>' +
       '<div style="padding:0 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
         '<select id="cg-contact" style="flex:1;min-width:130px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' + opts + '</select>' +
         '<select id="cg-count" style="width:76px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
@@ -164,9 +168,7 @@ window.MineLexiconAdmin = (function () {
         '</select>' +
         '<button class="chat-bg-btn" id="cg-run" style="padding:8px 16px;border-radius:8px;background:#4a90d9;color:#fff;border:none;font-size:13px;">' + iconSvg("send", 14) + ' 生成一批</button>' +
       '</div>' +
-      '<div id="cg-result" style="padding:6px 12px 0;"></div>' +
-      '<div class="group-head">待人工审批（' + pending.length + '）</div>' +
-      '<div id="cg-pending-list"></div>';
+      '<div id="cg-result" style="padding:6px 12px 0;"></div>';
     pageShell("approve", inner);
     var detail = document.getElementById("page-detail");
     /* 进入审批页先跑一次调度检查（处理过期申请 + 补跑到期的小时组卡） */

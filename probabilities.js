@@ -21,13 +21,13 @@ window.MineProbs = (function () {
     imageCard:     5,   // 图片字卡发送概率
     emojiCard:    10,   // emoji 字卡发送概率
     audioCard:     3,   // 语音字卡发送概率
-    sysCard:      10,   // 系统字卡发送概率（所有联系人可用）
     emojiAttach:  15,   // 文字字卡附带 emoji 概率
     silentChance:  1,   // 自动回复沉默概率
     groupSecond:  40,   // 群聊(≤2人)第二条回复概率
     groupThird:   15,   // 群聊(≥3人)第三条回复概率
     groupAll:      5,   // 群聊(≥3人)全员回复概率
     genCard:      50,   // 组字卡发送概率：回复时使用「组字卡池」的概率（其余为原有字卡机制）
+    recallGenerated: 10, // 实时组卡二次复核：系统审批通过后联系人撤回该条消息的概率
     /* —— 电话 —— */
     phoneIncoming:        0.5,  // 联系人主动来电概率
     phoneHangup:          2,    // 呼出时对方直接挂断概率
@@ -120,13 +120,13 @@ window.MineProbs = (function () {
         { key: "imageCard",    name: "图片字卡发送", desc: "对方回复时发送图片字卡的概率" },
         { key: "emojiCard",    name: "emoji 字卡发送", desc: "对方回复时发送 emoji 字卡的概率" },
         { key: "audioCard",    name: "语音字卡发送", desc: "对方回复时发送语音字卡的概率" },
-        { key: "sysCard",      name: "系统字卡发送", desc: "回复时发送系统字卡的概率（所有联系人可用）" },
         { key: "emojiAttach",  name: "文字附带 emoji", desc: "文字回复时附带 emoji 字卡的概率" },
         { key: "silentChance", name: "自动回复沉默", desc: "触发自动回复（而非普通回复）的概率" },
         { key: "groupSecond",  name: "群聊第二条回复", desc: "群聊出现第二条回复的概率（任意人数群聊均生效，需至少 2 人可回复）" },
         { key: "groupThird",   name: "群聊第三条回复", desc: "群聊出现第三条回复的概率（需至少 3 人可回复）" },
         { key: "groupAll",     name: "群聊全员回复", desc: "群聊全部成员都回复的概率（需至少 4 人可回复）" },
-        { key: "genCard",      name: "组字卡发送", desc: "联系人发送信息时使用「组字卡池」的概率（其余为原有字卡，默认各 50%）" }
+        { key: "genCard",      name: "组字卡发送", desc: "联系人发送信息时使用「组字卡池」的概率（其余为原有字卡，默认各 50%）" },
+        { key: "recallGenerated", name: "组字卡撤回", desc: "实时组卡系统审批通过后，联系人驳回并撤回该条消息的概率（撤回后消息显示为「（撤回）」，点击气泡可展开/收起内容）" }
       ]
     },
     {

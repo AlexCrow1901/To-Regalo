@@ -122,17 +122,17 @@ window.MineProfile = (function () {
       '<div class="func-icon">' + I.svg("me", 20) + '</div>' +
       '<div class="func-text">' +
         '<span class="func-title">我的字卡</span>' +
-        '<span class="func-sub">公用字卡所有联系人回复可用 · 单独字卡仅指定联系人 · 自动回复用单独字卡中的自动回复</span>' +
+        '<span class="func-sub">你自行添加的字卡（公用 + 系统预设已合并）· 单独字卡仅指定联系人</span>' +
       '</div>' +
       '<span class="chevron">' + I.svg("back", 18) + '</span>' +
       '</div>';
 
-    // 系统字卡（内容后期新增）
+    // 系统字卡（你审批通过的字卡）
     html += '<div class="func-row" role="button" tabindex="0" data-act="open-sys-cards">' +
       '<div class="func-icon">' + I.svg("bookmark", 20) + '</div>' +
       '<div class="func-text">' +
         '<span class="func-title">系统字卡</span>' +
-        '<span class="func-sub">系统预设字卡，可整体/单张开关，可自行添加</span>' +
+        '<span class="func-sub">你审批通过的字卡（来自字卡池），可删除</span>' +
       '</div>' +
       '<span class="chevron">' + I.svg("back", 18) + '</span>' +
       '</div>';
@@ -219,6 +219,18 @@ window.MineProfile = (function () {
           inline.hidden = false;
           if (window.MineProbs && MineProbs.renderInline) MineProbs.renderInline(inline);
           if (chevron) chevron.classList.add("is-open");
+          /* 展开后自动滚动到分栏区域：内容较长时会渲染在视口下方，
+             不滚动的话用户会误以为"点击没反应"（v1.0.10 体验优化） */
+          setTimeout(function () {
+            try {
+              var sc = pageEl.querySelector(".me-scroll");
+              if (sc) {
+                var r = inline.getBoundingClientRect();
+                var sr = sc.getBoundingClientRect();
+                sc.scrollTop += Math.max(0, r.top - sr.top - 90);
+              }
+            } catch (e) {}
+          }, 60);
         } else {
           inline.hidden = true;
           if (chevron) chevron.classList.remove("is-open");
