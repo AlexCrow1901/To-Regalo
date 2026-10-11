@@ -92,6 +92,7 @@ window.MineCardGenerator = (function () {
         if (L.words.indexOf(e) < 0) L.words.push(e);   /* 拼音路高频池可见 */
       });
     } catch (e) {}
+    perCacheDirty = true;   /* 全局词变化 → 联系人词缓存失效（下次重建） */
   }
   function saveCustom(arr) {
     try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(arr || [])); } catch (e) {}
@@ -370,7 +371,7 @@ window.MineCardGenerator = (function () {
   /* 单条后台组卡候选（模板/拼音两路随机，全部进人工审批队列） */
   function backlogCard(cid) {
     var cfg = getConfig();
-    var gen = (Math.random() < cfg.templateRatio) ? templateRoute() : pinyinRoute();
+    var gen = (Math.random() < cfg.templateRatio) ? templateRoute(cid) : pinyinRoute(cid);
     if (!gen) return null;
     var items = getItems();
     var dup = items.some(function (it) { return it.text === gen.text && it.route === gen.route && (it.status === "auto" || it.status === "approved" || it.status === "pending"); });
@@ -564,6 +565,125 @@ window.MineCardGenerator = (function () {
   function saveJSON(key, val) {
     try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
   }
+
+  /* ==================== 组卡模板库（可查看 / 修改 / 增删，存 localStorage） ====================
+     模板 = 槽位名数组（如 ["subj1","vTrans","obj1"] → "我想你"）。
+     槽位名需存在于 SLOTS 或 SLOT_FALLBACK_POS，否则保存时校验拒绝。 */
+  var TEMPLATES_KEY = "mine.cards.gen.templates.v1";
+  var SLOT_NAMES = {
+    subj1: "第一人称主语（我/咱们/我们/大家）", subj2: "第二三人称主语（你/他/她）",
+    obj1: "人称宾语（你/他/她）", vTrans: "及物动词（想/爱/懂/陪）", vActS: "单字动作（吃/喝/买）",
+    vAct2: "双字动作（吃饭/上班/睡觉）", vState: "心理状态（想/喜欢/担心）",
+    time: "时间（今天/明天/晚上）", adv: "程度副词（很/真/不/太）",
+    stateAdj: "状态形容词（累/困/开心）", evalAdj: "评价形容词（好/可爱/温柔）",
+    subjNoun: "话题名词（天气/心情/工作）", objNoun: "宾语名词（饭/水/猫/奶茶）",
+    num: "数词（一/两/几）", quan: "量词（个/杯/次）", mood: "语气词（啊/呀/哦）",
+    aux: "助词（了/的/过/吗）"
+  };
+  function getTemplates() {
+    var t = loadJSON(TEMPLATES_KEY, null);
+    if (Array.isArray(t) && t.length > 0) {
+      /* 兼容校验：每项为槽位名数组（忽略无效项） */
+      var valid = t.filter(function (x) {
+        return Array.isArray(x) && x.length > 0 && x.every(function (s) {
+          return typeof s === "string" && (SLOTS[s] || SLOT_FALLBACK_POS[s]);
+        });
+      });
+      if (valid.length > 0) return valid;
+    }
+    return TEMPLATES.map(function (t2) { return t2.slice(); });
+  }
+  function saveTemplates(list) {
+    if (!Array.isArray(list) || list.length === 0) return { ok: false, reason: "empty" };
+    var valid = [];
+    var bad = null;
+    list.forEach(function (x) {
+      if (!Array.isArray(x) || x.length === 0) { bad = bad || "bad-item"; return; }
+      var ok = x.every(function (s) {
+        return typeof s === "string" && (SLOTS[s] || SLOT_FALLBACK_POS[s]);
+      });
+      if (ok) valid.push(x.slice());
+      else bad = bad || "bad-slot";
+    });
+    if (valid.length === 0) return { ok: false, reason: bad || "empty" };
+    saveJSON(TEMPLATES_KEY, valid);
+    return { ok: true, count: valid.length };
+  }
+  function resetTemplates() {
+    saveJSON(TEMPLATES_KEY, null);
+    return { ok: true, count: TEMPLATES.length };
+  }
+
+  /* ==================== 联系人词库（与词库一致：词性 + 拼音，随联系人参与组卡） ====================
+     每个联系人可维护专属词库：添加时可自定义词性与拼音；
+     生成时该联系人的词与全局词库一起参与（模板路按词性、拼音路按拼音）。 */
+  var PERLEX_KEY = "mine.cards.gen.perlex.v1";
+  function getPerLex() {
+    var d = loadJSON(PERLEX_KEY, null);
+    return (d && typeof d === "object") ? d : {};
+  }
+  function savePerLex(d) { saveJSON(PERLEX_KEY, d); }
+  function getPerLexWords(cid) {
+    if (!cid || cid === "global") return [];
+    var d = getPerLex();
+    var arr = d[cid];
+    return Array.isArray(arr) ? arr : [];
+  }
+  function addPerWord(cid, w, p, pos) {
+    if (!cid || cid === "global") return { ok: false, reason: "no-contact" };
+    w = (w || "").trim();
+    p = (p || "").trim();
+    if (!/^[\u4e00-\u9fa5]{1,6}$/.test(w)) return { ok: false, reason: "bad-word" };
+    if (!p) return { ok: false, reason: "no-pinyin" };
+    var d = getPerLex();
+    var arr = Array.isArray(d[cid]) ? d[cid] : [];
+    var existing = arr.filter(function (c) { return c.w === w; });
+    if (existing.length) {
+      existing[0].p = p; existing[0].pos = pos; existing[0].on = true;
+      d[cid] = arr; savePerLex(d); perCacheDirty = true;
+      return { ok: true, mode: "update" };
+    }
+    arr.push({ w: w, p: p, pos: pos, on: true });
+    d[cid] = arr; savePerLex(d); perCacheDirty = true;
+    return { ok: true, mode: "add" };
+  }
+  function removePerWord(cid, w) {
+    var d = getPerLex();
+    var arr = Array.isArray(d[cid]) ? d[cid] : [];
+    var next = arr.filter(function (c) { return c.w !== w; });
+    var removed = next.length !== arr.length;
+    d[cid] = next; savePerLex(d); perCacheDirty = true;
+    return { ok: removed };
+  }
+  function togglePerWord(cid, w) {
+    var d = getPerLex();
+    var arr = Array.isArray(d[cid]) ? d[cid] : [];
+    var it = arr.filter(function (c) { return c.w === w; })[0];
+    if (!it) return { ok: false };
+    it.on = !it.on; savePerLex(d); perCacheDirty = true;
+    return { ok: true, on: it.on };
+  }
+  /* 联系人词索引缓存（cid → { byWord, posIndex }），词库变化时置脏 */
+  var perCacheDirty = true;
+  var perCache = {};
+  function perIndex(cid) {
+    if (!cid || cid === "global") return null;
+    if (!perCacheDirty && perCache[cid]) return perCache[cid];
+    var words = getPerLexWords(cid);
+    var idx = { byWord: {}, posIndex: {} };
+    words.forEach(function (e) {
+      if (!e.on) return;
+      idx.byWord[e.w] = e;
+      var pos = e.pos || "n";
+      (idx.posIndex[pos] = idx.posIndex[pos] || []).push(e);
+    });
+    perCache[cid] = idx;
+    return idx;
+  }
+  /* 全局索引变化时也要失效联系人缓存（自定义词/开关变化） */
+  /* 已在上方 loadCustomWords() 内置 perCacheDirty = true，此处不再重复 */
+
+  /* ==================== 抽词 ==================== */
   function getConfig() {
     var cfg = loadJSON(CFG_KEY, null);
     if (!cfg || typeof cfg !== "object") cfg = {};
@@ -599,8 +719,8 @@ window.MineCardGenerator = (function () {
   }
   function notDisabled(e) { return e && !disabledSet[e.w]; }
 
-  /* 从命名槽抽词：白名单优先 → 兜底词性 posIndex */
-  function pickForSlot(slot) {
+  /* 从命名槽抽词：白名单优先 → 全局词性池 → 联系人词库（同词性，与词库一起使用） */
+  function pickForSlot(slot, cid) {
     var wl = SLOTS[slot];
     if (wl) {
       var cands = [];
@@ -614,15 +734,24 @@ window.MineCardGenerator = (function () {
     var arr = (posIndex[fb || slot] || []).filter(notDisabled).filter(function (e) {
       return e.w.length <= 2;
     });
+    /* 联系人词库：同词性词合并进候选（"和词库一起使用"） */
+    var pidx = perIndex(cid);
+    if (pidx) {
+      var parr = (pidx.posIndex[fb || slot] || []).filter(function (e) {
+        return e && !disabledSet[e.w];
+      });
+      if (parr.length) arr = arr.concat(parr);
+    }
     return pickWeighted(arr, 300);
   }
 
   /* ==================== 模板路生成 ==================== */
-  function templateRoute() {
-    var tpl = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
+  function templateRoute(cid) {
+    var tpls = getTemplates();
+    var tpl = tpls[Math.floor(Math.random() * tpls.length)];
     var words = [];
     for (var i = 0; i < tpl.length; i++) {
-      var e = pickForSlot(tpl[i]);
+      var e = pickForSlot(tpl[i], cid);
       if (!e) return null;
       words.push(e.w);
     }
@@ -635,13 +764,22 @@ window.MineCardGenerator = (function () {
      模拟"联系人随机组合拼音"：从词库高频词随机抽 2~3 个，取拼音拼接，
      交给本地引擎还原（还原结果可能因同音歧义而不同于原词——这正是
      "对方在打字、我方判断意思"的场景）。 */
-  function pinyinRoute() {
+  function pinyinRoute(cid) {
     /* 高频词池：词频前 2500 的 1~2 字词（拼出短拼音串，还原成功率有保障） */
     var pool = [];
     for (var i = 0; i < L.words.length && pool.length < 2500; i++) {
       var e = L.words[i];
       if (disabledSet[e.w]) continue;
       if (e.w.length >= 1 && e.w.length <= 2 && e.p) pool.push(e);
+    }
+    /* 联系人词库：1~2 字词并入拼音池（"和词库一起使用"） */
+    var pidx = perIndex(cid);
+    if (pidx) {
+      Object.keys(pidx.posIndex).forEach(function (pos) {
+        (pidx.posIndex[pos] || []).forEach(function (e) {
+          if (e.w.length >= 1 && e.w.length <= 2 && e.p && !disabledSet[e.w]) pool.push(e);
+        });
+      });
     }
     if (pool.length < 2) return null;
     var n = 2 + Math.floor(Math.random() * 2);              /* 2~3 个词 */
@@ -717,7 +855,7 @@ window.MineCardGenerator = (function () {
     var created = 0, autoN = 0, pendingN = 0, droppedN = 0, dupN = 0;
     for (var i = 0; i < batch; i++) {
       /* 双路选择（占比可配置） */
-      var gen = (Math.random() < cfg.templateRatio) ? templateRoute() : pinyinRoute();
+      var gen = (Math.random() < cfg.templateRatio) ? templateRoute(cid) : pinyinRoute(cid);
       if (!gen) { continue; }
       /* 去重：同文本同路线的记录已存在则不重复生成 */
       var dup = items.some(function (it) { return it.text === gen.text && it.route === gen.route && (it.status === "auto" || it.status === "approved" || it.status === "pending"); });
@@ -768,6 +906,28 @@ window.MineCardGenerator = (function () {
   }
 
   /* ==================== 人工审批 ==================== */
+  /* 审批前手动修改字卡内容：更新文本并重新评分（语法/通顺/置信度） */
+  function editItem(id, text) {
+    text = String(text || "").trim();
+    if (!/^[\u4e00-\u9fa5A-Za-z0-9，。！？、,.!?()（）\s]{1,8}$/.test(text)) {
+      return { ok: false, reason: "bad-text" };
+    }
+    var items = getItems();
+    var it = null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].id === id) { it = items[i]; break; }
+    }
+    if (!it) return { ok: false, reason: "not-found" };
+    if (it.status !== "pending") return { ok: false, reason: "not-pending" };
+    it.text = text;
+    /* 重新评分：拼音路合并还原置信度 / 模板路走训练权重 */
+    var ev = evaluate(it);
+    it.syntax = ev.syntax;
+    it.fluency = ev.fluency;
+    it.conf = ev.conf;
+    saveItems(items);
+    return { ok: true, conf: ev.conf };
+  }
   function approve(id) {
     var items = getItems();
     var it = null;
@@ -823,7 +983,7 @@ window.MineCardGenerator = (function () {
      发送动作由 chat.js 调用方完成（sendGeneratedCard）。 */
   function realtimeCard(cid) {
     var cfg = getConfig();
-    var gen = (Math.random() < cfg.templateRatio) ? templateRoute() : pinyinRoute();
+    var gen = (Math.random() < cfg.templateRatio) ? templateRoute(cid) : pinyinRoute(cid);
     if (!gen) return null;
     var ev = evaluate(gen);
     var item = {
@@ -1023,7 +1183,19 @@ window.MineCardGenerator = (function () {
     addCustomWord: addCustomWord,
     removeCustomWord: removeCustomWord,
     getCustomWords: getCustomWords,
+    /* 组卡模板管理：查看 / 修改 / 增删 / 恢复默认 */
+    getTemplates: getTemplates,
+    saveTemplates: saveTemplates,
+    resetTemplates: resetTemplates,
+    /* 联系人词库：查看 / 添加 / 删除 / 开关（词性 + 拼音由你规定，随该联系人参与组卡） */
+    getPerLex: getPerLex,
+    getPerLexWords: getPerLexWords,
+    addPerWord: addPerWord,
+    removePerWord: removePerWord,
+    togglePerWord: togglePerWord,
+    /* 审批编辑：手动修改字卡内容后重新评分 */
+    editItem: editItem,
     templates: TEMPLATES.length,
-    version: "1.3.0"
+    version: "1.4.0"
   };
 })();
