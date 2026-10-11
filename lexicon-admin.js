@@ -284,7 +284,7 @@ window.MineLexiconAdmin = (function () {
           approveEdit = { id: "", val: "" };
           renderPendingList();
         } else {
-          toast({ "bad-text": "请输入中文（可含标点，无字数上限）", "not-pending": "该字卡状态已变化", "not-found": "字卡不存在" }[r.reason] || "保存失败");
+          toast({ "bad-text": "请输入中文（可含标点，无字数上限）", "closed": "该字卡状态已变化", "not-found": "字卡不存在" }[r.reason] || "保存失败");
         }
       });
     });
@@ -312,7 +312,8 @@ window.MineLexiconAdmin = (function () {
 
   /* ==================== 2. 字卡池（筛选 / 搜索 / 删除） ==================== */
   var poolState = { filter: "", kw: "" };
-  /* 字卡池卡片 HTML（单张） */
+  /* 字卡池卡片 HTML（单张）· 支持修改任意已入池字卡 */
+  var poolEdit = { id: "", val: "" };   /* 字卡池编辑态：{id, val} */
   function poolItemHtml(it) {
     var routeTag = it.route === "pinyin"
       ? '<span style="background:#fdf0e6;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">拼音</span>'
@@ -321,12 +322,22 @@ window.MineLexiconAdmin = (function () {
     var owner = it.contactId && it.contactId !== "global"
       ? '<span style="background:#f3f0fa;color:#6c4ab6;padding:1px 6px;border-radius:4px;font-size:11px;">' + esc(contactName(it.contactId)) + '专用</span>'
       : '<span style="background:#eafaf1;color:#1d8348;padding:1px 6px;border-radius:4px;font-size:11px;">公用</span>';
-    return '<div style="margin:0 12px 10px;border:1px solid #eee;border-radius:12px;padding:12px;background:#fff;">' +
+    var isEditing = poolEdit.id === it.id;
+    var textBlock = isEditing
+      ? '<input id="cg-pool-edit-input" value="' + esc(poolEdit.val === "" ? it.text : poolEdit.val) + '" ' +
+        'placeholder="修改字卡内容（无字数上限，可含标点）" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #4a90d9;font-size:15px;margin-bottom:6px;">'
+      : '<div style="font-size:16px;font-weight:600;">' + esc(it.text) + '</div>';
+    var btns = isEditing
+      ? '<button class="cg-pool-edit-save" data-id="' + it.id + '" style="margin-top:6px;padding:5px 10px;border-radius:6px;background:#2ecc71;color:#fff;border:none;font-size:12px;">' + iconSvg("check", 13) + ' 保存修改</button>' +
+        '<button class="cg-pool-edit-cancel" style="margin-top:6px;padding:5px 10px;border-radius:6px;background:#eee;color:#555;border:none;font-size:12px;">取消</button>'
+      : '<button class="cg-pool-edit" data-id="' + it.id + '" style="margin-top:6px;padding:5px 10px;border-radius:6px;background:#fef6e7;color:#b3571f;border:none;font-size:12px;">' + iconSvg("edit", 13) + ' 修改</button>' +
+        '<button class="cg-pool-rm" data-id="' + it.id + '" style="margin-top:6px;padding:5px 10px;border-radius:6px;background:#fdeaea;color:#c0392b;border:none;font-size:12px;">' + iconSvg("trash", 13) + ' 删除该字卡</button>';
+    return '<div style="margin:0 12px 10px;border:1px solid ' + (isEditing ? "#4a90d9" : "#eee") + ';border-radius:12px;padding:12px;background:#fff;">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<div style="font-size:16px;font-weight:600;">' + esc(it.text) + '</div>' +
+        textBlock +
         '<div style="display:flex;gap:6px;align-items:center;">' + routeTag + owner + '</div></div>' +
       '<div style="font-size:12px;color:#999;margin-top:4px;">' + src + ' · 评分 ' + it.conf.toFixed(2) + ' · ' + fmtTime(it.createdAt) + '</div>' +
-      '<button class="cg-pool-rm" data-id="' + it.id + '" style="margin-top:6px;padding:5px 10px;border-radius:6px;background:#fdeaea;color:#c0392b;border:none;font-size:12px;">' + iconSvg("trash", 13) + ' 删除该字卡</button>' +
+      '<div style="display:flex;gap:6px;">' + btns + '</div>' +
     '</div>';
   }
   function renderPoolItems(box, arr) {
@@ -335,6 +346,34 @@ window.MineLexiconAdmin = (function () {
       return;
     }
     box.innerHTML = arr.map(poolItemHtml).join("");
+    Array.prototype.forEach.call(box.querySelectorAll(".cg-pool-edit"), function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        var it = arr.filter(function (x) { return x.id === id; })[0];
+        poolEdit = { id: id, val: it ? it.text : "" };
+        renderPoolItems(box, arr);
+      });
+    });
+    Array.prototype.forEach.call(box.querySelectorAll(".cg-pool-edit-cancel"), function (btn) {
+      btn.addEventListener("click", function () {
+        poolEdit = { id: "", val: "" };
+        renderPoolItems(box, arr);
+      });
+    });
+    Array.prototype.forEach.call(box.querySelectorAll(".cg-pool-edit-save"), function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        var input = box.querySelector("#cg-pool-edit-input");
+        var r = G.editItem(id, input ? input.value : "");
+        if (r.ok) {
+          toast("已修改字卡内容并重新评分（已同步字卡池）");
+          poolEdit = { id: "", val: "" };
+          renderPool();
+        } else {
+          toast({ "bad-text": "请输入中文（可含标点，无字数上限）", "closed": "该字卡状态已变化", "not-found": "字卡不存在" }[r.reason] || "保存失败");
+        }
+      });
+    });
     Array.prototype.forEach.call(box.querySelectorAll(".cg-pool-rm"), function (btn) {
       btn.addEventListener("click", function () {
         var r = G.removePoolItem(btn.getAttribute("data-id"));

@@ -977,7 +977,8 @@ window.MineCardGenerator = (function () {
   }
 
   /* ==================== 人工审批 ==================== */
-  /* 审批前手动修改字卡内容：更新文本并重新评分（语法/通顺/置信度）· 无字数上限 */
+  /* 修改字卡内容：待审批与已入池（auto/approved）均支持 · 无字数上限
+     池中卡修改后同步更新对应字卡池（先移除旧文本，再按原归属重新入池） */
   function editItem(id, text) {
     text = String(text || "").trim();
     if (!/^[\u4e00-\u9fa5A-Za-z0-9，。！？、,.!?()（）\s]+$/.test(text)) {
@@ -989,7 +990,17 @@ window.MineCardGenerator = (function () {
       if (items[i].id === id) { it = items[i]; break; }
     }
     if (!it) return { ok: false, reason: "not-found" };
-    if (it.status !== "pending") return { ok: false, reason: "not-pending" };
+    if (it.status !== "pending" && it.status !== "auto" && it.status !== "approved") return { ok: false, reason: "closed" };
+    var wasInPool = (it.status === "auto" || it.status === "approved");
+    /* 原卡已在字卡池：先从池中移除旧文本（避免新旧并存） */
+    if (wasInPool) {
+      var M = window.MineCards;
+      if (it.contactId && it.contactId !== "global" && M && M.removePerCardByValue) {
+        M.removePerCardByValue(it.contactId, it.text);
+      } else if (M && M.removePublicCardByValue) {
+        M.removePublicCardByValue(it.text);
+      }
+    }
     it.text = text;
     /* 重新评分：拼音路合并还原置信度 / 模板路走训练权重 */
     var ev = evaluate(it);
@@ -997,6 +1008,15 @@ window.MineCardGenerator = (function () {
     it.fluency = ev.fluency;
     it.conf = ev.conf;
     saveItems(items);
+    /* 池中卡重新入池（保持原归属：联系人专用 / 公用） */
+    if (wasInPool) {
+      var M2 = window.MineCards;
+      if (it.contactId && it.contactId !== "global" && M2 && M2.addPerCard) {
+        M2.addPerCard(it.contactId, text);
+      } else {
+        addToPublicPool(text);
+      }
+    }
     return { ok: true, conf: ev.conf };
   }
   function approve(id) {
