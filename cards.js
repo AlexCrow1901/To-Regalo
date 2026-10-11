@@ -23,7 +23,7 @@ window.MineCards = (function () {
   var STORE_KEY = "mine.cards.v1";
 
   var state = { public: [], per: {}, autoPer: {}, sys: [], sysAllOn: true, sysOff: {}, cardAt: {} };
-  var expandedTypes = { text: true, emoji: true, image: true, audio: false, auto: false };  // 类型栏折叠状态
+  var expandedTypes = { text: true, emoji: true, image: true, audio: false, auto: true };  // 类型栏折叠状态
 
   /* ==================== 字卡类型判断（与 chat.js 保持同一套规则） ==================== */
   function isImageCard(card) {
@@ -591,16 +591,9 @@ window.MineCards = (function () {
 
   /* ---- 类型分栏编辑器：每一栏一种字卡类型，点击栏头折叠/展开
        includeAudio=true 时额外显示语音栏（单独字卡）
-       单独字卡（scope=per 且有 cid）的"自动回复"栏置顶（在字符字卡上面） ---- */
+       单独字卡（scope=per 且有 cid）的"自动回复"栏排在最后（字符/emoji/图片/语音 → 自动回复） ---- */
   function renderCardEditor(list, scope, cid, includeAudio) {
     var groups = [];
-    /* 单独字卡：自动回复栏置顶（与字符、emoji 等并列，排最前） */
-    if (scope === "per" && cid) {
-      var autoList = (state.autoPer[cid] || []).map(function (card, i) {
-        return { card: card, idx: i };
-      });
-      groups.push({ type: "auto", name: "自动回复", icon: "feather", items: autoList });
-    }
     groups.push(
       { type: "text",  name: "字符", icon: "feather", items: [] },
       { type: "emoji", name: "emoji", icon: "smile", items: [] },
@@ -609,16 +602,29 @@ window.MineCards = (function () {
     if (includeAudio) {
       groups.push({ type: "audio", name: "语音", icon: "mic", items: [] });
     }
+    /* 单独字卡：自动回复栏排最后（不占用前置索引，与下方按类型分组保持一致） */
+    if (scope === "per" && cid) {
+      var autoList = (state.autoPer[cid] || []).filter(function (c) {
+        return typeof c === "string" && c.length > 0;   /* 过滤脏条目，避免空白行 */
+      }).map(function (card, i) {
+        return { card: card, idx: i };
+      });
+      groups.push({ type: "auto", name: "自动回复", icon: "feather", items: autoList });
+    }
+    /* 按类型放入对应组：按 type 查找目标组（auto 组存在时不再按硬编码索引，避免内容错位） */
+    function groupByType(t) {
+      for (var gi = 0; gi < groups.length; gi++) if (groups[gi].type === t) return groups[gi];
+      return null;
+    }
     (list || []).forEach(function (entry0, i) {
       var card = entry0.card;
       var entry = { card: card, idx: entry0.idx, src: entry0.src || null };
-      if (isImageCard(card)) groups[2].items.push(entry);
-      else if (isAudioCard(card)) {
-        if (includeAudio) groups[3].items.push(entry);
-        else groups[2].items.push(entry);  /* 公用字卡无语音栏时语音并入图片栏 */
-      }
-      else if (isEmojiCard(card)) groups[1].items.push(entry);
-      else groups[0].items.push(entry);
+      var g;
+      if (isImageCard(card)) g = groupByType("image") || groupByType("emoji");
+      else if (isAudioCard(card)) g = groupByType("audio") || groupByType("image");
+      else if (isEmojiCard(card)) g = groupByType("emoji") || groupByType("text");
+      else g = groupByType("text");
+      if (g) g.items.push(entry);
     });
 
     return '<div class="card-editor">' + groups.map(function (g) {
@@ -961,14 +967,21 @@ window.MineCards = (function () {
 
   function openManager(tab) {
     /* 兼容旧调用：public→mine（我的字卡），sys→syspool（系统字卡=审批通过池） */
-    if (tab === "public") tab = "mine";
-    else if (tab === "sys") tab = "syspool";
-    if (tab === "mine" || tab === "per" || tab === "syspool") currentTab = tab;
-    buildSheet();
-    requestAnimationFrame(function () {
-      overlayEl.classList.add("is-open");
-      sheetEl.classList.add("is-open");
-    });
+    try {
+      if (tab === "public") tab = "mine";
+      else if (tab === "sys") tab = "syspool";
+      if (tab === "mine" || tab === "per" || tab === "syspool") currentTab = tab;
+      buildSheet();
+      requestAnimationFrame(function () {
+        if (overlayEl && sheetEl) {
+          overlayEl.classList.add("is-open");
+          sheetEl.classList.add("is-open");
+        }
+      });
+    } catch (e) {
+      console.error("[MineCards] openManager failed:", e);
+      if (window.MineToast && MineToast.show) MineToast.show("字卡打开失败，请重试");
+    }
   }
   function closeManager() {
     if (!sheetEl) return;
@@ -1097,7 +1110,9 @@ window.MineCards = (function () {
     if (items.length === 0) {
       listEl.innerHTML = '<div class="cards-empty">' + (kw ? "未找到匹配的字卡" : "暂无字卡") + '</div>';
     } else {
-      listEl.innerHTML = items.map(function (it, j) {
+      /* 大数据防卡：单次最多渲染 300 条，超出提示（搜索可继续缩小范围） */
+      var shown = items.slice(0, 300);
+      listEl.innerHTML = shown.map(function (it, j) {
         return '<div class="sitem" data-row="' + j + '">' +
           '<div class="sitem-main">' +
             '<div class="sitem-preview">' + cardPreviewHTML(it.card) + '</div>' +
@@ -1112,14 +1127,19 @@ window.MineCards = (function () {
           '</div>' +
         '</div>';
       }).join("");
-      bindSearchList(body, items);
+      if (items.length > 300) {
+        listEl.innerHTML += '<div class="cards-empty">共 ' + items.length + ' 条，仅显示前 300 条 · 输入关键词可继续筛选</div>';
+      }
+      bindSearchList(body, shown);
     }
 
-    /* 搜索输入实时过滤 */
+    /* 搜索输入实时过滤（防抖 200ms，避免大量字卡时每次按键全量重渲染卡死） */
     var searchInput = body.querySelector("#card-search-input");
+    var searchTimer = null;
     searchInput.addEventListener("input", function () {
       searchKeyword = searchInput.value;
-      renderSearch();
+      if (searchTimer) clearTimeout(searchTimer);
+      searchTimer = setTimeout(renderSearch, 200);
     });
     /* 展开/收起添加区 */
     var openAdd = body.querySelector("#card-search-open-add");

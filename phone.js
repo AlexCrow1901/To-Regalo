@@ -678,8 +678,7 @@ window.MinePhone = (function () {
   }
 
   /* ---------- 我发起的群通话：每位被邀请成员独立结算 ---------- */
-  function startGroupCall(g, ids) {
-    if (active || groupCall) { showToast("通话中，请先挂断"); return; }
+  function startGroupCall(g, ids) {    if (active || groupCall) { showToast("通话中，请先挂断"); return; }
     var invitees = ids.map(function (id) {
       return { id: id, state: "ringing", connectedAt: 0 };
     });
@@ -731,17 +730,77 @@ window.MinePhone = (function () {
     });
   }
 
-  /* ---------- 群通话界面 ---------- */
-  function buildGroupOverlay(g, invitees) {
+  /* ---------- 群成员主动发起且名单含我：打开群通话界面（全部成员可见），
+     我自动接通，其余成员按一对一规则独立结算（接通/挂断/留言） ---------- */
+  function startMemberGroupCall(g, callerId, inviteeIds) {
+    if (active || groupCall) { showToast("通话中，请先挂断"); return; }
+    var ids = inviteeIds.slice();
+    if (ids.indexOf("me") < 0) ids.push("me");
+    var now = Date.now();
+    var invitees = ids.map(function (id) {
+      if (id === "me") return { id: id, state: "connected", connectedAt: now };
+      return { id: id, state: "ringing", connectedAt: 0 };
+    });
+    var caller = findContact(callerId);
+    groupCall = {
+      groupId: g.id, callerId: callerId,
+      invitees: invitees, startedAt: now, connectedAt: now, msgs: []
+    };
+    groupOverlayEl = buildGroupOverlay(g, invitees, caller ? caller.name : "");
+    startGroupTimer();
+    refreshGroupStateText();
+    /* 其余成员独立结算（响铃后接通或挂断，规则与 startGroupCall 一致） */
+    ids.forEach(function (pid) {
+      if (pid === "me") return;
+      var c = findContact(pid);
+      var delay = Math.max(900, Math.random() * CONFIG.answerMaxSec * 1000);
+      timers.push(setTimeout(function () {
+        if (!groupCall) return;
+        var pp = null;
+        for (var i = 0; i < groupCall.invitees.length; i++) {
+          if (groupCall.invitees[i].id === pid) { pp = groupCall.invitees[i]; break; }
+        }
+        if (!pp || pp.state !== "ringing") return;
+        if (!c) { pp.state = "left"; updateGroupParticipant(pid, "已挂断"); checkGroupCallAllLeft(); return; }
+        if (Math.random() < CONFIG.hangupChance) {
+          pp.state = "left";
+          queueGroupHangupMessage(c);
+          updateGroupParticipant(pid, "已挂断");
+          checkGroupCallAllLeft();
+        } else {
+          pp.state = "connected";
+          pp.connectedAt = Date.now();
+          updateGroupParticipant(pid, "已接通");
+          var dur = CONFIG.connectedMinSec +
+            Math.random() * (CONFIG.connectedMaxSec - CONFIG.connectedMinSec);
+          timers.push(setTimeout(function () {
+            if (!groupCall) return;
+            var q = null;
+            for (var i = 0; i < groupCall.invitees.length; i++) {
+              if (groupCall.invitees[i].id === pid) { q = groupCall.invitees[i]; break; }
+            }
+            if (!q || q.state !== "connected") return;
+            q.state = "left";
+            updateGroupParticipant(pid, "已挂断");
+            checkGroupCallAllLeft();
+          }, dur * 1000));
+        }
+      }, delay));
+    });
+  }
+
+  /* ---------- 群通话界面（callerName 可选：成员发起时显示"××× 发起"） ---------- */
+  function buildGroupOverlay(g, invitees, callerName) {
     var I2 = window.MineIcons;
     var rows = invitees.map(function (p) {
       var c = findContact(p.id);
       var av = (window.MineContacts && MineContacts.avatarHTML)
         ? MineContacts.avatarHTML(c, 34, "")
         : '<div class="avatar">' + esc((c && c.name || "?").charAt(0)) + '</div>';
+      var name = p.id === "me" ? "我" : (c ? c.name : "未知");
       return '<div class="gc-row" data-pid="' + p.id + '" style="display:flex;align-items:center;gap:10px;padding:6px 0;">' +
         '<div style="flex:0 0 auto;">' + av + '</div>' +
-        '<div style="flex:1 1 auto;text-align:left;font-size:14px;opacity:.85;">' + esc(c ? c.name : "未知") + '</div>' +
+        '<div style="flex:1 1 auto;text-align:left;font-size:14px;opacity:.85;">' + esc(name) + '</div>' +
         '<div class="gc-state" style="flex:0 0 auto;font-size:12px;opacity:.6;">呼叫中…</div>' +
         '</div>';
     }).join("");
@@ -750,7 +809,9 @@ window.MinePhone = (function () {
     ov.className = "phone-overlay";
     ov.innerHTML =
       '<div class="phone-screen">' +
-        '<div class="phone-top"><span class="phone-brand">Mine · 群电话</span></div>' +
+        '<div class="phone-top"><span class="phone-brand">' +
+          (callerName ? esc(callerName) + ' 发起 · 群电话' : 'Mine · 群电话') +
+          '</span></div>' +
         '<div class="phone-stage">' +
           '<div class="phone-avatar-wrap">' +
             '<span class="phone-ring r1"></span>' +
@@ -859,15 +920,24 @@ window.MinePhone = (function () {
       });
       msg = { cards: nCards, voices: nVoices, cardItems: cardItems, voiceItems: voiceItems };
     }
-    addLog({
-      type: "group", dir: "out",
+    var isMemberInitiated = !!groupCall.callerId;
+    var memberIds = groupCall.invitees.map(function (p) { return p.id; });
+    var logEntry = {
+      type: "group",
+      dir: isMemberInitiated ? "member" : "out",
       kind: groupCall.connectedAt ? "answered" : "canceled",
       groupId: groupCall.groupId,
-      contactIds: groupCall.invitees.map(function (p) { return p.id; }),
       time: groupCall.startedAt,
       duration: duration,
       msg: msg
-    });
+    };
+    if (isMemberInitiated) {
+      logEntry.callerId = groupCall.callerId;
+      logEntry.inviteeIds = memberIds;
+    } else {
+      logEntry.contactIds = memberIds;
+    }
+    addLog(logEntry);
     var msgs = groupCall.msgs;
     clearTimers();
     removeCallBall();
@@ -1106,24 +1176,38 @@ window.MinePhone = (function () {
     return html ? '<div class="phone-msg-detail">' + html + '</div>' : "";
   }
 
-  /* 群通话记录行 */
+  /* 群通话记录行（显示具体群成员名单） */
   function groupLogRowHTML(entry) {
     var g = findGroup(entry.groupId);
     var gname = g ? g.name : "群聊";
     var durText = entry.duration > 0 ? fmtDuration(entry.duration) : "";
     var kindText;
+    var memberNames = [];
     if (entry.dir === "out") {
       kindText = "群呼出 · " + ((entry.contactIds || []).length) + " 人 · " + fmtLogTime(entry.time);
+      (entry.contactIds || []).forEach(function (id) {
+        var c = findContact(id);
+        memberNames.push(c ? c.name : "未知");
+      });
     } else {
       var caller = findContact(entry.callerId);
-      kindText = (caller ? caller.name : "成员") + " 发起 · " +
-        ((entry.inviteeIds || []).length) + " 人 · " + fmtLogTime(entry.time);
+      kindText = (caller ? caller.name : "成员") + " 发起 · " + ((entry.inviteeIds || []).length) + " 人 · " + fmtLogTime(entry.time);
+      (entry.inviteeIds || []).forEach(function (id) {
+        if (id === "me") { memberNames.push("我"); return; }
+        var c = findContact(id);
+        memberNames.push(c ? c.name : "未知");
+      });
     }
+    var membersLine = memberNames.length
+      ? '<div class="phone-log-members" style="font-size:12px;color:#7a8a9a;margin-top:2px;">成员：' +
+        esc(memberNames.join("、")) + '</div>'
+      : "";
     return '<div class="phone-log-row">' +
       '<div class="phone-log-icon">' + I.svg("users", 18) + '</div>' +
       '<div class="phone-log-info">' +
         '<span class="phone-log-name">' + esc(gname) + '</span>' +
         '<span class="phone-log-kind">' + kindText + msgText(entry) + '</span>' +
+        membersLine +
         msgDetailHTML(entry) +
       '</div>' +
       '<span class="phone-log-dur">' + durText + '</span>' +
@@ -1276,10 +1360,8 @@ window.MinePhone = (function () {
     var invitees = pool.slice(0, n);
 
     if (invitees.indexOf("me") >= 0) {
-      // 名单含我 → 按一对一呼入规则响铃（接听/未接留言与列表联系人一致）
-      var others = invitees.filter(function (id) { return id !== "me"; });
-      if (others.length) memberToMemberCall(hit, callerId, others);
-      receiveCall(callerId);
+      // 名单含我 → 打开群通话界面（全部成员可见），我自动接通，其余成员独立结算
+      startMemberGroupCall(hit, callerId, invitees);
     } else {
       // 纯成员间通话：仅记录（钩子，后期扩展）
       memberToMemberCall(hit, callerId, invitees);
