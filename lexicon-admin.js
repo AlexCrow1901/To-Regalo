@@ -43,11 +43,11 @@ window.MineLexiconAdmin = (function () {
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
   }
 
-  var VIEW_TITLES = { approve: "字卡审批", pool: "字卡池", train: "本地训练", rules: "运行规则", lexicon: "词库管理" };
-  var VIEW_ICONS = { approve: "check", pool: "bookmark", train: "chart", rules: "settings", lexicon: "book" };
+  var VIEW_TITLES = { approve: "字卡审批", pool: "字卡池", train: "本地训练", rules: "运行规则", templates: "组卡模板", lexicon: "词库管理" };
+  var VIEW_ICONS = { approve: "check", pool: "bookmark", train: "chart", rules: "settings", templates: "list", lexicon: "book" };
 
   /* 词库分组展开状态 */
-  var lexState = { search: "", expanded: {}, showCount: {}, loadedMore: {} };
+  var lexState = { search: "", expanded: {}, showCount: {}, loadedMore: {}, perCid: "" };
 
   /* 最近一次渲染的视图（用于判断同视图重渲染 → 保持滚动，视图切换 → 回到顶部） */
   var lastRenderedView = "";
@@ -59,7 +59,7 @@ window.MineLexiconAdmin = (function () {
         '<span class="nav-title">' + VIEW_TITLES[view] + '</span>' +
         '<span class="nav-right"></span>' +
       '</div>';
-    var tabs = ["approve", "pool", "train", "rules", "lexicon"].map(function (v) {
+    var tabs = ["approve", "pool", "train", "rules", "templates", "lexicon"].map(function (v) {
       return '<button class="card-tab' + (v === view ? " is-active" : "") + '" data-tab="' + v + '">' +
         iconSvg(VIEW_ICONS[v], 14) + VIEW_TITLES[v] + '</button>';
     }).join("");
@@ -95,6 +95,7 @@ window.MineLexiconAdmin = (function () {
     else if (view === "pool") renderPool();
     else if (view === "train") renderTrain();
     else if (view === "rules") renderRules();
+    else if (view === "templates") renderTemplates();
     else renderLexicon();
   }
 
@@ -190,8 +191,9 @@ window.MineLexiconAdmin = (function () {
     });
     renderPendingList();
   }
-  /* 待审批字卡：按联系人分组，组头可点击展开/折叠（默认折叠） */
+  /* 待审批字卡：按联系人分组，组头可点击展开/折叠（默认折叠）；卡可编辑内容后通过 */
   var pendingCollapse = {};
+  var approveEdit = { id: "", val: "" };   /* 行内编辑状态 */
   function renderPendingList() {
     var detail = document.getElementById("page-detail");
     var box = detail.querySelector("#cg-pending-list");
@@ -228,17 +230,26 @@ window.MineLexiconAdmin = (function () {
           var inputLine = it.input
             ? '<div style="font-size:12px;color:#888;margin-top:2px;">输入：' + esc(it.input) + ' → 还原为</div>'
             : '';
-          return '<div style="margin:0 12px 10px;border:1px solid #eee;border-radius:12px;padding:12px;background:#fff;">' +
+          var isEditing = approveEdit.id === it.id;
+          var textBlock = isEditing
+            ? '<input id="cg-edit-input" value="' + esc(approveEdit.val === "" ? it.text : approveEdit.val) + '" ' +
+              'placeholder="修改字卡内容（1-8 字）" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #4a90d9;font-size:15px;margin-bottom:6px;">'
+            : '<div style="font-size:17px;font-weight:600;">' + esc(it.text) + '</div>';
+          var editBtns = isEditing
+            ? '<button class="cg-edit-save" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#2ecc71;color:#fff;border:none;font-size:13px;">' + iconSvg("check", 13) + ' 保存修改</button>' +
+              '<button class="cg-edit-cancel" style="flex:1;padding:8px;border-radius:8px;background:#eee;color:#555;border:none;font-size:13px;">取消</button>'
+            : '<button class="cg-edit" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#fef6e7;color:#b3571f;border:none;font-size:13px;">' + iconSvg("edit", 13) + ' 修改</button>' +
+              '<button class="cg-approve" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#2ecc71;color:#fff;border:none;font-size:13px;">' + iconSvg("check", 13) + ' 通过</button>' +
+              '<button class="cg-reject" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#eee;color:#555;border:none;font-size:13px;">拒绝</button>';
+          return '<div style="margin:0 12px 10px;border:1px solid ' + (isEditing ? "#4a90d9" : "#eee") + ';border-radius:12px;padding:12px;background:#fff;">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-              '<div style="font-size:17px;font-weight:600;">' + esc(it.text) + '</div>' +
+              textBlock +
               '<div style="display:flex;gap:6px;align-items:center;">' + routeTag + srcTag + '</div>' +
             '</div>' +
             inputLine +
             '<div style="font-size:12px;color:#999;margin-top:6px;">评分 ' + it.conf.toFixed(2) +
               '（语法 ' + it.syntax.toFixed(2) + ' / 通顺 ' + it.fluency.toFixed(2) + '） · ' + fmtTime(it.createdAt) + '</div>' +
-            '<div style="display:flex;gap:8px;margin-top:8px;">' +
-              '<button class="cg-approve" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#2ecc71;color:#fff;border:none;font-size:13px;">' + iconSvg("check", 13) + ' 通过</button>' +
-              '<button class="cg-reject" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#eee;color:#555;border:none;font-size:13px;">拒绝</button>' +
+            '<div style="display:flex;gap:8px;margin-top:8px;">' + editBtns +
             '</div></div>';
         }).join("");
       }
@@ -249,6 +260,34 @@ window.MineLexiconAdmin = (function () {
       h.addEventListener("click", function () {
         var k = h.getAttribute("data-cg-group");
         pendingCollapse[k] = pendingCollapse[k] !== true;
+        renderPendingList();
+      });
+    });
+    Array.prototype.forEach.call(box.querySelectorAll(".cg-edit"), function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        var it = G.getPending().filter(function (x) { return x.id === id; })[0];
+        approveEdit = { id: id, val: it ? it.text : "" };
+        renderPendingList();
+      });
+    });
+    Array.prototype.forEach.call(box.querySelectorAll(".cg-edit-save"), function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        var input = box.querySelector("#cg-edit-input");
+        var r = G.editItem(id, input ? input.value : "");
+        if (r.ok) {
+          toast("已修改字卡内容并重新评分");
+          approveEdit = { id: "", val: "" };
+          renderPendingList();
+        } else {
+          toast({ "bad-text": "请输入 1-8 字的中文（可含标点）", "not-pending": "该字卡状态已变化", "not-found": "字卡不存在" }[r.reason] || "保存失败");
+        }
+      });
+    });
+    Array.prototype.forEach.call(box.querySelectorAll(".cg-edit-cancel"), function (btn) {
+      btn.addEventListener("click", function () {
+        approveEdit = { id: "", val: "" };
         renderPendingList();
       });
     });
@@ -538,6 +577,128 @@ window.MineLexiconAdmin = (function () {
       '</div>';
   }
 
+  /* ==================== 4.5 组卡模板管理（可见 / 可修改 / 可增删） ==================== */
+  var SLOT_LABELS = {
+    subj1: "第一人称主语（我/咱们/我们/大家）", subj2: "第二三人称主语（你/他/她）",
+    obj1: "人称宾语（你/他/她）", vTrans: "及物动词（想/爱/懂/陪）", vActS: "单字动作（吃/喝/买）",
+    vAct2: "双字动作（吃饭/上班/睡觉）", vState: "心理状态（想/喜欢/担心）",
+    time: "时间（今天/明天/晚上）", adv: "程度副词（很/真/不/太）",
+    stateAdj: "状态形容词（累/困/开心）", evalAdj: "评价形容词（好/可爱/温柔）",
+    subjNoun: "话题名词（天气/心情/工作）", objNoun: "宾语名词（饭/水/猫/奶茶）",
+    num: "数词（一/两/几）", quan: "量词（个/杯/次）", mood: "语气词（啊/呀/哦）",
+    aux: "助词（了/的/过/吗）"
+  };
+  var SLOT_EXAMPLE = {
+    subj1: "我", subj2: "你", obj1: "你", vTrans: "想", vActS: "吃", vAct2: "吃饭",
+    vState: "喜欢", time: "今天", adv: "很", stateAdj: "累", evalAdj: "好",
+    subjNoun: "天气", objNoun: "饭", num: "一", quan: "个", mood: "呀", aux: "了"
+  };
+  var templateEdit = { idx: -1, val: "" };
+  function renderTemplates() {
+    var tpls = G.getTemplates();
+    var inner =
+      '<div class="group-head">组卡模板</div>' +
+      '<div class="card-hint">模板 = 槽位序列，组卡时按槽位随机填词生成字卡（如 subj1 + vTrans + obj1 → "我想你"）。' +
+        '可修改任意模板、删除、新增；点击「示例」随机预览一种填词结果。</div>' +
+      '<div class="group-head">新增模板</div>' +
+      '<div style="padding:0 12px 6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
+        '<input id="tp-new" placeholder="槽位序列，空格分隔，如：subj1 vTrans obj1 mood" style="flex:1.6;min-width:180px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
+        '<button id="tp-add" class="chat-bg-btn" style="padding:8px 14px;border-radius:8px;background:#4a90d9;color:#fff;border:none;font-size:13px;">' + iconSvg("plus", 14) + ' 添加</button>' +
+        '<button id="tp-reset" class="chat-bg-btn" style="padding:8px 10px;border-radius:8px;background:#eee;color:#555;border:none;font-size:13px;">' + iconSvg("refresh", 14) + ' 恢复默认</button>' +
+      '</div>' +
+      '<div class="group-head">模板列表（' + tpls.length + ' 个）</div>' +
+      '<div id="tp-list"></div>';
+    pageShell("templates", inner);
+    var detail = document.getElementById("page-detail");
+    var addBtn = detail.querySelector("#tp-add");
+    if (addBtn) addBtn.addEventListener("click", function () {
+      var raw = detail.querySelector("#tp-new").value.trim();
+      var slots = raw.split(/[\s,，]+/).filter(function (s) { return s; });
+      var r = G.saveTemplates(tpls.concat([slots]));
+      if (r.ok) { toast("已添加模板（共 " + r.count + " 个）"); renderTemplates(); }
+      else toast({ "bad-slot": "存在无效槽位，请检查拼写", "bad-item": "模板为空", "empty": "模板列表不能为空" }[r.reason] || "添加失败");
+    });
+    var resetBtn = detail.querySelector("#tp-reset");
+    if (resetBtn) resetBtn.addEventListener("click", function () {
+      if (!window.confirm("恢复默认模板？当前所有自定义修改将丢失。")) return;
+      var r = G.resetTemplates();
+      toast("已恢复默认模板（" + r.count + " 个）");
+      renderTemplates();
+    });
+    /* 列表 */
+    var box = detail.querySelector("#tp-list");
+    if (!tpls.length) { box.innerHTML = '<div class="card-hint">暂无模板，请在上方添加。</div>'; return; }
+    box.innerHTML = tpls.map(function (tpl, i) {
+      var seq = tpl.join(" ");
+      var labels = tpl.map(function (s) { return SLOT_LABELS[s] || s; }).join(" + ");
+      if (templateEdit.idx === i) {
+        return '<div style="margin:0 12px 10px;border:1px solid #4a90d9;border-radius:12px;padding:12px;background:#fff;">' +
+          '<div class="card-hint">槽位序列（空格分隔）：</div>' +
+          '<input id="tp-edit-input" value="' + esc(seq) + '" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
+          '<div style="display:flex;gap:8px;margin-top:8px;">' +
+            '<button id="tp-edit-save" data-i="' + i + '" style="flex:1;padding:8px;border-radius:8px;background:#2ecc71;color:#fff;border:none;font-size:13px;">' + iconSvg("check", 13) + ' 保存</button>' +
+            '<button id="tp-edit-cancel" style="flex:1;padding:8px;border-radius:8px;background:#eee;color:#555;border:none;font-size:13px;">取消</button>' +
+          '</div></div>';
+      }
+      return '<div style="margin:0 12px 10px;border:1px solid #eee;border-radius:12px;padding:12px;background:#fff;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<div style="font-size:14px;font-weight:600;">' + esc(seq) + '</div>' +
+          '<div style="display:flex;gap:6px;align-items:center;">' +
+            '<button class="tp-preview" data-i="' + i + '" style="padding:4px 9px;border-radius:6px;border:none;background:#e8f1fb;color:#2563a8;font-size:12px;">' + iconSvg("eye", 12) + ' 示例</button>' +
+            '<button class="tp-edit" data-i="' + i + '" style="padding:4px 9px;border-radius:6px;border:none;background:#fef6e7;color:#b3571f;font-size:12px;">' + iconSvg("edit", 12) + ' 修改</button>' +
+            '<button class="tp-del" data-i="' + i + '" style="padding:4px 9px;border-radius:6px;border:none;background:#fdedec;color:#a93226;font-size:12px;">' + iconSvg("trash", 12) + ' 删除</button>' +
+          '</div></div>' +
+        '<div style="font-size:12px;color:#888;margin-top:4px;">' + esc(labels) + '</div>' +
+        '<div class="tp-preview-out" data-i="' + i + '" style="font-size:13px;color:#1d8348;margin-top:4px;"></div>' +
+      '</div>';
+    }).join("");
+    /* 事件 */
+    var previewBtns = box.querySelectorAll(".tp-preview");
+    Array.prototype.forEach.call(previewBtns, function (btn) {
+      btn.addEventListener("click", function () {
+        var i = parseInt(btn.getAttribute("data-i"), 10);
+        var tpl = tpls[i];
+        var text = tpl.map(function (s) { return SLOT_EXAMPLE[s] || s; }).join("");
+        var out = box.querySelector('.tp-preview-out[data-i="' + i + '"]');
+        if (out) out.textContent = "示例：" + text;
+      });
+    });
+    var editBtns = box.querySelectorAll(".tp-edit");
+    Array.prototype.forEach.call(editBtns, function (btn) {
+      btn.addEventListener("click", function () {
+        templateEdit.idx = parseInt(btn.getAttribute("data-i"), 10);
+        renderTemplates();
+      });
+    });
+    var delBtns = box.querySelectorAll(".tp-del");
+    Array.prototype.forEach.call(delBtns, function (btn) {
+      btn.addEventListener("click", function () {
+        var i = parseInt(btn.getAttribute("data-i"), 10);
+        var next = tpls.slice();
+        next.splice(i, 1);
+        var r = G.saveTemplates(next);
+        if (r.ok) { toast("已删除该模板"); renderTemplates(); }
+        else toast("模板列表不能为空");
+      });
+    });
+    var saveBtn = detail.querySelector("#tp-edit-save");
+    if (saveBtn) saveBtn.addEventListener("click", function () {
+      var i = parseInt(saveBtn.getAttribute("data-i"), 10);
+      var raw = detail.querySelector("#tp-edit-input").value.trim();
+      var slots = raw.split(/[\s,，]+/).filter(function (s) { return s; });
+      var next = tpls.slice();
+      next[i] = slots;
+      var r = G.saveTemplates(next);
+      if (r.ok) { toast("已保存修改"); templateEdit.idx = -1; renderTemplates(); }
+      else toast({ "bad-slot": "存在无效槽位，请检查拼写", "empty": "模板列表不能为空" }[r.reason] || "保存失败");
+    });
+    var cancelBtn = detail.querySelector("#tp-edit-cancel");
+    if (cancelBtn) cancelBtn.addEventListener("click", function () {
+      templateEdit.idx = -1;
+      renderTemplates();
+    });
+  }
+
   /* ==================== 4. 词库管理 ==================== */
   function firstLetter(e) {
     var py = e.p || "";
@@ -553,9 +714,16 @@ window.MineLexiconAdmin = (function () {
     var customSet = {};
     custom.forEach(function (c) { customSet[c.w] = true; });
 
+    /* 联系人词库模式：选择联系人后管理其专属词库（词性 + 拼音由你规定，随该联系人参与组卡） */
+    var isPer = !!lexState.perCid;
+    var contacts = (C && C.getState) ? (C.getState().contacts || []) : [];
+    var perWords = isPer ? (G.getPerLexWords ? G.getPerLexWords(lexState.perCid) : []) : [];
+    var perOn = {};
+    perWords.forEach(function (w) { if (w.on !== false) perOn[w.w] = true; });
+
     /* 搜索过滤（词 / 拼音包含） */
     var kw = lexState.search.trim().toLowerCase();
-    var words = L.words;
+    var words = isPer ? perWords : L.words;
     if (kw) {
       words = words.filter(function (e) {
         return e.w.indexOf(kw) >= 0 || (e.p || "").toLowerCase().indexOf(kw) >= 0;
@@ -570,14 +738,28 @@ window.MineLexiconAdmin = (function () {
     });
     var letters = Object.keys(groups).sort();
 
+    /* 联系人选择器 */
+    var perOpts = '<option value=""' + (isPer ? "" : " selected") + '>通用词库（全部联系人）</option>' +
+      contacts.map(function (c) {
+        var sel = lexState.perCid === c.id ? " selected" : "";
+        return '<option value="' + esc(c.id) + '"' + sel + '>' + esc(c.name || c.id) + ' 专属词库</option>';
+      }).join("");
+
     var inner =
+      '<div class="group-head">词库范围</div>' +
+      '<div style="padding:0 12px 6px;">' +
+        '<select id="lx-per" style="width:100%;padding:9px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' + perOpts + '</select>' +
+        (isPer
+          ? '<div class="card-hint">联系人的专属词库：与全局词库一起参与该联系人的字卡生成 · 添加时可自主规定词性与拼音 · 每词可开关 / 删除</div>'
+          : '<div class="card-hint">通用词库：全部联系人的组卡均使用 · 添加时可自主规定词性与拼音 · 每词可开关（关闭则不参与）/ 删除</div>') +
+      '</div>' +
       '<div class="group-head">搜索</div>' +
       '<div style="padding:0 12px 6px;">' +
         '<div style="display:flex;gap:6px;">' +
           '<input id="lx-search" placeholder="搜索字词或拼音…" value="' + esc(lexState.search) + '" style="flex:1;padding:9px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
           '<button id="lx-search-clear" class="chat-bg-btn icon-only" aria-label="清空" style="flex:none;">' + iconSvg("close", 16) + '</button>' +
         '</div>' +
-        '<div class="card-hint">共 ' + words.length + ' 个匹配字词 · 每词可开关（关闭则不参与字卡生成）/ 删除 · 展示按 A-Z 排序，不影响内部逻辑。</div>' +
+        '<div class="card-hint">共 ' + words.length + ' 个匹配字词 · 展示按 A-Z 排序，不影响内部逻辑。</div>' +
       '</div>' +
       '<div class="group-head">添加字词</div>' +
       '<div style="padding:0 12px 6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
@@ -594,6 +776,13 @@ window.MineLexiconAdmin = (function () {
     pageShell("lexicon", inner);
     var detail = document.getElementById("page-detail");
 
+    /* 联系人选择事件 */
+    var perSel = detail.querySelector("#lx-per");
+    if (perSel) perSel.addEventListener("change", function () {
+      lexState.perCid = perSel.value;
+      lexState.search = "";
+      renderLexicon();
+    });
     /* 搜索事件 */
     var search = detail.querySelector("#lx-search");
     if (search) search.addEventListener("input", function () {
@@ -605,20 +794,25 @@ window.MineLexiconAdmin = (function () {
       lexState.search = "";
       renderLexicon();
     });
-    /* 添加事件 */
+    /* 添加事件：联系人词库 → 专属词；通用词库 → 自定义词 */
     var addBtn = detail.querySelector("#lx-add-btn");
     if (addBtn) addBtn.addEventListener("click", function () {
       var w = detail.querySelector("#lx-add-w").value.trim();
       var p = detail.querySelector("#lx-add-p").value.trim();
       var pos = detail.querySelector("#lx-add-pos").value;
-      var r = G.addCustomWord(w, p, pos);
+      var r;
+      if (isPer) {
+        r = G.addPerWord ? G.addPerWord(lexState.perCid, w, p, pos) : { ok: false, reason: "no-engine" };
+      } else {
+        r = G.addCustomWord(w, p, pos);
+      }
       if (r.ok) {
-        toast(r.mode === "re-enable" ? "已重新启用该词" : "已添加字词");
+        toast(r.mode === "re-enable" || r.mode === "update" ? "已更新该词" : "已添加字词");
         detail.querySelector("#lx-add-w").value = "";
         detail.querySelector("#lx-add-p").value = "";
         renderLexicon();
       } else {
-        toast({ "bad-word": "请输入 1-6 字词", "not-chinese": "仅支持中文字词", "no-pinyin": "请输入拼音" }[r.reason] || "添加失败");
+        toast({ "bad-word": "请输入 1-6 字词", "not-chinese": "仅支持中文字词", "no-pinyin": "请输入拼音", "no-contact": "请先选择联系人" }[r.reason] || "添加失败");
       }
     });
 
@@ -637,16 +831,18 @@ window.MineLexiconAdmin = (function () {
       var count = lexState.showCount[k] || 100;
       var shown = arr.slice(0, count);
       var rows = shown.map(function (e) {
-        var off = !!disabled[e.w];
-        var isC = !!customSet[e.w];
+        var off = isPer ? !perOn[e.w] : !!disabled[e.w];
+        var tag = isPer
+          ? ' <span style="font-size:10px;color:#6c4ab6;border:1px solid #6c4ab6;border-radius:3px;padding:0 3px;">专属</span>'
+          : (customSet[e.w] ? ' <span style="font-size:10px;color:#b3571f;border:1px solid #b3571f;border-radius:3px;padding:0 3px;">自添</span>' : '');
         return '<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f3f3f3;' + (off ? "opacity:.5;" : "") + '">' +
           '<span style="flex:none;width:30px;height:30px;border-radius:50%;background:' + (off ? "#eee" : "#e8f1fb") + ';color:' + (off ? "#999" : "#2563a8") + ';display:flex;align-items:center;justify-content:center;font-size:15px;">' + esc(e.w[0]) + '</span>' +
           '<div style="flex:1;min-width:0;">' +
-            '<div style="font-size:14px;font-weight:600;">' + esc(e.w) + (isC ? ' <span style="font-size:10px;color:#b3571f;border:1px solid #b3571f;border-radius:3px;padding:0 3px;">自添</span>' : '') + '</div>' +
+            '<div style="font-size:14px;font-weight:600;">' + esc(e.w) + tag + '</div>' +
             '<div style="font-size:11px;color:#999;">' + esc(e.p) + ' · ' + esc(e.pos) + (off ? ' · <span style="color:#a93226;">已关闭</span>' : '') + '</div>' +
           '</div>' +
           '<button class="lx-off" data-w="' + esc(e.w) + '" style="flex:none;padding:4px 9px;border-radius:6px;border:none;font-size:12px;' + (off ? "background:#2ecc71;color:#fff;" : "background:#eee;color:#777;") + '">' + (off ? "开启" : "关闭") + '</button>' +
-          '<button class="lx-del" data-w="' + esc(e.w) + '" data-custom="' + isC + '" style="flex:none;padding:4px 9px;border-radius:6px;border:none;background:#fdedec;color:#a93226;font-size:12px;">' + iconSvg("trash", 12) + '</button>' +
+          '<button class="lx-del" data-w="' + esc(e.w) + '" data-custom="' + (isPer ? "per" : (customSet[e.w] ? "true" : "false")) + '" style="flex:none;padding:4px 9px;border-radius:6px;border:none;background:#fdedec;color:#a93226;font-size:12px;">' + iconSvg("trash", 12) + '</button>' +
         '</div>';
       }).join("");
       var more = arr.length > shown.length
@@ -680,20 +876,28 @@ window.MineLexiconAdmin = (function () {
     Array.prototype.forEach.call(gbox.querySelectorAll(".lx-off"), function (btn) {
       btn.addEventListener("click", function () {
         var w = btn.getAttribute("data-w");
-        var cfg2 = G.getConfig();
-        var dis = cfg2.disabledWords.slice();
-        var i = dis.indexOf(w);
-        if (i >= 0) dis.splice(i, 1); else dis.push(w);
-        G.setConfig({ disabledWords: dis });
-        toast(i >= 0 ? "已开启该词" : "已关闭该词（不参与字卡生成）");
+        if (isPer) {
+          var tr = G.togglePerWord ? G.togglePerWord(lexState.perCid, w) : { ok: false };
+          toast(tr.ok ? (tr.on ? "已开启该词（参与该联系人组卡）" : "已关闭该词（不参与该联系人组卡）") : "操作失败");
+        } else {
+          var cfg2 = G.getConfig();
+          var dis = cfg2.disabledWords.slice();
+          var i = dis.indexOf(w);
+          if (i >= 0) dis.splice(i, 1); else dis.push(w);
+          G.setConfig({ disabledWords: dis });
+          toast(i >= 0 ? "已开启该词" : "已关闭该词（不参与字卡生成）");
+        }
         renderLexicon();
       });
     });
     Array.prototype.forEach.call(gbox.querySelectorAll(".lx-del"), function (btn) {
       btn.addEventListener("click", function () {
         var w = btn.getAttribute("data-w");
-        var isC = btn.getAttribute("data-custom") === "true";
-        if (isC) {
+        var kind = btn.getAttribute("data-custom");
+        if (kind === "per") {
+          G.removePerWord ? G.removePerWord(lexState.perCid, w) : null;
+          toast("已删除该联系人的专属词");
+        } else if (kind === "true") {
           G.removeCustomWord(w);
           toast("已删除自定义词");
         } else {

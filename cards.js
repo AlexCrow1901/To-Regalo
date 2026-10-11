@@ -22,7 +22,7 @@ window.MineCards = (function () {
   var C = window.MineContacts;
   var STORE_KEY = "mine.cards.v1";
 
-  var state = { public: [], per: {}, autoPer: {}, sys: [], sysAllOn: true, sysOff: {} };
+  var state = { public: [], per: {}, autoPer: {}, sys: [], sysAllOn: true, sysOff: {}, cardAt: {} };
   var expandedTypes = { text: true, emoji: true, image: true, audio: false, auto: false };  // 类型栏折叠状态
 
   /* ==================== 字卡类型判断（与 chat.js 保持同一套规则） ==================== */
@@ -62,6 +62,7 @@ window.MineCards = (function () {
         state.autoPer = (d.autoPer && typeof d.autoPer === "object") ? d.autoPer : {};
         state.sysAllOn = d.sysAllOn === false ? false : true;
         state.sysOff = (d.sysOff && typeof d.sysOff === "object") ? d.sysOff : {};
+        state.cardAt = (d.cardAt && typeof d.cardAt === "object") ? d.cardAt : {};
       }
     } catch (e) {}
     if (!Array.isArray(state.public)) state.public = [];
@@ -131,13 +132,14 @@ window.MineCards = (function () {
     try { list.sort(compareCards); } catch (e) {}
     return list;
   }
-  /** 单条添加：自动去重 + 排序 + 保存 */
+  /** 单条添加：自动去重 + 排序 + 保存 + 记录添加日期 */
   function addTo(list, v) {
     v = String(v || "").trim();
     if (!v) return false;
     if (list.indexOf(v) >= 0) return false;  // 自动去重
     list.push(v);
     sortList(list);
+    state.cardAt[v] = Date.now();
     save();
     return true;
   }
@@ -484,12 +486,19 @@ window.MineCards = (function () {
       '</div>';
 
     var content = "";
-    if (currentTab === "mine") {
-      content = renderMineTab();
-    } else if (currentTab === "per") {
-      content = renderPerTab();
-    } else {
-      content = renderSysPoolTab();
+    try {
+      if (currentTab === "mine") {
+        content = renderMineTab();
+      } else if (currentTab === "per") {
+        content = renderPerTab();
+      } else {
+        content = renderSysPoolTab();
+      }
+    } catch (e) {
+      /* 渲染异常不允许白屏：显示错误信息便于定位 */
+      content = '<div class="card-hint" style="color:#a93226;">字卡列表渲染失败：' +
+        escapeHtml((e && e.message) ? e.message : String(e)) +
+        '<br>可尝试在设置中清除缓存后重试。</div>';
     }
 
     /* 弹层内交互重渲染（删除/添加/tab 切换）保持滚动位置，避免跳回顶部 */
@@ -539,7 +548,10 @@ window.MineCards = (function () {
       if (open) {
         html += '<div class="card-list">' + byCid[k].map(function (it) {
           var inner = '<span class="card-text">' + escapeHtml(it.text) + '</span>';
-          return '<div class="card-item">' + inner +
+          var atLine = it.createdAt
+            ? '<div style="font-size:11px;color:#aaa;margin-top:2px;">添加于 ' + fmtCardDate(it.createdAt) + '</div>'
+            : '';
+          return '<div class="card-item">' + inner + atLine +
             '<button class="card-del" data-del-pool-id="' + escapeHtml(it.id) + '" aria-label="删除">' + I.svg("trash", 16) + '</button></div>';
         }).join("") + '</div>';
       }
@@ -658,6 +670,11 @@ window.MineCards = (function () {
       '</div>';
   }
 
+  function fmtCardDate(ts) {
+    var d = new Date(ts);
+    var p = function (n) { return n < 10 ? "0" + n : n; };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
   /* ---- 某类型下的字卡项列表（items: [{card, idx}]，idx 为存储数组真实索引） ---- */
   function renderTypeItems(items, scope, cid, type) {
     if (!items || items.length === 0) {
@@ -680,6 +697,11 @@ window.MineCards = (function () {
       } else {
         inner = '<span class="card-text">' + escapeHtml(card) + '</span>';
       }
+      /* 添加日期（文本/emoji 卡有记录；图片/语音无记录不显示） */
+      var at = state.cardAt[card];
+      var atLine = at
+        ? '<div style="font-size:11px;color:#aaa;margin-top:2px;">添加于 ' + fmtCardDate(at) + '</div>'
+        : '';
       /* 系统预设字卡（来源 sys）显示开关；"mine" 合并 tab 内按 entry.src 区分删除目标 */
       var isSysEntry = (scope === "mine" && entry.src === "sys") || scope === "sys";
       var sysToggle = isSysEntry
@@ -689,7 +711,7 @@ window.MineCards = (function () {
           '</button>'
         : '';
       var delScope = (scope === "mine") ? entry.src : scope;
-      return '<div class="card-item' + (isAudioCard(card) ? " is-voice" : "") + '">' + inner + sysToggle +
+      return '<div class="card-item' + (isAudioCard(card) ? " is-voice" : "") + '">' + inner + atLine + sysToggle +
         '<button class="card-del" data-del-scope="' + delScope + '" data-del-cid="' + (cid || "") + '" data-del-idx="' + entry.idx + '" ' +
         'aria-label="删除">' + I.svg("trash", 16) + '</button></div>';
     }).join("") + '</div>';
