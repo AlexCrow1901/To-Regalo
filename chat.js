@@ -34,19 +34,35 @@ window.MineChat = (function () {
     try {
       var raw = localStorage.getItem(STORE_KEY);
       if (raw) {
-        conversations = JSON.parse(raw) || {};
-        // 兼容旧数据：确保我的消息有 read 字段
-        Object.keys(conversations).forEach(function (key) {
-          var msgs = conversations[key];
-          if (Array.isArray(msgs)) {
-            msgs.forEach(function (m) {
-              if (m.from === "me" && m.read === undefined) {
-                // 旧消息默认视为已读
-                m.read = true;
-              }
-            });
+        try {
+          conversations = JSON.parse(raw) || {};
+          // 兼容旧数据：确保我的消息有 read 字段
+          Object.keys(conversations).forEach(function (key) {
+            var msgs = conversations[key];
+            if (Array.isArray(msgs)) {
+              msgs.forEach(function (m) {
+                if (m.from === "me" && m.read === undefined) {
+                  // 旧消息默认视为已读
+                  m.read = true;
+                }
+              });
+            }
+          });
+        } catch (parseErr) {
+          /* 数据异常（半截写入 / 被清理后残留）：先把原始串备份到 .bak，
+             再尝试从备份键恢复，绝不静默当作"无聊天记录"处理 */
+          console.warn("[MineChat] 聊天记录解析失败，尝试备份与恢复", parseErr);
+          try { localStorage.setItem(STORE_KEY + ".bak", raw); } catch (e2) {}
+          var bak = localStorage.getItem(STORE_KEY + ".bak");
+          if (bak && bak !== raw) {
+            try {
+              conversations = JSON.parse(bak) || {};
+              console.warn("[MineChat] 已从备份键恢复聊天记录");
+            } catch (e3) { conversations = {}; }
+          } else {
+            conversations = {};
           }
-        });
+        }
       }
     } catch (e) {}
     if (!conversations) conversations = {};
@@ -63,10 +79,12 @@ window.MineChat = (function () {
     loadProactive();
   }
   function save() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(conversations)); } catch (e) {}
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(conversations)); }
+    catch (e) { console.warn("[MineChat] 聊天记录写入失败", e); }
   }
   function saveUnread() {
-    try { localStorage.setItem(UNREAD_KEY, JSON.stringify(unreadCounts)); } catch (e) {}
+    try { localStorage.setItem(UNREAD_KEY, JSON.stringify(unreadCounts)); }
+    catch (e) { console.warn("[MineChat] 未读计数写入失败", e); }
   }
   /* ==================== 主动消息（联系人主动发消息）调度 ====================
      联系人详情页提供"主动消息"设置（proactiveMin / proactiveMax，单位为分钟），

@@ -97,6 +97,7 @@
   var flushing = false;
 
   /* 立即把当前缓存全量写入 IndexedDB（幂等：写入所有键） */
+  var hydrated = false;
   function flushNow() {
     if (flushing) return;
     flushing = true;
@@ -104,8 +105,12 @@
       flushing = false;
       if (!db) return;
       var entries = [];
-      for (var key in cache) entries.push({ key: key, value: cache[key] });
-      dbPutAll(db, entries);
+      if (!hydrated) {
+        for (var key in cache) if (dirty[key]) entries.push({ key: key, value: cache[key] });
+      } else {
+        for (var key in cache) entries.push({ key: key, value: cache[key] });
+      }
+      if (entries.length) dbPutAll(db, entries);
     });
   }
 
@@ -188,9 +193,17 @@
       var all = [];
       for (var key in cache) all.push({ key: key, value: cache[key] });
       dbPutAll(db, all);
+      hydrated = true;
       // 版本标记：仅记录存储层版本，不删除任何数据
       try {
-        localStorage.setItem(META_KEY, JSON.stringify({ v: 2, ts: Date.now() }));
+        localStorage.setItem(META_KEY, JSON.stringify({ v: 3, ts: Date.now() }));
+      } catch (e) {}
+      /* 自动申请持久化存储：防止浏览器在存储压力下自动清理本站数据
+         （聊天记录"时不时被清空"的主要外部原因），失败静默不影响使用 */
+      try {
+        if (navigator.storage && navigator.storage.persist) {
+          navigator.storage.persist().catch(function () {});
+        }
       } catch (e) {}
       try { window.dispatchEvent(new Event("mine:storage-hydrated")); } catch (e) {}
     });

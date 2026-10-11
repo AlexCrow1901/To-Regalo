@@ -7,20 +7,26 @@ window.MineFiles = (function () {
 
   var I = window.MineIcons;
 
-  /* ---------------- 模块注册表（与各模块存储键一一对应） ---------------- */
+  /* ---------------- 模块注册表（与各模块存储键一一对应） ----------------
+     覆盖全部功能数据（含后期新增：字卡生成器 / 词库 / 训练 / 组卡模板 /
+     联系人词库 / 发送概率 / 陪伴寄语 / 设置保活 / 自定义气泡 / 音乐等），
+     未登记的 mine.* 键仍由「其他」兜底导出导入。 */
   var MODULES = [
-    { key: "me",       name: "个人中心",   icon: "me",        keys: ["mine.me.v1"] },
-    { key: "contacts", name: "通讯录",     icon: "contacts",  keys: ["mine.contacts.v1", "mine.contacts.lastShuffle"] },
-    { key: "chat",     name: "聊天",       icon: "chat",      keys: ["mine.chat.v1", "mine.chat.unread.v1", "mine.chat.bg.v1", "mine.chat.fontColor.v1", "mine.chat.choices.v1"] },
-    { key: "cards",    name: "字卡",       icon: "feather",   keys: ["mine.cards.v1"] },
-    { key: "moments",  name: "朋友圈",     icon: "moments",   keys: ["mine.moments.v1", "mine.moments.cover", "mine.moments.contactInteractions"] },
-    { key: "phone",    name: "通话记录",   icon: "phone",     keys: ["mine.phone.log.v1"] },
-    { key: "mail",     name: "次元信箱",   icon: "mail",      keys: ["mine.mail.v1", "mine.mail.pending.v1", "mine.mail.active.v1", "mine.mail.activecheck.v1"] },
-    { key: "treehole", name: "深夜树洞",   icon: "feather",   keys: ["mine.treehole.v2", "mine.treehole.verify.v1", "mine.treehole.pending.v2", "mine.treehole.templates.v1", "mine.treehole.seenCount.v1"] },
-    { key: "radio",    name: "心情电台",   icon: "music",     keys: ["mine.radio.v1", "mine.radio.mode.v1"] },
-    { key: "foodie",   name: "雾都觅食",   icon: "utensils",  keys: ["mine.foodie.v1"] },
-    { key: "theme",    name: "背景与主题", icon: "background", keys: ["mine.bg.v1", "mine.theme.v1"] },
-    { key: "notify",   name: "通知记录",   icon: "bell",      keys: ["mine.notify.lastSeen.v1"] }
+    { key: "me",        name: "个人中心",   icon: "me",        keys: ["mine.me.v1"] },
+    { key: "contacts",  name: "通讯录",     icon: "contacts",  keys: ["mine.contacts.v1", "mine.contacts.lastShuffle"] },
+    { key: "chat",      name: "聊天",       icon: "chat",      keys: ["mine.chat.v1", "mine.chat.unread.v1", "mine.chat.bg.v1", "mine.chat.fontColor.v1", "mine.chat.choices.v1", "mine.chat.proactive.v1"] },
+    { key: "cards",     name: "字卡",       icon: "feather",   keys: ["mine.cards.v1", "mine.cards.gen.config.v1", "mine.cards.gen.items.v1", "mine.cards.gen.last.v1", "mine.cards.gen.backlog.v1", "mine.cards.gen.limitreq.v1", "mine.cards.gen.templates.v1", "mine.cards.gen.perlex.v1", "mine.lexicon.custom.v1", "mine.lexicon.train.v1", "mine.probabilities.v1"] },
+    { key: "companion", name: "陪伴寄语",   icon: "star",      keys: ["mine.companion.quotes.v1"] },
+    { key: "moments",   name: "朋友圈",     icon: "moments",   keys: ["mine.moments.v1", "mine.moments.cover", "mine.moments.contactInteractions"] },
+    { key: "phone",     name: "通话记录",   icon: "phone",     keys: ["mine.phone.log.v1"] },
+    { key: "mail",      name: "次元信箱",   icon: "mail",      keys: ["mine.mail.v1", "mine.mail.pending.v1", "mine.mail.active.v1", "mine.mail.activecheck.v1"] },
+    { key: "treehole",  name: "深夜树洞",   icon: "feather",   keys: ["mine.treehole.v2", "mine.treehole.verify.v1", "mine.treehole.pending.v2", "mine.treehole.templates.v1", "mine.treehole.seenCount.v1"] },
+    { key: "radio",     name: "心情电台",   icon: "music",     keys: ["mine.radio.v1", "mine.radio.mode.v1"] },
+    { key: "netease",   name: "音乐",       icon: "music",     keys: ["mine.netease.v1"] },
+    { key: "foodie",    name: "雾都觅食",   icon: "utensils",  keys: ["mine.foodie.v1"] },
+    { key: "theme",     name: "背景与主题", icon: "background", keys: ["mine.bg.v1", "mine.theme.v1", "mine.bubble.custom.v1", "mine.bubbles.v1"] },
+    { key: "settings",  name: "设置与保活", icon: "settings",  keys: ["mine.settings.v1", "mine.keepalive.hb.v1", "mine.icon.v1"] },
+    { key: "notify",    name: "通知记录",   icon: "bell",      keys: ["mine.notify.lastSeen.v1"] }
   ];
 
   /* ---------------- 工具函数 ---------------- */
