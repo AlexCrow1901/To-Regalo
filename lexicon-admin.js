@@ -227,13 +227,16 @@ window.MineLexiconAdmin = (function () {
             : (it.source === "realtime"
               ? '<span style="background:#fdf3e7;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">实时</span>'
               : '');
+          var comboTag = it.combo
+            ? '<span style="background:#eef3ff;color:#4a63d9;padding:1px 6px;border-radius:4px;font-size:11px;">拼卡</span>'
+            : '';
           var inputLine = it.input
             ? '<div style="font-size:12px;color:#888;margin-top:2px;">输入：' + esc(it.input) + ' → 还原为</div>'
             : '';
           var isEditing = approveEdit.id === it.id;
           var textBlock = isEditing
             ? '<input id="cg-edit-input" value="' + esc(approveEdit.val === "" ? it.text : approveEdit.val) + '" ' +
-              'placeholder="修改字卡内容（1-8 字）" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #4a90d9;font-size:15px;margin-bottom:6px;">'
+              'placeholder="修改字卡内容（无字数上限，可含标点）" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #4a90d9;font-size:15px;margin-bottom:6px;">'
             : '<div style="font-size:17px;font-weight:600;">' + esc(it.text) + '</div>';
           var editBtns = isEditing
             ? '<button class="cg-edit-save" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#2ecc71;color:#fff;border:none;font-size:13px;">' + iconSvg("check", 13) + ' 保存修改</button>' +
@@ -244,7 +247,7 @@ window.MineLexiconAdmin = (function () {
           return '<div style="margin:0 12px 10px;border:1px solid ' + (isEditing ? "#4a90d9" : "#eee") + ';border-radius:12px;padding:12px;background:#fff;">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;">' +
               textBlock +
-              '<div style="display:flex;gap:6px;align-items:center;">' + routeTag + srcTag + '</div>' +
+              '<div style="display:flex;gap:6px;align-items:center;">' + routeTag + srcTag + comboTag + '</div>' +
             '</div>' +
             inputLine +
             '<div style="font-size:12px;color:#999;margin-top:6px;">评分 ' + it.conf.toFixed(2) +
@@ -281,7 +284,7 @@ window.MineLexiconAdmin = (function () {
           approveEdit = { id: "", val: "" };
           renderPendingList();
         } else {
-          toast({ "bad-text": "请输入 1-8 字的中文（可含标点）", "not-pending": "该字卡状态已变化", "not-found": "字卡不存在" }[r.reason] || "保存失败");
+          toast({ "bad-text": "请输入中文（可含标点，无字数上限）", "not-pending": "该字卡状态已变化", "not-found": "字卡不存在" }[r.reason] || "保存失败");
         }
       });
     });
@@ -481,6 +484,10 @@ window.MineLexiconAdmin = (function () {
     var inner =
       '<div class="group-head">生成比例</div>' +
       row("rg-template", "模板路占比", "句法模板生成的字卡比例（其余为拼音路）", cfg.templateRatio * 100, "%", 0, 100, 5) +
+      '<div class="group-head">组卡拼字卡模式</div>' +
+      row("rg-gen-combo", "拼卡概率", "组字卡时使用拼字卡模式（多句拼接 + 切割）的概率（默认 25%）", Math.round((cfg.genComboProb || 0.25) * 100), "%", 0, 100, 5) +
+      '<div class="card-hint" style="margin:0 12px;">拼卡模式下：子句数在最少/最多之间随机（默认 1~3 句），每个子句独立 10% 概率被切割，' +
+        '子句间随机衔接（直接/空格/逗号/句号/感叹号/括号/emoji），可组成多句话；非拼卡模式生成单张素卡。</div>' +
       '<div class="group-head">置信度阈值（评分审批）</div>' +
       row("rg-auto", "实时组卡阈值", "评分 ≥ 此值：实时组卡通过并实时发送（入池仍需你审批）", cfg.autoThreshold * 100, "%", 50, 100, 5) +
       row("rg-manual", "人工审批下限", "评分 ≥ 此值：后台组卡进入人工审批（低分丢弃）", cfg.manualLow * 100, "%", 30, 70, 5) +
@@ -517,6 +524,7 @@ window.MineLexiconAdmin = (function () {
     if (save) save.addEventListener("click", function () {
       var patch = {
         templateRatio: (parseFloat(detail.querySelector("#rg-template").value) || 70) / 100,
+        genComboProb: (parseFloat(detail.querySelector("#rg-gen-combo").value) || 25) / 100,
         autoThreshold: (parseFloat(detail.querySelector("#rg-auto").value) || 80) / 100,
         manualLow: (parseFloat(detail.querySelector("#rg-manual").value) || 50) / 100,
         batchSize: parseInt(detail.querySelector("#rg-batch").value, 10) || 3,

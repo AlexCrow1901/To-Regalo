@@ -40,6 +40,9 @@ window.MineCardGenerator = (function () {
   /* ==================== 默认配置 ==================== */
   var CFG_DEFAULT = {
     templateRatio: 0.7,      /* 模板路占比（拼音路 = 1 - templateRatio） */
+    genComboProb: 0.25,      /* 组卡拼字卡模式概率：组出的字卡使用「多句拼接 + 切割」的概率（默认25%，与拼字卡发送一致） */
+    comboCountMin: 1,        /* 拼卡模式最少子句数 */
+    comboCountMax: 3,        /* 拼卡模式最多子句数 */
     autoThreshold: 0.8,      /* ≥ 此置信度：自动通过入池（可实时发送） */
     manualLow: 0.5,          /* ≥manualLow 且 <autoThreshold：人工审批；<manualLow：丢弃 */
     batchSize: 3,            /* 每次生成候选数 */
@@ -368,10 +371,10 @@ window.MineCardGenerator = (function () {
     return { autoed: autoed, backlogMax: cfg.backlogMax };
   }
 
-  /* 单条后台组卡候选（模板/拼音两路随机，全部进人工审批队列） */
+  /* 单条后台组卡候选（模板/拼音两路随机 + 拼卡模式，全部进人工审批队列） */
   function backlogCard(cid) {
     var cfg = getConfig();
-    var gen = (Math.random() < cfg.templateRatio) ? templateRoute(cid) : pinyinRoute(cid);
+    var gen = genRoute(cid);
     if (!gen) return null;
     var items = getItems();
     var dup = items.some(function (it) { return it.text === gen.text && it.route === gen.route && (it.status === "auto" || it.status === "approved" || it.status === "pending"); });
@@ -386,7 +389,8 @@ window.MineCardGenerator = (function () {
       source: "backlog",          /* 标记来源：后台自动组卡 */
       contactId: cid,
       createdAt: Date.now(),
-      genWords: gen.words || []
+      genWords: gen.words || [],
+      combo: gen.combo || null   /* 拼卡模式标记：多句拼接/切割 */
     };
     items.push(item);
     saveItems(items);
@@ -756,7 +760,7 @@ window.MineCardGenerator = (function () {
       words.push(e.w);
     }
     var text = words.join("");
-    if (text.length < 2 || text.length > 8) return null;
+    if (text.length < 2) return null;   /* 无字数上限（可生成多句长卡） */
     return { text: text, input: null, route: "template", words: words };
   }
 
@@ -803,6 +807,72 @@ window.MineCardGenerator = (function () {
       candidates: res.candidates || [],
       words: textWords
     };
+  }
+
+  /* ==================== 拼字卡模式（组卡后处理：多句拼接 + 切割单独字卡） ====================
+     规则与聊天发送的拼字卡一致：
+     · 按 genComboProb 概率启用：子句数在 comboCountMin ~ comboCountMax 之间随机（默认 1~3）
+     · 每个子句独立 10% 概率被切割（随机位置插入 逗号/空格/感叹号/emoji/括号包裹，均等）
+     · 子句间衔接符随机均等：直接连 / 空格 / 逗号 / 句号 / 感叹号 / 圆括号(包裹后卡) / emoji
+     · 非拼卡模式：单卡原样保留（不切割） */
+  var GEN_COMBO_EMOJI = ["🤔", "😊", "🥰", "😘", "😄", "❤️", "✨", "😆", "👍", "😳"];
+  function genCutText(text) {
+    var chars = Array.from(text);
+    if (chars.length < 2) return text;
+    var pos = 1 + Math.floor(Math.random() * (chars.length - 1));
+    var k = Math.floor(Math.random() * 5);
+    if (k === 4) {
+      return chars.slice(0, pos).join("") + "（" + chars.slice(pos).join("") + "）";
+    }
+    var sep = k === 0 ? "，" : (k === 1 ? " " : (k === 2 ? "！" :
+      GEN_COMBO_EMOJI[Math.floor(Math.random() * GEN_COMBO_EMOJI.length)]));
+    return chars.slice(0, pos).join("") + sep + chars.slice(pos).join("");
+  }
+  function genJoinTexts(parts) {
+    var out = parts[0];
+    for (var i = 1; i < parts.length; i++) {
+      var j = Math.floor(Math.random() * 7);
+      if (j === 0) out += parts[i];
+      else if (j === 1) out += " " + parts[i];
+      else if (j === 2) out += "，" + parts[i];
+      else if (j === 3) out += "。" + parts[i];
+      else if (j === 4) out += "！" + parts[i];
+      else if (j === 5) out += "（" + parts[i] + "）";
+      else out += GEN_COMBO_EMOJI[Math.floor(Math.random() * GEN_COMBO_EMOJI.length)] + parts[i];
+    }
+    return out;
+  }
+  /* 拼卡模式后处理：对一条已生成的基础卡应用多句拼接与切割，返回更新后的 gen */
+  function applyGenCombo(gen, cid) {
+    if (!gen) return gen;
+    var cfg = getConfig();
+    if (Math.random() >= (cfg.genComboProb || 0.25)) return gen;   /* 非拼卡模式：单卡原样 */
+    var min = Math.round(cfg.comboCountMin || 1);
+    var max = Math.round(cfg.comboCountMax || 3);
+    if (min < 1) min = 1;
+    if (max < 1) max = 3;
+    if (min > max) { var t = min; min = max; max = t; }
+    if (max > 8) max = 8;
+    var n = min + Math.floor(Math.random() * (max - min + 1));
+    var parts = [gen.text];
+    /* 补齐其余子句（复用模板/拼音两路生成；失败则保持已有子句） */
+    for (var i = 1; i < n; i++) {
+      var sub = (Math.random() < cfg.templateRatio) ? templateRoute(cid) : pinyinRoute(cid);
+      if (sub && sub.text) parts.push(sub.text);
+    }
+    /* 每个子句独立 10% 概率被切割 */
+    for (var k = 0; k < parts.length; k++) {
+      if (Math.random() < 0.10) parts[k] = genCutText(parts[k]);
+    }
+    gen.text = parts.length > 1 ? genJoinTexts(parts) : parts[0];
+    gen.combo = true;
+    return gen;
+  }
+  /* 统一组卡入口：双路选择 + 拼卡模式后处理（后台组卡 / 手动生成 / 实时组卡共用） */
+  function genRoute(cid) {
+    var cfg = getConfig();
+    var gen = (Math.random() < cfg.templateRatio) ? templateRoute(cid) : pinyinRoute(cid);
+    return applyGenCombo(gen, cid);
   }
 
   /* ==================== 评分分档 ==================== */
@@ -854,8 +924,8 @@ window.MineCardGenerator = (function () {
     var items = getItems();
     var created = 0, autoN = 0, pendingN = 0, droppedN = 0, dupN = 0;
     for (var i = 0; i < batch; i++) {
-      /* 双路选择（占比可配置） */
-      var gen = (Math.random() < cfg.templateRatio) ? templateRoute(cid) : pinyinRoute(cid);
+      /* 双路选择（占比可配置）+ 拼卡模式后处理 */
+      var gen = genRoute(cid);
       if (!gen) { continue; }
       /* 去重：同文本同路线的记录已存在则不重复生成 */
       var dup = items.some(function (it) { return it.text === gen.text && it.route === gen.route && (it.status === "auto" || it.status === "approved" || it.status === "pending"); });
@@ -874,7 +944,8 @@ window.MineCardGenerator = (function () {
         status: "pending",
         contactId: cid,
         createdAt: now,
-        genWords: gen.words || []
+        genWords: gen.words || [],
+        combo: gen.combo || null   /* 拼卡模式标记：多句拼接/切割 */
       };
       created++;
       /* AI 终审接口位：灰色区间卡片送外部 AI 判断（未启用时返回 null，不影响本地分） */
@@ -906,10 +977,10 @@ window.MineCardGenerator = (function () {
   }
 
   /* ==================== 人工审批 ==================== */
-  /* 审批前手动修改字卡内容：更新文本并重新评分（语法/通顺/置信度） */
+  /* 审批前手动修改字卡内容：更新文本并重新评分（语法/通顺/置信度）· 无字数上限 */
   function editItem(id, text) {
     text = String(text || "").trim();
-    if (!/^[\u4e00-\u9fa5A-Za-z0-9，。！？、,.!?()（）\s]{1,8}$/.test(text)) {
+    if (!/^[\u4e00-\u9fa5A-Za-z0-9，。！？、,.!?()（）\s]+$/.test(text)) {
       return { ok: false, reason: "bad-text" };
     }
     var items = getItems();
@@ -983,7 +1054,7 @@ window.MineCardGenerator = (function () {
      发送动作由 chat.js 调用方完成（sendGeneratedCard）。 */
   function realtimeCard(cid) {
     var cfg = getConfig();
-    var gen = (Math.random() < cfg.templateRatio) ? templateRoute(cid) : pinyinRoute(cid);
+    var gen = genRoute(cid);
     if (!gen) return null;
     var ev = evaluate(gen);
     var item = {
@@ -994,7 +1065,8 @@ window.MineCardGenerator = (function () {
       status: "pending", judgedBy: null, source: "realtime",
       contactId: cid || "global",
       createdAt: Date.now(),
-      genWords: gen.words || []
+      genWords: gen.words || [],
+      combo: gen.combo || null   /* 拼卡模式标记：多句拼接/切割 */
     };
     if (ev.conf >= cfg.autoThreshold) {
       item.sentTo = cid || null;
@@ -1066,6 +1138,9 @@ window.MineCardGenerator = (function () {
       });
       /* 归一化合法区间 */
       cfg.templateRatio = Math.max(0, Math.min(1, Number(cfg.templateRatio) || CFG_DEFAULT.templateRatio));
+      cfg.genComboProb = Math.max(0, Math.min(1, Number(cfg.genComboProb) || CFG_DEFAULT.genComboProb));
+      cfg.comboCountMin = Math.max(1, Math.min(8, parseInt(cfg.comboCountMin, 10) || CFG_DEFAULT.comboCountMin));
+      cfg.comboCountMax = Math.max(1, Math.min(8, parseInt(cfg.comboCountMax, 10) || CFG_DEFAULT.comboCountMax));
       cfg.autoThreshold = Math.max(0, Math.min(1, Number(cfg.autoThreshold) || CFG_DEFAULT.autoThreshold));
       cfg.manualLow = Math.max(0, Math.min(Number(cfg.autoThreshold) - 0.01, Number(cfg.manualLow) || CFG_DEFAULT.manualLow));
       cfg.batchSize = Math.max(1, Math.min(10, parseInt(cfg.batchSize, 10) || CFG_DEFAULT.batchSize));
