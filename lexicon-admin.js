@@ -47,7 +47,7 @@ window.MineLexiconAdmin = (function () {
   var VIEW_ICONS = { approve: "check", pool: "bookmark", train: "chart", rules: "settings", templates: "list", lexicon: "book" };
 
   /* 词库分组展开状态 */
-  var lexState = { search: "", expanded: {}, showCount: {}, loadedMore: {}, perCid: "" };
+  var lexState = { search: "", expanded: {}, showCount: {}, loadedMore: {}, perCid: "", mode: "all" };
 
   /* 最近一次渲染的视图（用于判断同视图重渲染 → 保持滚动，视图切换 → 回到顶部） */
   var lastRenderedView = "";
@@ -710,12 +710,10 @@ window.MineLexiconAdmin = (function () {
     var cfg = G.getConfig();
     var disabled = {};
     (cfg.disabledWords || []).forEach(function (w) { disabled[w] = true; });
-    var custom = G.getCustomWords();
-    var customSet = {};
-    custom.forEach(function (c) { customSet[c.w] = true; });
 
-    /* 联系人词库模式：选择联系人后管理其专属词库（词性 + 拼音由你规定，随该联系人参与组卡） */
-    var isPer = !!lexState.perCid;
+    /* 模式：all=系统预设词库 | mine=我的字词（通用） | per=联系人专属词库 */
+    var mode = lexState.mode || "all";
+    var isPer = mode === "per";
     var contacts = (C && C.getState) ? (C.getState().contacts || []) : [];
     var perWords = isPer ? (G.getPerLexWords ? G.getPerLexWords(lexState.perCid) : []) : [];
     var perOn = {};
@@ -723,7 +721,14 @@ window.MineLexiconAdmin = (function () {
 
     /* 搜索过滤（词 / 拼音包含） */
     var kw = lexState.search.trim().toLowerCase();
-    var words = isPer ? perWords : L.words;
+    var words;
+    if (mode === "mine") {
+      words = G.getCustomWords();                    /* 我的字词（通用）：仅我添加的 */
+    } else if (mode === "per") {
+      words = perWords;                              /* 联系人专属 */
+    } else {
+      words = L.words.filter(function (e) { return !e.isCustom; });  /* 系统预设，不含自添词 */
+    }
     if (kw) {
       words = words.filter(function (e) {
         return e.w.indexOf(kw) >= 0 || (e.p || "").toLowerCase().indexOf(kw) >= 0;
@@ -738,20 +743,40 @@ window.MineLexiconAdmin = (function () {
     });
     var letters = Object.keys(groups).sort();
 
-    /* 联系人选择器 */
-    var perOpts = '<option value=""' + (isPer ? "" : " selected") + '>通用词库（全部联系人）</option>' +
+    /* 模式 / 联系人选择器 */
+    var perOpts =
+      '<option value="all"' + (mode === "all" ? " selected" : "") + '>通用词库（系统预设）</option>' +
+      '<option value="mine"' + (mode === "mine" ? " selected" : "") + '>我的字词（通用）</option>' +
       contacts.map(function (c) {
-        var sel = lexState.perCid === c.id ? " selected" : "";
-        return '<option value="' + esc(c.id) + '"' + sel + '>' + esc(c.name || c.id) + ' 专属词库</option>';
+        var sel = mode === "per" && lexState.perCid === c.id ? " selected" : "";
+        return '<option value="per:' + esc(c.id) + '"' + sel + '>' + esc(c.name || c.id) + ' 专属词库</option>';
       }).join("");
+
+    var hintTxt =
+      mode === "mine"
+        ? '我的字词：仅你添加的字词，所有联系人组卡时均可使用 · 添加时可自主规定词性与拼音 · 可增删 / 开关'
+        : (isPer
+          ? '联系人的专属词库：仅该联系人组卡使用（与全局词库一起）· 添加时可自主规定词性与拼音 · 每词可开关 / 删除'
+          : '系统预设词库：内置常用字词，全部联系人组卡均使用 · 每词可开关（关闭则不参与）/ 删除（删除后不参与，可在「我的字词」中自行添加）');
+
+    var addArea = mode === "all"
+      ? '<div class="card-hint" style="padding:0 12px 6px;color:#888;">系统预设词库无需添加字词——想添加自定义字词，请切换到「我的字词（通用）」或联系人专属词库。</div>'
+      : '<div class="group-head">添加字词</div>' +
+        '<div style="padding:0 12px 6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
+          '<input id="lx-add-w" placeholder="字词（2-6 字）" style="flex:1;min-width:90px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
+          '<input id="lx-add-p" placeholder="拼音（空格分隔，如 wo xiang ni）" style="flex:1.4;min-width:150px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
+          '<select id="lx-add-pos" style="padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
+            '<option value="n">名词</option><option value="v">动词</option><option value="a">形容词</option>' +
+            '<option value="d">副词</option><option value="r">代词</option><option value="e">叹词</option>' +
+          '</select>' +
+          '<button id="lx-add-btn" class="chat-bg-btn" style="padding:8px 14px;border-radius:8px;background:#4a90d9;color:#fff;border:none;font-size:13px;">' + iconSvg("plus", 14) + ' 添加</button>' +
+        '</div>';
 
     var inner =
       '<div class="group-head">词库范围</div>' +
       '<div style="padding:0 12px 6px;">' +
         '<select id="lx-per" style="width:100%;padding:9px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' + perOpts + '</select>' +
-        (isPer
-          ? '<div class="card-hint">联系人的专属词库：与全局词库一起参与该联系人的字卡生成 · 添加时可自主规定词性与拼音 · 每词可开关 / 删除</div>'
-          : '<div class="card-hint">通用词库：全部联系人的组卡均使用 · 添加时可自主规定词性与拼音 · 每词可开关（关闭则不参与）/ 删除</div>') +
+        '<div class="card-hint">' + hintTxt + '</div>' +
       '</div>' +
       '<div class="group-head">搜索</div>' +
       '<div style="padding:0 12px 6px;">' +
@@ -761,25 +786,23 @@ window.MineLexiconAdmin = (function () {
         '</div>' +
         '<div class="card-hint">共 ' + words.length + ' 个匹配字词 · 展示按 A-Z 排序，不影响内部逻辑。</div>' +
       '</div>' +
-      '<div class="group-head">添加字词</div>' +
-      '<div style="padding:0 12px 6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
-        '<input id="lx-add-w" placeholder="字词（2-6 字）" style="flex:1;min-width:90px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
-        '<input id="lx-add-p" placeholder="拼音（空格分隔，如 wo xiang ni）" style="flex:1.4;min-width:150px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
-        '<select id="lx-add-pos" style="padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
-          '<option value="n">名词</option><option value="v">动词</option><option value="a">形容词</option>' +
-          '<option value="d">副词</option><option value="r">代词</option><option value="e">叹词</option>' +
-        '</select>' +
-        '<button id="lx-add-btn" class="chat-bg-btn" style="padding:8px 14px;border-radius:8px;background:#4a90d9;color:#fff;border:none;font-size:13px;">' + iconSvg("plus", 14) + ' 添加</button>' +
-      '</div>' +
+      addArea +
       '<div class="group-head">字词列表（A-Z）</div>' +
       '<div id="lx-groups"></div>';
     pageShell("lexicon", inner);
     var detail = document.getElementById("page-detail");
 
-    /* 联系人选择事件 */
+    /* 模式 / 联系人选择事件 */
     var perSel = detail.querySelector("#lx-per");
     if (perSel) perSel.addEventListener("change", function () {
-      lexState.perCid = perSel.value;
+      var v = perSel.value;
+      if (v === "all" || v === "mine") {
+        lexState.mode = v;
+        lexState.perCid = "";
+      } else if (v.indexOf("per:") === 0) {
+        lexState.mode = "per";
+        lexState.perCid = v.slice(4);
+      }
       lexState.search = "";
       renderLexicon();
     });
@@ -794,7 +817,7 @@ window.MineLexiconAdmin = (function () {
       lexState.search = "";
       renderLexicon();
     });
-    /* 添加事件：联系人词库 → 专属词；通用词库 → 自定义词 */
+    /* 添加事件：我的字词（通用）→ 自定义词；联系人词库 → 专属词 */
     var addBtn = detail.querySelector("#lx-add-btn");
     if (addBtn) addBtn.addEventListener("click", function () {
       var w = detail.querySelector("#lx-add-w").value.trim();
@@ -834,7 +857,8 @@ window.MineLexiconAdmin = (function () {
         var off = isPer ? !perOn[e.w] : !!disabled[e.w];
         var tag = isPer
           ? ' <span style="font-size:10px;color:#6c4ab6;border:1px solid #6c4ab6;border-radius:3px;padding:0 3px;">专属</span>'
-          : (customSet[e.w] ? ' <span style="font-size:10px;color:#b3571f;border:1px solid #b3571f;border-radius:3px;padding:0 3px;">自添</span>' : '');
+          : (mode === "mine" ? ' <span style="font-size:10px;color:#b3571f;border:1px solid #b3571f;border-radius:3px;padding:0 3px;">我的</span>' : '');
+        var delKind = isPer ? "per" : (mode === "mine" ? "mine" : "false");
         return '<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f3f3f3;' + (off ? "opacity:.5;" : "") + '">' +
           '<span style="flex:none;width:30px;height:30px;border-radius:50%;background:' + (off ? "#eee" : "#e8f1fb") + ';color:' + (off ? "#999" : "#2563a8") + ';display:flex;align-items:center;justify-content:center;font-size:15px;">' + esc(e.w[0]) + '</span>' +
           '<div style="flex:1;min-width:0;">' +
@@ -842,7 +866,7 @@ window.MineLexiconAdmin = (function () {
             '<div style="font-size:11px;color:#999;">' + esc(e.p) + ' · ' + esc(e.pos) + (off ? ' · <span style="color:#a93226;">已关闭</span>' : '') + '</div>' +
           '</div>' +
           '<button class="lx-off" data-w="' + esc(e.w) + '" style="flex:none;padding:4px 9px;border-radius:6px;border:none;font-size:12px;' + (off ? "background:#2ecc71;color:#fff;" : "background:#eee;color:#777;") + '">' + (off ? "开启" : "关闭") + '</button>' +
-          '<button class="lx-del" data-w="' + esc(e.w) + '" data-custom="' + (isPer ? "per" : (customSet[e.w] ? "true" : "false")) + '" style="flex:none;padding:4px 9px;border-radius:6px;border:none;background:#fdedec;color:#a93226;font-size:12px;">' + iconSvg("trash", 12) + '</button>' +
+          '<button class="lx-del" data-w="' + esc(e.w) + '" data-custom="' + delKind + '" style="flex:none;padding:4px 9px;border-radius:6px;border:none;background:#fdedec;color:#a93226;font-size:12px;">' + iconSvg("trash", 12) + '</button>' +
         '</div>';
       }).join("");
       var more = arr.length > shown.length
@@ -897,9 +921,9 @@ window.MineLexiconAdmin = (function () {
         if (kind === "per") {
           G.removePerWord ? G.removePerWord(lexState.perCid, w) : null;
           toast("已删除该联系人的专属词");
-        } else if (kind === "true") {
+        } else if (kind === "mine") {
           G.removeCustomWord(w);
-          toast("已删除自定义词");
+          toast("已删除我的字词");
         } else {
           var cfg2 = G.getConfig();
           var dis = cfg2.disabledWords.slice();
