@@ -24,6 +24,7 @@ window.MineCards = (function () {
 
   var state = { public: [], per: {}, autoPer: {}, sys: [], sysAllOn: true, sysOff: {}, cardAt: {} };
   var expandedTypes = { text: true, emoji: true, image: true, audio: false, auto: true };  // 类型栏折叠状态
+  var expandedMore = {};   // 大列表"显示更多"展开状态（按 scope:cid:type 记忆）
 
   /* ==================== 字卡类型判断（与 chat.js 保持同一套规则） ==================== */
   function isImageCard(card) {
@@ -501,8 +502,15 @@ window.MineCards = (function () {
         '<br>可尝试在设置中清除缓存后重试。</div>';
     }
 
-    /* 弹层内交互重渲染（删除/添加/tab 切换）保持滚动位置，避免跳回顶部 */
-    window.MineScroll.render(body, tabs + content, true, function () { bindEvents(body); });
+    /* 弹层内交互重渲染（删除/添加/tab 切换）保持滚动位置，避免跳回顶部
+       防御：MineScroll 异常时回退为直接渲染，保证交互不失效（防"点击没反应"） */
+    try {
+      window.MineScroll.render(body, tabs + content, true, function () { bindEvents(body); });
+    } catch (e) {
+      console.error("[MineCards] render failed:", e);
+      body.innerHTML = tabs + content;
+      try { bindEvents(body); } catch (e2) { console.error("[MineCards] bindEvents failed:", e2); }
+    }
   }
 
   /* ---- 我的字卡 tab：你自行添加的字卡（公用字卡 + 系统预设字卡合并） ---- */
@@ -528,6 +536,7 @@ window.MineCards = (function () {
 
   /* ---- 系统字卡 tab：字卡池中你审批通过的字卡（来自组字卡审批），按联系人分组、可折叠 ---- */
   var sysPoolCollapse = {};   /* 联系人组折叠状态：默认折叠，点击组头展开 */
+  var sysPoolMore = {};       /* 联系人组「显示更多」展开状态 */
   function renderSysPoolTab() {
     var html = '<div class="card-hint">系统字卡：你审批通过的字卡（来自字卡池），联系人组卡审批通过后自动进入此处 · 按联系人分组，点击组名展开/折叠 · 删除后同时移出聊天使用</div>';
     var pool = (window.MineCardGenerator && window.MineCardGenerator.getPool) ? window.MineCardGenerator.getPool() : [];
@@ -539,6 +548,7 @@ window.MineCards = (function () {
       var k = (it.contactId && it.contactId !== "global") ? it.contactId : "global";
       (byCid[k] = byCid[k] || []).push(it);
     });
+    var POOL_MORE = 100;   /* 每组最多渲染 100 条，防大量审批通过卡导致卡顿 */
     Object.keys(byCid).forEach(function (k) {
       var name = k === "global" ? "通用" : contactName(k);
       var open = sysPoolCollapse[k] === true;
@@ -546,7 +556,9 @@ window.MineCards = (function () {
         '<span>' + escapeHtml(name) + ' · ' + byCid[k].length + ' 张</span>' +
         '<span style="font-size:12px;color:#888;">' + (open ? '收起 ▲' : '展开 ▼') + '</span></div>';
       if (open) {
-        html += '<div class="card-list">' + byCid[k].map(function (it) {
+        var poolExpanded = sysPoolMore[k] === true;
+        var poolShown = poolExpanded ? byCid[k] : byCid[k].slice(0, POOL_MORE);
+        html += '<div class="card-list">' + poolShown.map(function (it) {
           var inner = '<span class="card-text">' + escapeHtml(it.text) + '</span>';
           var atLine = it.createdAt
             ? '<div style="font-size:11px;color:#aaa;margin-top:2px;">添加于 ' + fmtCardDate(it.createdAt) + '</div>'
@@ -554,6 +566,9 @@ window.MineCards = (function () {
           return '<div class="card-item">' + inner + atLine +
             '<button class="card-del" data-del-pool-id="' + escapeHtml(it.id) + '" aria-label="删除">' + I.svg("trash", 16) + '</button></div>';
         }).join("") + '</div>';
+        if (byCid[k].length > poolShown.length) {
+          html += '<button class="card-more-btn" data-sp-more="' + escapeHtml(k) + '" style="width:100%;padding:9px;border:none;background:none;color:#4a90d9;font-size:12px;cursor:pointer;">显示更多（还有 ' + (byCid[k].length - poolShown.length) + ' 张）</button>';
+        }
       }
     });
     return html;
@@ -584,7 +599,9 @@ window.MineCards = (function () {
       '<span>当前联系人：' + escapeHtml(contactName(currentCid)) + '</span>' +
       '<button class="card-back" data-pick-back>' + I.svg("back", 14) + ' 切换</button>' +
       '</div>';
-    var per = state.per[currentCid] || [];
+    var per = (state.per[currentCid] || []).map(function (card, i) {
+      return { card: card, idx: i };   /* 字符串数组 → 对象格式（card/idx），否则内容渲染为空 */
+    });
     html += renderCardEditor(per, "per", currentCid, true);
     return html;
   }
@@ -691,7 +708,12 @@ window.MineCards = (function () {
         (type === "auto" ? "暂无自动回复字卡" : "暂无语音字卡")));
       return '<div class="cards-empty">' + emptyText + '</div>';
     }
-    return '<div class="card-list">' + items.map(function (entry) {
+    /* 大列表限流：每栏默认最多渲染 100 条，点击「显示更多」展开全部（防大量字卡导致页面卡顿） */
+    var MORE_LIMIT = 100;
+    var moreKey = (scope || "s") + ":" + (cid || "") + ":" + type;
+    var expanded = expandedMore[moreKey] === true;
+    var shown = expanded ? items : items.slice(0, MORE_LIMIT);
+    var listHtml = shown.map(function (entry) {
       var card = entry.card;
       var inner;
       if (isImageCard(card)) {
@@ -720,7 +742,11 @@ window.MineCards = (function () {
       return '<div class="card-item' + (isAudioCard(card) ? " is-voice" : "") + '">' + inner + atLine + sysToggle +
         '<button class="card-del" data-del-scope="' + delScope + '" data-del-cid="' + (cid || "") + '" data-del-idx="' + entry.idx + '" ' +
         'aria-label="删除">' + I.svg("trash", 16) + '</button></div>';
-    }).join("") + '</div>';
+    }).join("");
+    var moreBtn = items.length > shown.length
+      ? '<button class="card-more-btn" data-more-key="' + moreKey + '" style="width:100%;padding:9px;border:none;background:none;color:#4a90d9;font-size:12px;cursor:pointer;">显示更多（还有 ' + (items.length - shown.length) + ' 条）</button>'
+      : '';
+    return '<div class="card-list">' + listHtml + '</div>' + moreBtn;
   }
 
   /* ---- 某类型的添加行 ---- */
@@ -788,6 +814,14 @@ window.MineCards = (function () {
       });
     });
 
+    /* 大列表「显示更多」展开（防卡顿限流后的补充分页） */
+    body.querySelectorAll("[data-more-key]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        expandedMore[btn.getAttribute("data-more-key")] = true;
+        render();
+      });
+    });
+
     /* 一键导出 / 一键导入（各类字卡） */
     body.querySelectorAll("[data-export-type]").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -845,6 +879,14 @@ window.MineCards = (function () {
       h.addEventListener("click", function () {
         var k = h.getAttribute("data-sp-group");
         sysPoolCollapse[k] = sysPoolCollapse[k] !== true;
+        render();
+      });
+    });
+
+    /* 系统字卡分组「显示更多」展开 */
+    body.querySelectorAll("[data-sp-more]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        sysPoolMore[btn.getAttribute("data-sp-more")] = true;
         render();
       });
     });

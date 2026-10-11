@@ -102,7 +102,7 @@ window.MineCardGenerator = (function () {
   }
   function addCustomWord(w, p, pos) {
     w = String(w || "").trim();
-    if (!w || w.length < 1 || w.length > 6) return { ok: false, reason: "bad-word" };
+    if (!w || w.length < 1) return { ok: false, reason: "bad-word" };   /* 字数不设限 */
     if (!/^[\u4e00-\u9fa5]+$/.test(w)) return { ok: false, reason: "not-chinese" };
     p = String(p || "").trim().toLowerCase().replace(/\s+/g, " ");
     if (!p) return { ok: false, reason: "no-pinyin" };
@@ -637,7 +637,7 @@ window.MineCardGenerator = (function () {
     if (!cid || cid === "global") return { ok: false, reason: "no-contact" };
     w = (w || "").trim();
     p = (p || "").trim();
-    if (!/^[\u4e00-\u9fa5]{1,6}$/.test(w)) return { ok: false, reason: "bad-word" };
+    if (!/^[\u4e00-\u9fa5]+$/.test(w)) return { ok: false, reason: "bad-word" };   /* 字数不设限 */
     if (!p) return { ok: false, reason: "no-pinyin" };
     var d = getPerLex();
     var arr = Array.isArray(d[cid]) ? d[cid] : [];
@@ -914,9 +914,9 @@ window.MineCardGenerator = (function () {
     var last = getLast();
     var now = Date.now();
     var hour = 3600000;
-    /* 限流：每联系人每小时候选数上限 */
+    /* 限流：每联系人每小时候选数上限（0 = 不设限） */
     var stamps = (last[cid] || []).filter(function (ts) { return now - ts < hour; });
-    if (stamps.length >= cfg.maxPerHour) {
+    if (cfg.maxPerHour > 0 && stamps.length >= cfg.maxPerHour) {
       return { blocked: true, reason: "per-hour-limit", limit: cfg.maxPerHour, nextIn: Math.ceil((hour - (now - stamps[0])) / 60000) };
     }
     var batch = count || cfg.batchSize;
@@ -1144,7 +1144,8 @@ window.MineCardGenerator = (function () {
       cfg.autoThreshold = Math.max(0, Math.min(1, Number(cfg.autoThreshold) || CFG_DEFAULT.autoThreshold));
       cfg.manualLow = Math.max(0, Math.min(Number(cfg.autoThreshold) - 0.01, Number(cfg.manualLow) || CFG_DEFAULT.manualLow));
       cfg.batchSize = Math.max(1, Math.min(10, parseInt(cfg.batchSize, 10) || CFG_DEFAULT.batchSize));
-      cfg.maxPerHour = Math.max(1, Math.min(100, parseInt(cfg.maxPerHour, 10) || CFG_DEFAULT.maxPerHour));
+      var mh = parseInt(cfg.maxPerHour, 10);
+      cfg.maxPerHour = (isNaN(mh) || mh < 0) ? CFG_DEFAULT.maxPerHour : Math.min(500, mh);  /* 0 = 不设限（最高 500） */
       cfg.autoAddToPool = !!cfg.autoAddToPool;
       cfg.disabledWords = Array.isArray(cfg.disabledWords) ? cfg.disabledWords : [];
       saveJSON(CFG_KEY, cfg);

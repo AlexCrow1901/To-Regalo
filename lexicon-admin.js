@@ -496,7 +496,7 @@ window.MineLexiconAdmin = (function () {
         '% 实时发送（发送后转入待审批，你通过才入池）</div>' +
       '<div class="group-head">运行规则</div>' +
       selRow("rg-batch", "每次生成数量", "单次「生成一批」的候选数", cfg.batchSize, [1, 2, 3, 5, 10]) +
-      selRow("rg-max", "每小时候选数上限", "每个联系人每小时最多生成的候选数", cfg.maxPerHour, [5, 10, 20, 50, 100]) +
+      selRow("rg-max", "每小时候选数上限", "每个联系人每小时最多生成的候选数（0 = 不设限）", cfg.maxPerHour, [0, 5, 10, 20, 50, 100, 500]) +
       '<div class="group-head">本地训练</div>' +
       selRow("rg-train-batch", "训练批量", "攒满多少条人工审批样本后自动批量训练一次", cfg.trainBatchSize, [10, 20, 30, 50]) +
       '<div class="group-head">后台组卡调度</div>' +
@@ -528,7 +528,7 @@ window.MineLexiconAdmin = (function () {
         autoThreshold: (parseFloat(detail.querySelector("#rg-auto").value) || 80) / 100,
         manualLow: (parseFloat(detail.querySelector("#rg-manual").value) || 50) / 100,
         batchSize: parseInt(detail.querySelector("#rg-batch").value, 10) || 3,
-        maxPerHour: parseInt(detail.querySelector("#rg-max").value, 10) || 10,
+        maxPerHour: (function () { var v = parseInt(detail.querySelector("#rg-max").value, 10); return isNaN(v) ? 10 : v; })(),   /* 0 = 不设限 */
         trainBatchSize: parseInt(detail.querySelector("#rg-train-batch").value, 10) || 20,
         backlogMax: parseInt(detail.querySelector("#rg-backlog-max").value, 10) || 20,
         reqTimeout: parseInt(detail.querySelector("#rg-req-timeout").value, 10) || 15,
@@ -767,18 +767,20 @@ window.MineLexiconAdmin = (function () {
           ? '联系人的专属词库：仅该联系人组卡使用（与全局词库一起）· 添加时可自主规定词性与拼音 · 每词可开关 / 删除'
           : '系统预设词库：内置常用字词，全部联系人组卡均使用 · 每词可开关（关闭则不参与）/ 删除（删除后不参与，可在「我的字词」中自行添加）');
 
-    var addArea = mode === "all"
-      ? '<div class="card-hint" style="padding:0 12px 6px;color:#888;">系统预设词库无需添加字词——想添加自定义字词，请切换到「我的字词（通用）」或联系人专属词库。</div>'
-      : '<div class="group-head">添加字词</div>' +
-        '<div style="padding:0 12px 6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
-          '<input id="lx-add-w" placeholder="字词（2-6 字）" style="flex:1;min-width:90px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
-          '<input id="lx-add-p" placeholder="拼音（空格分隔，如 wo xiang ni）" style="flex:1.4;min-width:150px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
-          '<select id="lx-add-pos" style="padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
-            '<option value="n">名词</option><option value="v">动词</option><option value="a">形容词</option>' +
-            '<option value="d">副词</option><option value="r">代词</option><option value="e">叹词</option>' +
-          '</select>' +
-          '<button id="lx-add-btn" class="chat-bg-btn" style="padding:8px 14px;border-radius:8px;background:#4a90d9;color:#fff;border:none;font-size:13px;">' + iconSvg("plus", 14) + ' 添加</button>' +
-        '</div>';
+    var addArea =
+      '<div class="group-head">添加字词</div>' +
+      '<div style="padding:0 12px 6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
+        '<input id="lx-add-w" placeholder="字词（字数不限，可长句）" style="flex:1;min-width:90px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
+        '<input id="lx-add-p" placeholder="拼音（空格分隔，如 wo xiang ni）" style="flex:1.4;min-width:150px;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
+        '<select id="lx-add-pos" style="padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;">' +
+          '<option value="n">名词</option><option value="v">动词</option><option value="a">形容词</option>' +
+          '<option value="d">副词</option><option value="r">代词</option><option value="e">叹词</option>' +
+        '</select>' +
+        '<button id="lx-add-btn" class="chat-bg-btn" style="padding:8px 14px;border-radius:8px;background:#4a90d9;color:#fff;border:none;font-size:13px;">' + iconSvg("plus", 14) + ' 添加</button>' +
+      '</div>' +
+      (mode === "all"
+        ? '<div class="card-hint" style="padding:0 12px 6px;color:#888;">当前在系统预设词库：新增字词会自动放入「我的字词（通用）」，所有联系人组卡均可用。</div>'
+        : '');
 
     var inner =
       '<div class="group-head">词库范围</div>' +
@@ -838,12 +840,12 @@ window.MineLexiconAdmin = (function () {
         r = G.addCustomWord(w, p, pos);
       }
       if (r.ok) {
-        toast(r.mode === "re-enable" || r.mode === "update" ? "已更新该词" : "已添加字词");
+        toast(r.mode === "re-enable" || r.mode === "update" ? "已更新该词" : (mode === "all" ? "已添加至我的字词（通用）" : "已添加字词"));
         detail.querySelector("#lx-add-w").value = "";
         detail.querySelector("#lx-add-p").value = "";
         renderLexicon();
       } else {
-        toast({ "bad-word": "请输入 1-6 字词", "not-chinese": "仅支持中文字词", "no-pinyin": "请输入拼音", "no-contact": "请先选择联系人" }[r.reason] || "添加失败");
+        toast({ "bad-word": "请输入字词", "not-chinese": "仅支持中文字词", "no-pinyin": "请输入拼音", "no-contact": "请先选择联系人" }[r.reason] || "添加失败");
       }
     });
 
