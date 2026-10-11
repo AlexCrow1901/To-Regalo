@@ -223,9 +223,11 @@ window.MineLexiconAdmin = (function () {
             ? '<span style="background:#fdf0e6;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">拼音</span>'
             : '<span style="background:#e8f1fb;color:#2563a8;padding:1px 6px;border-radius:4px;font-size:11px;">模板</span>';
           var srcTag = it.source === "backlog"
-            ? '<span style="background:#e8f6ef;color:#1d8348;padding:1px 6px;border-radius:4px;font-size:11px;">后台组卡</span>'
+            ? '<span style="background:#e8f6ef;color:#1d8348;padding:1px 6px;border-radius:4px;font-size:11px;">后台组卡' +
+              (it.contactId && it.contactId !== "global" ? ' · ' + esc(contactName(it.contactId)) : '') + '</span>'
             : (it.source === "realtime"
-              ? '<span style="background:#fdf3e7;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">实时</span>'
+              ? '<span style="background:#fdf3e7;color:#b3571f;padding:1px 6px;border-radius:4px;font-size:11px;">实时' +
+                (it.contactId && it.contactId !== "global" ? ' · ' + esc(contactName(it.contactId)) : '') + '</span>'
               : '');
           var comboTag = it.combo
             ? '<span style="background:#eef3ff;color:#4a63d9;padding:1px 6px;border-radius:4px;font-size:11px;">拼卡</span>'
@@ -236,7 +238,7 @@ window.MineLexiconAdmin = (function () {
           var isEditing = approveEdit.id === it.id;
           var textBlock = isEditing
             ? '<input id="cg-edit-input" value="' + esc(approveEdit.val === "" ? it.text : approveEdit.val) + '" ' +
-              'placeholder="修改字卡内容（无字数上限，可含标点）" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #4a90d9;font-size:15px;margin-bottom:6px;">'
+              'placeholder="修改字卡内容（无字数上限，任意内容）" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #4a90d9;font-size:15px;margin-bottom:6px;">'
             : '<div style="font-size:17px;font-weight:600;">' + esc(it.text) + '</div>';
           var editBtns = isEditing
             ? '<button class="cg-edit-save" data-id="' + it.id + '" style="flex:1;padding:8px;border-radius:8px;background:#2ecc71;color:#fff;border:none;font-size:13px;">' + iconSvg("check", 13) + ' 保存修改</button>' +
@@ -284,7 +286,7 @@ window.MineLexiconAdmin = (function () {
           approveEdit = { id: "", val: "" };
           renderPendingList();
         } else {
-          toast({ "bad-text": "请输入中文（可含标点，无字数上限）", "closed": "该字卡状态已变化", "not-found": "字卡不存在" }[r.reason] || "保存失败");
+          toast({ "empty": "字卡内容不能为空", "closed": "该字卡状态已变化", "not-found": "字卡不存在" }[r.reason] || "保存失败");
         }
       });
     });
@@ -325,7 +327,7 @@ window.MineLexiconAdmin = (function () {
     var isEditing = poolEdit.id === it.id;
     var textBlock = isEditing
       ? '<input id="cg-pool-edit-input" value="' + esc(poolEdit.val === "" ? it.text : poolEdit.val) + '" ' +
-        'placeholder="修改字卡内容（无字数上限，可含标点）" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #4a90d9;font-size:15px;margin-bottom:6px;">'
+        'placeholder="修改字卡内容（无字数上限，任意内容）" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #4a90d9;font-size:15px;margin-bottom:6px;">'
       : '<div style="font-size:16px;font-weight:600;">' + esc(it.text) + '</div>';
     var btns = isEditing
       ? '<button class="cg-pool-edit-save" data-id="' + it.id + '" style="margin-top:6px;padding:5px 10px;border-radius:6px;background:#2ecc71;color:#fff;border:none;font-size:12px;">' + iconSvg("check", 13) + ' 保存修改</button>' +
@@ -370,7 +372,7 @@ window.MineLexiconAdmin = (function () {
           poolEdit = { id: "", val: "" };
           renderPool();
         } else {
-          toast({ "bad-text": "请输入中文（可含标点，无字数上限）", "closed": "该字卡状态已变化", "not-found": "字卡不存在" }[r.reason] || "保存失败");
+          toast({ "empty": "字卡内容不能为空", "closed": "该字卡状态已变化", "not-found": "字卡不存在" }[r.reason] || "保存失败");
         }
       });
     });

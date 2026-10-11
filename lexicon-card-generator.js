@@ -981,9 +981,7 @@ window.MineCardGenerator = (function () {
      池中卡修改后同步更新对应字卡池（先移除旧文本，再按原归属重新入池） */
   function editItem(id, text) {
     text = String(text || "").trim();
-    if (!/^[\u4e00-\u9fa5A-Za-z0-9，。！？、,.!?()（）\s]+$/.test(text)) {
-      return { ok: false, reason: "bad-text" };
-    }
+    if (!text) return { ok: false, reason: "empty" };
     var items = getItems();
     var it = null;
     for (var i = 0; i < items.length; i++) {
