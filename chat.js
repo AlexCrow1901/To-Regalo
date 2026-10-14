@@ -490,6 +490,10 @@ window.MineChat = (function () {
         '<textarea id="persona-input" rows="4" placeholder="其他补充：说话习惯、经历、小故事..." style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;resize:vertical;margin-bottom:8px;"></textarea>' +
         '<button class="chat-bg-btn" id="persona-save" style="width:100%;">' +
           I.svg("check", 16) + '<span>保存人设</span></button>' +
+        '<div class="section-label" style="margin-top:16px;">学习语料（一行一条，仅供 AI 学习，不会发送）</div>' +
+        '<textarea id="corpus-input" rows="5" placeholder="这个角色可能会说的话...&#10;比如：&#10;我跟你说个事你别笑&#10;今天真的超级累&#10;你猜我刚才看到什么了" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;resize:vertical;margin-bottom:8px;"></textarea>' +
+        '<button class="chat-bg-btn" id="corpus-save" style="width:100%;">' +
+          I.svg("check", 16) + '<span>保存学习语料</span></button>' +
       '</div>';
     overlay.appendChild(sheet);
     document.body.appendChild(overlay);
@@ -609,6 +613,25 @@ window.MineChat = (function () {
           personaSave.innerHTML = I.svg("check", 16) + "<span>已保存</span>";
           setTimeout(function () {
             personaSave.innerHTML = I.svg("check", 16) + "<span>保存人设</span>";
+          }, 1500);
+        }
+      });
+    }
+    /* 学习语料：加载 + 保存 */
+    var corpusInput = sheet.querySelector("#corpus-input");
+    var corpusSave = sheet.querySelector("#corpus-save");
+    if (window.MineAI && cid) {
+      var savedCorpus = MineAI.getStudyCorpus(cid);
+      if (corpusInput) corpusInput.value = savedCorpus.join("\n");
+    }
+    if (corpusSave && window.MineAI && cid) {
+      corpusSave.addEventListener("click", function () {
+        var lines = corpusInput.value.split("\n").filter(function (s) { return s.trim(); });
+        var r = MineAI.setStudyCorpus(cid, lines);
+        if (r.ok) {
+          corpusSave.innerHTML = I.svg("check", 16) + "<span>已保存</span>";
+          setTimeout(function () {
+            corpusSave.innerHTML = I.svg("check", 16) + "<span>保存学习语料</span>";
           }, 1500);
         }
       });

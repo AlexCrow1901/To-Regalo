@@ -62,6 +62,57 @@ window.MineAI = (function () {
     return { ok: true };
   }
 
+  /* ---------------- 学习语料（手动添加的参考句子，不发送） ---------------- */
+  var CORPUS_KEY = "mine.ai.corpus.v1";
+  function getStudyCorpus(contactId) {
+    if (!contactId) return [];
+    try {
+      var raw = localStorage.getItem(CORPUS_KEY);
+      if (!raw) return [];
+      var m = JSON.parse(raw);
+      var list = Array.isArray(m[contactId]) ? m[contactId] : [];
+      return list.filter(function (s) { return typeof s === "string" && s.trim(); });
+    } catch (e) { return []; }
+  }
+  function setStudyCorpus(contactId, lines) {
+    if (!contactId) return { ok: false, reason: "no-contact" };
+    try {
+      var raw = localStorage.getItem(CORPUS_KEY);
+      var m = raw ? JSON.parse(raw) : {};
+      m[contactId] = Array.isArray(lines) ? lines.filter(function (s) { return typeof s === "string" && s.trim(); }) : [];
+      localStorage.setItem(CORPUS_KEY, JSON.stringify(m));
+      return { ok: true };
+    } catch (e) { return { ok: false, reason: "save-failed" }; }
+  }
+
+  /* ---------------- 从字卡池提取这个联系人的所有文本字卡 ---------------- */
+  function getCardSamples(contactId) {
+    var samples = [];
+    try {
+      var raw = localStorage.getItem("mine.cards.v1");
+      if (!raw) return samples;
+      var d = JSON.parse(raw);
+      /* 1. 单独字卡（这个联系人专属的） */
+      var per = (d.per && d.per[contactId]) || [];
+      /* 2. 公用字卡 */
+      var pub = Array.isArray(d.public) ? d.public : [];
+      /* 3. 系统字卡（审批通过的组字卡，按联系人分组） */
+      var sys = Array.isArray(d.sys) ? d.sys : [];
+      /* 合并，只保留短文本（3-30字，口语化特征最明显） */
+      per.concat(pub).concat(sys).forEach(function (card) {
+        if (typeof card !== "string") return;
+        var t = card.trim();
+        /* 跳过图片/音频/emoji */
+        if (t.indexOf("data:image/") === 0 || t.indexOf("data:audio/") === 0) return;
+        /* 只保留 2-30 字的短文本 */
+        if (t.length < 2 || t.length > 30) return;
+        samples.push(t);
+      });
+      /* 去重 */
+      return samples.filter(function (v, i, a) { return a.indexOf(v) === i; });
+    } catch (e) { return samples; }
+  }
+
   /* ---------------- 启用判断 ---------------- */
   function isEnabled() {
     var c = getConfig();
@@ -95,6 +146,24 @@ window.MineAI = (function () {
       "要求：1) 意思保持不变；2) 像真人随手打字，口语化，不要书面腔；3) 充分体现角色的性格和说话习惯；4) 只输出改写后的消息本身，不要引号、解释、前缀。";
     if (persona) {
       sys += "\n\n【角色设定】\n" + persona + "\n\n请严格按照这个角色的身份、性格、说话习惯来改写消息。";
+    }
+    /* 加入这个联系人的所有字卡样本（学习说话风格） */
+    var cardSamples = getCardSamples(opts.contactId);
+    if (cardSamples.length > 0) {
+      sys += "\n\n【这个联系人平时是这样说话的】";
+      /* 最多取 50 条，防止 token 爆炸 */
+      cardSamples.slice(0, 50).forEach(function (s) {
+        sys += "\n「" + s + "」";
+      });
+      sys += "\n\n请模仿上面这些消息的语气、用词习惯、句长偏好来改写。";
+    }
+    /* 加入手动添加的学习语料 */
+    var corpus = getStudyCorpus(opts.contactId);
+    if (corpus.length > 0) {
+      sys += "\n\n【补充参考：这个角色可能会说的话】";
+      corpus.slice(0, 30).forEach(function (s) {
+        sys += "\n「" + s + "」";
+      });
     }
     var user = "";
     if (opts.route === "pinyin" && opts.input) {
