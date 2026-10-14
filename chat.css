@@ -960,8 +960,6 @@
   border-radius: var(--bubble-radius, var(--r-md));
   position: relative;
   white-space: normal;
-  /* 确保 emoji/颜文字完整显示，不被拆行 */
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
 }
 /* 对方气泡 · 冷调雾面玻璃（样式由聊天气泡变量 --bubble-* 驱动） */
 .msg-bubble.is-them {
