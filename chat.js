@@ -223,6 +223,74 @@ window.MineChat = (function () {
     }
     return { ok: true, convKey: convKey };
   }
+  /* 联系人主动删除字卡：发送一条带按钮的消息 */
+  function sendDeleteRequest(contactId, cardText, reasonText) {
+    if (!contactId || !cardText || !reasonText) return { ok: false, reason: "bad-args" };
+    var contact = C.findContact(contactId);
+    if (!contact || !contact.id) return { ok: false, reason: "no-contact" };
+    var convKey = "contact:" + contact.id;
+    if (!conversations[convKey]) conversations[convKey] = [];
+    var msgs = conversations[convKey];
+    var senderName = contact.name || "未知";
+    var senderAvatar = contact.avatar || null;
+    var beforeLen = msgs.length;
+    msgs.push({
+      id: uid(),
+      from: contact.id,
+      text: reasonText,
+      time: Date.now(),
+      isProactive: true,
+      isDeleteRequest: true,
+      deleteCardText: cardText,
+      deleteContactId: contactId,
+      deleteResolved: false,
+      deleteAccepted: false,
+      senderName: senderName,
+      senderAvatar: senderAvatar
+    });
+    save();
+    if (!isViewingConv(convKey)) {
+      incrementUnread(convKey);
+      if (window.MineNotify) MineNotify.refreshBadges();
+    }
+    if (isViewingConv(convKey)) {
+      for (var j = beforeLen; j < msgs.length; j++) appendMessage(msgs[j]);
+    }
+    return { ok: true, convKey: convKey };
+  }
+  /* 处理删卡请求的按钮点击 */
+  function resolveDeleteRequest(msgId, accepted) {
+    /* 找到这条消息 */
+    for (var key in conversations) {
+      var msgs = conversations[key];
+      for (var i = 0; i < msgs.length; i++) {
+        if (msgs[i].id === msgId) {
+          if (msgs[i].isDeleteRequest && !msgs[i].deleteResolved) {
+            msgs[i].deleteResolved = true;
+            msgs[i].deleteAccepted = accepted;
+            /* 如果同意删除，从字卡池里删掉 */
+            if (accepted && msgs[i].deleteCardText) {
+              /* 先试联系人专属字卡，再试公用字卡 */
+              if (window.MineCards && window.MineCards.removePerCard) {
+                window.MineCards.removePerCard(msgs[i].deleteContactId, msgs[i].deleteCardText);
+              }
+              if (window.MineCards && window.MineCards.removePublicCard) {
+                window.MineCards.removePublicCard(msgs[i].deleteCardText);
+              }
+            }
+            save();
+            /* 重新渲染 */
+            var convKey = key;
+            if (isViewingConv(convKey)) {
+              rerenderCurrentConv();
+            }
+          }
+          return { ok: true };
+        }
+      }
+    }
+    return { ok: false, reason: "not-found" };
+  }
   /** 主动消息调度器：每 20 秒扫描一次
       · 首次遇到联系人/群成员 → 为其创建下次发送计划（立即计时）
       · 到期 → 发送一条主动消息并重新计时
@@ -1430,6 +1498,20 @@ window.MineChat = (function () {
         '<span class="recalled-text">' + bubbleText + '</span>';
       bubbleText = "";
     }
+    // 删卡请求：显示按钮或处理结果
+    var deleteButtons = "";
+    if (msg.isDeleteRequest) {
+      if (!msg.deleteResolved) {
+        deleteButtons = '<div style="display:flex;gap:8px;margin-top:8px;">' +
+          '<button class="del-req-ok" data-msg-id="' + escapeHtml(msg.id) + '" style="flex:1;padding:6px;border-radius:6px;background:#ff4757;color:#fff;border:none;font-size:12px;">同意删除</button>' +
+          '<button class="del-req-no" data-msg-id="' + escapeHtml(msg.id) + '" style="flex:1;padding:6px;border-radius:6px;background:#eee;color:#555;border:none;font-size:12px;">留着</button>' +
+        '</div>';
+      } else {
+        deleteButtons = '<div style="font-size:12px;color:#999;margin-top:4px;">' +
+          (msg.deleteAccepted ? '已删除「' + escapeHtml(msg.deleteCardText) + '」' : '已保留「' + escapeHtml(msg.deleteCardText) + '」') +
+        '</div>';
+      }
+    }
     // 已读对勾（仅我的消息且已读时才显示）
     var readMark = "";
     if (isMe && msg.read) {
@@ -1440,6 +1522,7 @@ window.MineChat = (function () {
       '<div class="msg-content">' +
         senderNameHTML +
         '<div class="msg-bubble ' + bubbleClass + '">' + autoTag + (recalledWrap || bubbleText) + '</div>' +
+        deleteButtons +
         '<div class="msg-time">' + readMark +
         '<span class="time-text" data-time="' + fmtTime(msg.time) + '" data-date="' + fmtDateSep(msg.time) + '">' + fmtTime(msg.time) + '</span>' +
         '</div>' +
@@ -1593,6 +1676,17 @@ window.MineChat = (function () {
       var bubble = e.target.closest ? e.target.closest(".msg-bubble.is-recalled") : null;
       if (!bubble) return;
       bubble.classList.toggle("is-revealed");
+    });
+    // 点击删卡请求按钮 → 同意删除 / 留着
+    msgContainer.addEventListener("click", function (e) {
+      var okBtn = e.target.closest ? e.target.closest(".del-req-ok") : null;
+      var noBtn = e.target.closest ? e.target.closest(".del-req-no") : null;
+      var btn = okBtn || noBtn;
+      if (!btn) return;
+      var msgId = btn.getAttribute("data-msg-id");
+      if (!msgId) return;
+      var accepted = !!okBtn;
+      resolveDeleteRequest(msgId, accepted);
     });
     // 点击对方头像 → 跳转到联系人主页
     msgContainer.addEventListener("click", function (e) {
@@ -2746,7 +2840,10 @@ window.MineChat = (function () {
     /* 主动消息：设置变更后重排对应联系人的发送计划（contacts.js 调用） */
     refreshProactive: refreshProactive,
     /* 字卡生成器联动：直接向联系人会话发送指定文本 */
-    sendGeneratedCard: sendGeneratedCard
+    sendGeneratedCard: sendGeneratedCard,
+    /* 联系人主动删除字卡 */
+    sendDeleteRequest: sendDeleteRequest,
+    resolveDeleteRequest: resolveDeleteRequest
   };
 
   /* 模块启动：加载主动消息调度状态并启动调度器（立即执行一次以建立初始计划，

@@ -154,11 +154,16 @@ window.MineLexiconAdmin = (function () {
     });
     var counts = G.getStats();
     var pending = G.getPending();
+    var autoList = G.getAuto();
     var reqs = G.getLimitRequests();
     var inner =
       (reqs.length ? '<div class="group-head">上限调整申请（' + reqs.length + '）</div>' + '<div id="cg-limit-reqs"></div>' : '') +
+      '<div class="group-head">AI 自动生成字卡（' + autoList.length + '）</div>' +
+      '<div class="card-hint">联系人后台组卡经 AI 润色后自动加入字卡库 · 你只需删除不满意的 · 每张卡都标注了原始组卡内容</div>' +
+      '<div id="cg-auto-list"></div>' +
+      '<div class="list-sep"></div>' +
       '<div class="group-head">待人工审批（' + pending.length + '）</div>' +
-      '<div class="card-hint">联系人随时主动组字卡，新卡到达时会收到通知 · 全部由你人工审批：通过后进入对应联系人字卡池，拒绝则丢弃</div>' +
+      '<div class="card-hint">AI 未启用时，后台组卡进入人工审批队列：通过后进入对应联系人字卡池，拒绝则丢弃</div>' +
       '<div id="cg-pending-list"></div>' +
       '<div class="list-sep"></div>' +
       '<div class="group-head">手动生成（测试用）</div>' +
@@ -191,6 +196,62 @@ window.MineLexiconAdmin = (function () {
       }
     });
     renderPendingList();
+    renderAutoList();
+  }
+  /* AI 自动生成字卡：按联系人分组，展示原始组卡 vs AI 生成，只有删除按钮 */
+  var autoCollapse = {};
+  function renderAutoList() {
+    var detail = document.getElementById("page-detail");
+    var box = detail.querySelector("#cg-auto-list");
+    if (!box) return;
+    var autoList = G.getAuto();
+    if (!autoList.length) {
+      box.innerHTML = '<div class="card-hint">暂无 AI 自动生成的字卡。联系人后台组卡经 AI 润色后会自动出现在这里。</div>';
+      return;
+    }
+    /* 按联系人分组 */
+    var groups = {};
+    autoList.forEach(function (it) {
+      var k = (it.contactId && it.contactId !== "global") ? it.contactId : "global";
+      (groups[k] = groups[k] || []).push(it);
+    });
+    var html = "";
+    Object.keys(groups).forEach(function (k) {
+      var name = k === "global" ? "通用" : contactName(k);
+      var open = autoCollapse[k] === true;
+      html += '<div class="group-head cg-group-head" data-auto-group="' + esc(k) + '" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">' +
+        '<span>' + esc(name) + ' 有 ' + groups[k].length + ' 张 AI 生成字卡</span>' +
+        '<span style="font-size:12px;color:#888;">' + (open ? '收起 ▲' : '展开 ▼') + '</span>' +
+        '</div>';
+      if (open) {
+        html += groups[k].map(function (it) {
+          return '<div style="margin:0 12px 8px;border:1px solid #e8e8e8;border-radius:12px;padding:10px;background:#fafafa;">' +
+            '<div style="font-size:14px;font-weight:600;color:#333;">' + esc(it.text) + '</div>' +
+            (it.rawText ? '<div style="font-size:12px;color:#999;margin-top:4px;">原始组卡：' + esc(it.rawText) + '</div>' : '') +
+            '<div style="display:flex;gap:8px;margin-top:8px;">' +
+              '<button class="auto-del" data-id="' + it.id + '" style="flex:1;padding:6px;border-radius:6px;background:#ff4757;color:#fff;border:none;font-size:12px;">删除</button>' +
+            '</div></div>';
+        }).join("");
+      }
+    });
+    box.innerHTML = html;
+    /* 组头点击展开/折叠 */
+    Array.prototype.forEach.call(box.querySelectorAll("[data-auto-group]"), function (el) {
+      el.addEventListener("click", function () {
+        var k = el.getAttribute("data-auto-group");
+        autoCollapse[k] = autoCollapse[k] !== true;
+        renderAutoList();
+      });
+    });
+    /* 删除按钮 */
+    Array.prototype.forEach.call(box.querySelectorAll(".auto-del"), function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        var r = G.removeItem(id);
+        toast(r.ok ? "已删除" : "删除失败");
+        renderAutoList();
+      });
+    });
   }
   /* 待审批字卡：按联系人分组，组头可点击展开/折叠（默认折叠）；卡可编辑内容后通过 */
   var pendingCollapse = {};

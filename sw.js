@@ -17,7 +17,7 @@
    说明：通知是否弹出仍受浏览器通知权限 + 手机系统通知设置控制。
    版本：v4（缓存名含版本，升级时浏览器自动更新）
    ======================================================================== */
-var CACHE_NAME = "mine-cache-v26";
+var CACHE_NAME = "mine-cache-v27";
 
 /* 核心资源全量预缓存（版本号与 index.html 中的 ?vN 保持一致；
    版本升级时同步更新本列表，确保离线时拉到的都是最新文件） */
@@ -53,15 +53,15 @@ var CORE_ASSETS = [
   "settings.js?v16",
   "icons.js?v22",
   "background.js?v14",
-  "probabilities.js?v12",
+  "probabilities.js?v13",
   "contacts.js?v24",
   "cards.js?v16",
   "lexicon.js?v1",
   "lexicon-engine.js?v1",
   "mine-ai.js?v7",
-  "lexicon-card-generator.js?v14",
-  "lexicon-admin.js?v15",
-  "chat.js?v72",
+  "lexicon-card-generator.js?v15",
+  "lexicon-admin.js?v16",
+  "chat.js?v73",
   "phone.js?v5",
   "companion.js?v10",
   "profile.js?v15",

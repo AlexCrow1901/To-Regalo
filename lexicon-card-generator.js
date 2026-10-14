@@ -438,6 +438,8 @@ window.MineCardGenerator = (function () {
         } catch (e) {}
       }
     }
+    /* 联系人主动删除字卡：每小时 5% 概率触发 */
+    try { tickContactDelete(); } catch (e) {}
     return { made: made, requests: reqMade, autoed: exp.autoed, backlogMax: cfg.backlogMax };
   }
 
@@ -967,7 +969,7 @@ window.MineCardGenerator = (function () {
         droppedN++;
       }
       items.push(item);
-      /* AI 润色（异步不阻塞）：润色成功 → text=润色后、rawText=原始组卡内容（审批页对照显示） */
+      /* AI 润色（异步不阻塞）：润色成功 → 自动进字卡库（status=auto），rawText 保留原始组卡内容用于对照展示 */
       if (window.MineAI && window.MineAI.isEnabled()) {
         (function (it) {
           window.MineAI.polish({ raw: it.text, input: it.input, route: it.route, contactId: it.contactId, chatType: "single" })
@@ -979,6 +981,15 @@ window.MineCardGenerator = (function () {
                     list[i].rawText = it.text;
                     list[i].text = res.text;
                     list[i].aiPolished = true;
+                    list[i].status = "auto";
+                    list[i].judgedBy = "ai";
+                    list[i].decidedAt = Date.now();
+                    /* 自动加入字卡池 */
+                    if (list[i].contactId && list[i].contactId !== "global" && window.MineCards && window.MineCards.addPerCard) {
+                      window.MineCards.addPerCard(list[i].contactId, res.text);
+                    } else {
+                      addToPublicPool(res.text);
+                    }
                     break;
                   }
                 }
@@ -1077,6 +1088,64 @@ window.MineCardGenerator = (function () {
     /* 本地训练：人工"拒绝" = 强负样本（只采模板路） */
     trainCollect(it, 0, 1);
     return { ok: true };
+  }
+  /* 删除字卡：从生成器记录里删掉，同时从字卡池里移除 */
+  function removeItem(id) {
+    var items = getItems();
+    var it = null;
+    var idx = -1;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].id === id) { it = items[i]; idx = i; break; }
+    }
+    if (!it) return { ok: false, reason: "not-found" };
+    /* 从字卡池里移除 */
+    if (it.status === "auto" || it.status === "approved") {
+      if (it.contactId && it.contactId !== "global" && window.MineCards && window.MineCards.removePerCard) {
+        window.MineCards.removePerCard(it.contactId, it.text);
+      } else {
+        removeFromPublicPool(it.text);
+      }
+    }
+    /* 从记录里删掉 */
+    items.splice(idx, 1);
+    saveItems(items);
+    return { ok: true };
+  }
+
+  /* ==================== 联系人主动删除字卡 ==================== */
+  var DELETE_REASONS = [
+    "不想再说了", "过时了", "说错了", "换个说法",
+    "太奇怪了", "不太合适", "不想提这个", "换一句吧",
+    "这个不好", "删掉吧", "不想说这个", "换个表达"
+  ];
+  /* 每小时检查一次：5% 概率触发联系人删卡请求 */
+  function tickContactDelete() {
+    if (!window.MineAI || !window.MineAI.isEnabled()) return;  /* AI 未启用不触发 */
+    if (!window.MineCards) return;
+    var prob = (window.MineProbs && window.MineProbs.get) ? (window.MineProbs.get("contactDelete") / 100) : 0.05;
+    if (Math.random() >= prob) return;
+    /* 随机选一个联系人 */
+    var cids = Object.keys(window.MineCards.getAllCards ? window.MineCards.getAllCards() : {});
+    if (!cids.length) return;
+    var cid = cids[Math.floor(Math.random() * cids.length)];
+    /* 随机挑一张这个联系人的字卡（公用+专属） */
+    var allCards = [];
+    var pub = window.MineCards.getPublicCards ? window.MineCards.getPublicCards() : [];
+    var per = window.MineCards.getPerCards ? window.MineCards.getPerCards(cid) : [];
+    allCards = pub.concat(per);
+    if (!allCards.length) return;
+    var cardText = allCards[Math.floor(Math.random() * allCards.length)];
+    /* 随机选一个删除理由 */
+    var reason = DELETE_REASONS[Math.floor(Math.random() * DELETE_REASONS.length)];
+    /* AI 润色理由 */
+    window.MineAI.polish({ raw: "我觉得「" + cardText + "」这句话" + reason, route: "template", contactId: cid, chatType: "single" })
+      .then(function (res) {
+        var msg = (res && res.ok) ? res.text : "我觉得「" + cardText + "」这句话" + reason + "，删掉吧？";
+        /* 发送删卡请求消息 */
+        if (window.MineChat && window.MineChat.sendDeleteRequest) {
+          window.MineChat.sendDeleteRequest(cid, cardText, msg);
+        }
+      });
   }
   function resetLast(contactId) {
     var last = getLast();
@@ -1180,6 +1249,7 @@ window.MineCardGenerator = (function () {
     return status ? items.filter(function (i) { return i.status === status; }) : items;
   }
   function getPending() { return getItemsBy("pending"); }
+  function getAuto() { return getItemsBy("auto"); }
   function getPool() { return getItemsBy("auto").concat(getItemsBy("approved")); }
   function getDropped() { return getItemsBy("dropped").concat(getItemsBy("rejected")); }
   function getConfigAPI() { return getConfig(); }
@@ -1284,7 +1354,10 @@ window.MineCardGenerator = (function () {
     generate: generate,
     approve: approve,
     reject: reject,
+    removeItem: removeItem,
+    tickContactDelete: tickContactDelete,
     getPending: getPending,
+    getAuto: getAuto,
     getPool: getPool,
     getDropped: getDropped,
     getItems: getItemsBy,

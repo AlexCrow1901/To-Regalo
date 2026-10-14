@@ -31,6 +31,7 @@ window.MineProbs = (function () {
     comboCard:    25,   // 拼字卡发送概率：联系人发送消息时使用「多张字卡随机拼接」的概率（其余走组字卡/原有字卡）
     comboCountMin: 1,   // 拼字卡最少使用字卡条数
     comboCountMax: 3,   // 拼字卡最多使用字卡条数
+    contactDelete: 5,   // 联系人主动删除字卡概率（每小时）
     /* —— 电话 —— */
     phoneIncoming:        0.5,  // 联系人主动来电概率
     phoneHangup:          2,    // 呼出时对方直接挂断概率
