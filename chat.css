@@ -960,8 +960,9 @@
   border-radius: var(--bubble-radius, var(--r-md));
   position: relative;
   white-space: normal;
-  /* 完整字体栈：确保特殊符号/颜文字字符都能显示 */
-  font-family: var(--font-base), "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Symbola", "Quivira", sans-serif;
+  /* 字体栈：主字体 + 支持组合符号/emoji 的备用字体 */
+  font-family: var(--font-base), "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  text-rendering: optimizeLegibility;
 }
 /* 对方气泡 · 冷调雾面玻璃（样式由聊天气泡变量 --bubble-* 驱动） */
 .msg-bubble.is-them {
