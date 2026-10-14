@@ -477,6 +477,10 @@ window.MineChat = (function () {
           '<button class="font-color-btn' + (curFc === "black" ? " is-active" : "") + '" data-fc="black">' +
             '<span class="fc-swatch fc-black"></span><span>黑色</span></button>' +
         '</div>' +
+        '<div class="section-label" style="margin-top:20px;">联系人人设（AI 润色时参考）</div>' +
+        '<textarea id="persona-input" rows="4" placeholder="这个联系人的性格、口头禅、说话习惯...（AI 润色时会带入）" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;resize:vertical;margin-bottom:8px;"></textarea>' +
+        '<button class="chat-bg-btn" id="persona-save" style="width:100%;">' +
+          I.svg("check", 16) + '<span>保存人设</span></button>' +
       '</div>';
     overlay.appendChild(sheet);
     document.body.appendChild(overlay);
@@ -539,6 +543,24 @@ window.MineChat = (function () {
         btn.classList.add("is-active");
       });
     });
+    /* 联系人人设：加载 + 保存 */
+    var personaInput = sheet.querySelector("#persona-input");
+    var personaSave = sheet.querySelector("#persona-save");
+    var cid = (ctx.convKey || "").split(":")[1] || "";
+    if (personaInput && window.MineAI && cid) {
+      personaInput.value = MineAI.getPersona(cid) || "";
+    }
+    if (personaSave && window.MineAI && cid) {
+      personaSave.addEventListener("click", function () {
+        var r = MineAI.setPersona(cid, personaInput.value);
+        if (r.ok) {
+          personaSave.innerHTML = I.svg("check", 16) + "<span>已保存</span>";
+          setTimeout(function () {
+            personaSave.innerHTML = I.svg("check", 16) + "<span>保存人设</span>";
+          }, 1500);
+        }
+      });
+    }
   }
   /* ---------------- 未读计数工具 ---------------- */
   var appLevelSeen = false;  // 用户是否已打开过聊天应用（控制主屏角标）
