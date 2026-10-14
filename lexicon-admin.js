@@ -43,8 +43,8 @@ window.MineLexiconAdmin = (function () {
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
   }
 
-  var VIEW_TITLES = { approve: "字卡审批", pool: "字卡池", train: "本地训练", rules: "运行规则", templates: "组卡模板", lexicon: "词库管理" };
-  var VIEW_ICONS = { approve: "check", pool: "bookmark", train: "chart", rules: "settings", templates: "list", lexicon: "book" };
+  var VIEW_TITLES = { approve: "字卡审批", pool: "字卡池", train: "本地训练", rules: "运行规则", templates: "组卡模板", lexicon: "词库管理", persona: "联系人人设" };
+  var VIEW_ICONS = { approve: "check", pool: "bookmark", train: "chart", rules: "settings", templates: "list", lexicon: "book", persona: "list" };
 
   /* 词库分组展开状态 */
   var lexState = { search: "", expanded: {}, showCount: {}, loadedMore: {}, perCid: "", mode: "all" };
@@ -59,7 +59,7 @@ window.MineLexiconAdmin = (function () {
         '<span class="nav-title">' + VIEW_TITLES[view] + '</span>' +
         '<span class="nav-right"></span>' +
       '</div>';
-    var tabs = ["approve", "pool", "train", "rules", "templates", "lexicon"].map(function (v) {
+    var tabs = ["approve", "pool", "train", "rules", "persona", "templates", "lexicon"].map(function (v) {
       return '<button class="card-tab' + (v === view ? " is-active" : "") + '" data-tab="' + v + '">' +
         iconSvg(VIEW_ICONS[v], 14) + VIEW_TITLES[v] + '</button>';
     }).join("");
@@ -95,6 +95,7 @@ window.MineLexiconAdmin = (function () {
     else if (view === "pool") renderPool();
     else if (view === "train") renderTrain();
     else if (view === "rules") renderRules();
+    else if (view === "persona") renderPersona();
     else if (view === "templates") renderTemplates();
     else renderLexicon();
   }
@@ -232,8 +233,16 @@ window.MineLexiconAdmin = (function () {
           var comboTag = it.combo
             ? '<span style="background:#eef3ff;color:#4a63d9;padding:1px 6px;border-radius:4px;font-size:11px;">拼卡</span>'
             : '';
+          var aiTag = it.aiPolished
+            ? '<span style="background:#f0e8fb;color:#7b4fc9;padding:1px 6px;border-radius:4px;font-size:11px;">AI 润色</span>'
+            : '';
           var inputLine = it.input
             ? '<div style="font-size:12px;color:#888;margin-top:2px;">输入：' + esc(it.input) + ' → 还原为</div>'
+            : '';
+          /* AI 润色对照：原始组卡内容 vs 润色后 */
+          var rawLine = (it.aiPolished && it.rawText)
+            ? '<div style="font-size:12px;color:#888;margin-top:4px;padding:6px 8px;background:#f7f7fb;border-radius:8px;">' +
+              '原始组卡：<span style="color:#666;">' + esc(it.rawText) + '</span></div>'
             : '';
           var isEditing = approveEdit.id === it.id;
           var textBlock = isEditing
@@ -249,9 +258,10 @@ window.MineLexiconAdmin = (function () {
           return '<div style="margin:0 12px 10px;border:1px solid ' + (isEditing ? "#4a90d9" : "#eee") + ';border-radius:12px;padding:12px;background:#fff;">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;">' +
               textBlock +
-              '<div style="display:flex;gap:6px;align-items:center;">' + routeTag + srcTag + comboTag + '</div>' +
+              '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' + routeTag + srcTag + comboTag + aiTag + '</div>' +
             '</div>' +
             inputLine +
+            rawLine +
             '<div style="font-size:12px;color:#999;margin-top:6px;">评分 ' + it.conf.toFixed(2) +
               '（语法 ' + it.syntax.toFixed(2) + ' / 通顺 ' + it.fluency.toFixed(2) + '） · ' + fmtTime(it.createdAt) + '</div>' +
             '<div style="display:flex;gap:8px;margin-top:8px;">' + editBtns +
@@ -545,16 +555,13 @@ window.MineLexiconAdmin = (function () {
         '每小时 ' + Math.round((cfg.backlogProb || 0.01) * 100) + '% 概率申请调整上限，超时 ' + (cfg.reqTimeout || 15) + ' 分钟自动生效。</div>' +
       row("rg-backlog-max", "每小时组卡上限", "联系人每小时后台自动组字卡条数上限（0~N 随机）", cfg.backlogMax, "条", 5, 50, 1) +
       row("rg-req-timeout", "申请超时", "上限调整申请未处理的自动生效时间", cfg.reqTimeout, "分", 5, 60, 1) +
-      '<div class="group-head">AI 终审（接口位，默认关闭）</div>' +
-      switchRow("rg-ai", "启用 AI 终审", "灰色区间（aiGrayLow ~ aiGrayHigh）的候选送外部 AI 判断语义通顺度", cfg.aiEnabled) +
-      '<div class="card-hint" style="margin:0 12px;">接入后：评分落在灰色区间（默认 0.4~0.85）的候选会调用外部 AI 复核，' +
-        'AI 判断结果覆盖本地分；未启用 / 无 Key / 调用失败时自动降级为本地评分。</div>' +
-      selRow("rg-ai-provider", "AI 服务商", "OpenAI 兼容接口的服务商（deepseek / qwen / glm 等）", cfg.aiProvider || "deepseek", ["deepseek", "qwen", "glm", "openai"]) +
-      rowText("rg-ai-model", "模型名", "如 deepseek-chat / qwen-plus / glm-4-flash", cfg.aiModel, "deepseek-chat") +
+      '<div class="group-head">AI 润色（把组出的碎片句改写成自然口语）</div>' +
+      switchRow("rg-ai", "启用 AI 润色", "开启后：组字卡/拼音串先经 AI 按联系人设的人设改写为自然聊天句，再进入审批 / 实时发送", cfg.aiEnabled) +
+      '<div class="card-hint" style="margin:0 12px;">未启用 / 无 Key / 调用失败时自动降级为本地原句，聊天不中断。润色结果：后台组卡进审批时对照显示原始组卡；实时聊天免人工审批直接发出，经联系人二次复核（默认 20% 概率撤回态，可在概率设置修改）。</div>' +
+      selRow("rg-ai-provider", "AI 服务商", "OpenAI 兼容格式，可自行切换；选自定义时在下方填接口地址", cfg.aiProvider || "deepseek", ["deepseek", "openai", "qwen", "kimi", "custom"]) +
+      rowText("rg-ai-url", "接口地址", "留空用服务商默认地址；自定义时填完整 base URL（如 https://api.example.com/v1）", cfg.aiBaseUrl || "", "https://api.deepseek.com") +
+      rowText("rg-ai-model", "模型名", "如 deepseek-chat / gpt-4o-mini / qwen-plus / moonshot-v1-8k", cfg.aiModel, "deepseek-chat") +
       rowText("rg-ai-key", "API Key", "存储在本机浏览器（请注意保管，勿外泄）", cfg.aiApiKey, "") +
-      '<div class="group-head">AI 灰色区间</div>' +
-      row("rg-ai-low", "灰色区间下限", "评分低于此值不送 AI（直接按本地分处理）", Math.round((cfg.aiGrayLow || 0.4) * 100), "%", 10, 60, 5) +
-      row("rg-ai-high", "灰色区间上限", "评分高于此值不送 AI（直接按本地分处理）", Math.round((cfg.aiGrayHigh || 0.85) * 100), "%", 60, 95, 5) +
       '<div style="padding:14px 12px;">' +
         '<button id="rg-save" style="width:100%;padding:12px;border-radius:10px;background:#4a90d9;color:#fff;border:none;font-size:14px;">' + iconSvg("check", 14) + ' 保存运行规则</button>' +
       '</div>' +
@@ -575,13 +582,45 @@ window.MineLexiconAdmin = (function () {
         reqTimeout: parseInt(detail.querySelector("#rg-req-timeout").value, 10) || 15,
         aiEnabled: detail.querySelector("#rg-ai").checked,
         aiProvider: detail.querySelector("#rg-ai-provider").value,
+        aiBaseUrl: detail.querySelector("#rg-ai-url").value.trim(),
         aiModel: detail.querySelector("#rg-ai-model").value.trim(),
-        aiApiKey: detail.querySelector("#rg-ai-key").value.trim(),
-        aiGrayLow: (parseFloat(detail.querySelector("#rg-ai-low").value) || 40) / 100,
-        aiGrayHigh: (parseFloat(detail.querySelector("#rg-ai-high").value) || 85) / 100
+        aiApiKey: detail.querySelector("#rg-ai-key").value.trim()
       };
       G.setConfig(patch);
       toast("运行规则已保存并即时生效");
+    });
+  }
+  /* ==================== 5. 联系人人设 ==================== */
+  function renderPersona() {
+    var cs = (C && C.getState) ? (C.getState().contacts || []) : [];
+    var opts = cs.map(function (c) {
+      return '<option value="' + esc(c.id) + '">' + esc(c.name || c.id) + '</option>';
+    }).join("");
+    var inner =
+      '<div class="card-hint" style="margin:12px;">为每个联系人设定人设（性格 / 说话习惯 / 口头禅 / 经历 / 和我的关系等，支持长文本）。' +
+      'AI 润色组字卡时会全量带入人设，让每个联系人的回复各具特色。未启用 AI 时此设置不生效。</div>' +
+      '<div style="margin:0 12px 10px;"><div style="font-size:13px;color:#666;margin-bottom:6px;">选择联系人</div>' +
+        '<select id="rg-persona-cid" style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;border:1px solid #ddd;font-size:14px;background:#fff;">' + opts + '</select></div>' +
+      '<div style="margin:0 12px 10px;"><div style="font-size:13px;color:#666;margin-bottom:6px;">人设内容</div>' +
+        '<textarea id="rg-persona-text" rows="14" style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;border:1px solid #ddd;font-size:14px;line-height:1.6;resize:vertical;" placeholder="例：她叫小鹿，22岁，刚工作半年，性格活泼有点慢热，喜欢用"哈哈"结尾，遇到烦心事会先叹气再说..."></textarea></div>' +
+      '<div style="padding:14px 12px;">' +
+        '<button id="rg-persona-save" style="width:100%;padding:12px;border-radius:10px;background:#4a90d9;color:#fff;border:none;font-size:14px;">保存人设</button>' +
+      '</div>';
+    pageShell("persona", inner);
+    var detail = document.getElementById("page-detail");
+    var sel = detail.querySelector("#rg-persona-cid");
+    var ta = detail.querySelector("#rg-persona-text");
+    function loadPersona() {
+      ta.value = (window.MineAI && MineAI.getPersona) ? MineAI.getPersona(sel.value) : "";
+    }
+    if (sel) sel.addEventListener("change", loadPersona);
+    loadPersona();
+    var save = detail.querySelector("#rg-persona-save");
+    if (save) save.addEventListener("click", function () {
+      if (window.MineAI && MineAI.setPersona) {
+        var r = MineAI.setPersona(sel.value, ta.value);
+        toast(r.ok ? "人设已保存" : "保存失败");
+      }
     });
   }
   function row(id, title, sub, val, unit, min, max, step) {

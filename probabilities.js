@@ -27,7 +27,7 @@ window.MineProbs = (function () {
     groupThird:   15,   // 群聊(≥3人)第三条回复概率
     groupAll:      5,   // 群聊(≥3人)全员回复概率
     genCard:      50,   // 组字卡发送概率：回复时使用「组字卡池」的概率（其余为原有字卡机制）
-    recallGenerated: 10, // 实时组卡二次复核：系统审批通过后联系人撤回该条消息的概率
+    recallGenerated: 20, // 实时组卡二次复核：AI 润色后联系人驳回撤回的概率（默认20%，可在概率设置修改）
     comboCard:    25,   // 拼字卡发送概率：联系人发送消息时使用「多张字卡随机拼接」的概率（其余走组字卡/原有字卡）
     comboCountMin: 1,   // 拼字卡最少使用字卡条数
     comboCountMax: 3,   // 拼字卡最多使用字卡条数

@@ -967,6 +967,26 @@ window.MineCardGenerator = (function () {
         droppedN++;
       }
       items.push(item);
+      /* AI 润色（异步不阻塞）：润色成功 → text=润色后、rawText=原始组卡内容（审批页对照显示） */
+      if (window.MineAI && window.MineAI.isEnabled()) {
+        (function (it) {
+          window.MineAI.polish({ raw: it.text, input: it.input, route: it.route, contactId: it.contactId })
+            .then(function (res) {
+              if (res && res.ok && res.text && res.text !== it.text) {
+                var list = getItems();
+                for (var i = 0; i < list.length; i++) {
+                  if (list[i].id === it.id) {
+                    list[i].rawText = it.text;
+                    list[i].text = res.text;
+                    list[i].aiPolished = true;
+                    break;
+                  }
+                }
+                saveItems(list);
+              }
+            });
+        })(item);
+      }
     }
     saveItems(items);
     /* 限流记录：按实际生成的候选数累计时间戳（一次生成 batch 个 → 记 batch 次） */
@@ -1087,6 +1107,21 @@ window.MineCardGenerator = (function () {
       combo: gen.combo || null   /* 拼卡模式标记：多句拼接/切割 */
     };
     if (ev.conf >= cfg.autoThreshold) {
+      /* AI 启用：不经过人工审批。组卡 → AI 润色 → 经 sendGeneratedCard 发出
+         （自带联系人二次复核撤回：默认 20% 驳回撤回态发送 / 80% 通过正常发送）。
+         异步执行，不占用本次同步回复链路（返回 null 由调用方走原有字卡）。 */
+      if (window.MineAI && window.MineAI.isEnabled()) {
+        (function (cid2, raw, inp, route) {
+          window.MineAI.polish({ raw: raw, input: inp, route: route, contactId: cid2 })
+            .then(function (res) {
+              var finalText = (res && res.ok && res.text) ? res.text : raw;
+              if (window.MineChat && window.MineChat.sendGeneratedCard) {
+                window.MineChat.sendGeneratedCard(cid2, finalText);
+              }
+            });
+        })(cid, gen.text, gen.input, gen.route);
+        return null;
+      }
       item.sentTo = cid || null;
       var items = getItems();
       /* 实时发出（系统审批通过即发，仅实时聊天使用，不入池） */
