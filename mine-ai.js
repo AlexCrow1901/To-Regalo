@@ -42,6 +42,22 @@ window.MineAI = (function () {
         }
       } catch (e) {}
     }
+    /* 如果还是空，自动从旧键迁移（兼容历史配置） */
+    if (!cfg.aiApiKey) {
+      try {
+        var old = JSON.parse(localStorage.getItem("mine.cards.gen.config.v1")) || {};
+        if (old.aiApiKey) {
+          cfg = {
+            aiEnabled: old.aiEnabled,
+            aiProvider: old.aiProvider,
+            aiBaseUrl: old.aiBaseUrl,
+            aiModel: old.aiModel,
+            aiApiKey: old.aiApiKey
+          };
+          try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) {}
+        }
+      } catch (e) {}
+    }
     return cfg;
   }
   function setConfig(patch) {
