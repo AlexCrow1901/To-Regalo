@@ -478,7 +478,16 @@ window.MineChat = (function () {
             '<span class="fc-swatch fc-black"></span><span>黑色</span></button>' +
         '</div>' +
         '<div class="section-label" style="margin-top:20px;">联系人人设（AI 润色时参考）</div>' +
-        '<textarea id="persona-input" rows="4" placeholder="这个联系人的性格、口头禅、说话习惯...（AI 润色时会带入）" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;resize:vertical;margin-bottom:8px;"></textarea>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">' +
+          '<input id="persona-name" placeholder="姓名" style="padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;">' +
+          '<input id="persona-age" placeholder="年龄" style="padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;">' +
+          '<input id="persona-job" placeholder="职业" style="padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;">' +
+          '<input id="persona-personality" placeholder="性格" style="padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;">' +
+          '<input id="persona-hobby" placeholder="喜好" style="padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;grid-column:span 2;">' +
+          '<input id="persona-catchphrase" placeholder="口头禅" style="padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;grid-column:span 2;">' +
+          '<input id="persona-relation" placeholder="和我的关系" style="padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;grid-column:span 2;">' +
+        '</div>' +
+        '<textarea id="persona-input" rows="4" placeholder="其他补充：说话习惯、经历、小故事..." style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;resize:vertical;margin-bottom:8px;"></textarea>' +
         '<button class="chat-bg-btn" id="persona-save" style="width:100%;">' +
           I.svg("check", 16) + '<span>保存人设</span></button>' +
       '</div>';
@@ -543,16 +552,59 @@ window.MineChat = (function () {
         btn.classList.add("is-active");
       });
     });
-    /* 联系人人设：加载 + 保存 */
-    var personaInput = sheet.querySelector("#persona-input");
+    /* 联系人人设：加载 + 保存（结构化字段 + 自由文本） */
+    var personaFields = {
+      name: sheet.querySelector("#persona-name"),
+      age: sheet.querySelector("#persona-age"),
+      job: sheet.querySelector("#persona-job"),
+      personality: sheet.querySelector("#persona-personality"),
+      hobby: sheet.querySelector("#persona-hobby"),
+      catchphrase: sheet.querySelector("#persona-catchphrase"),
+      relation: sheet.querySelector("#persona-relation"),
+      extra: sheet.querySelector("#persona-input")
+    };
     var personaSave = sheet.querySelector("#persona-save");
     var cid = (ctx.convKey || "").split(":")[1] || "";
-    if (personaInput && window.MineAI && cid) {
-      personaInput.value = MineAI.getPersona(cid) || "";
+    /* 加载：从 localStorage 读取完整人设文本，拆填到各字段 */
+    if (window.MineAI && cid) {
+      var saved = MineAI.getPersona(cid) || "";
+      /* 简单解析：按行匹配字段 */
+      function fillField(id, prefix) {
+        var re = new RegExp(prefix + "[：:](.*)");
+        var m = saved.match(re);
+        if (m && personaFields[id]) personaFields[id].value = m[1].trim();
+      }
+      fillField("name", "姓名");
+      fillField("age", "年龄");
+      fillField("job", "职业");
+      fillField("personality", "性格");
+      fillField("hobby", "喜好");
+      fillField("catchphrase", "口头禅");
+      fillField("relation", "和我的关系");
+      /* 自由文本：去掉结构化行后剩余部分 */
+      personaFields.extra.value = saved
+        .replace(/姓名[：:].*\n?/g, "")
+        .replace(/年龄[：:].*\n?/g, "")
+        .replace(/职业[：:].*\n?/g, "")
+        .replace(/性格[：:].*\n?/g, "")
+        .replace(/喜好[：:].*\n?/g, "")
+        .replace(/口头禅[：:].*\n?/g, "")
+        .replace(/和我的关系[：:].*\n?/g, "")
+        .trim();
     }
+    /* 保存：把结构化字段拼成完整人设文本 */
     if (personaSave && window.MineAI && cid) {
       personaSave.addEventListener("click", function () {
-        var r = MineAI.setPersona(cid, personaInput.value);
+        var lines = [];
+        if (personaFields.name.value.trim()) lines.push("姓名：" + personaFields.name.value.trim());
+        if (personaFields.age.value.trim()) lines.push("年龄：" + personaFields.age.value.trim());
+        if (personaFields.job.value.trim()) lines.push("职业：" + personaFields.job.value.trim());
+        if (personaFields.personality.value.trim()) lines.push("性格：" + personaFields.personality.value.trim());
+        if (personaFields.hobby.value.trim()) lines.push("喜好：" + personaFields.hobby.value.trim());
+        if (personaFields.catchphrase.value.trim()) lines.push("口头禅：" + personaFields.catchphrase.value.trim());
+        if (personaFields.relation.value.trim()) lines.push("和我的关系：" + personaFields.relation.value.trim());
+        if (personaFields.extra.value.trim()) lines.push(personaFields.extra.value.trim());
+        var r = MineAI.setPersona(cid, lines.join("\n"));
         if (r.ok) {
           personaSave.innerHTML = I.svg("check", 16) + "<span>已保存</span>";
           setTimeout(function () {
