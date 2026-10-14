@@ -27,7 +27,7 @@ window.MineProbs = (function () {
     groupThird:   15,   // 群聊(≥3人)第三条回复概率
     groupAll:      5,   // 群聊(≥3人)全员回复概率
     genCard:      50,   // 组字卡发送概率：回复时使用「组字卡池」的概率（其余为原有字卡机制）
-    recallGenerated: 20, // 实时组卡二次复核：AI 润色后联系人驳回撤回的概率（默认20%，可在概率设置修改）
+    recallGenerated: 1, // AI 润色后联系人驳回撤回的概率（默认1%，可在概率设置修改）
     comboCard:    25,   // 拼字卡发送概率：联系人发送消息时使用「多张字卡随机拼接」的概率（其余走组字卡/原有字卡）
     comboCountMin: 1,   // 拼字卡最少使用字卡条数
     comboCountMax: 3,   // 拼字卡最多使用字卡条数
@@ -129,7 +129,7 @@ window.MineProbs = (function () {
         { key: "groupThird",   name: "群聊第三条回复", desc: "群聊出现第三条回复的概率（需至少 3 人可回复）" },
         { key: "groupAll",     name: "群聊全员回复", desc: "群聊全部成员都回复的概率（需至少 4 人可回复）" },
         { key: "genCard",      name: "组字卡发送", desc: "联系人发送信息时使用「组字卡池」的概率（其余为原有字卡，默认各 50%）" },
-        { key: "recallGenerated", name: "组字卡撤回", desc: "实时组卡系统审批通过后，联系人驳回并撤回该条消息的概率（撤回后消息显示为「（撤回）」，点击气泡可展开/收起内容）" },
+        { key: "recallGenerated", name: "AI润色消息撤回", desc: "AI 润色后的消息，联系人有概率驳回并撤回（撤回后显示为「（撤回）」，点击气泡可展开看内容）" },
         { key: "comboCard",    name: "拼字卡发送", desc: "联系人发送信息时使用「多张字卡随机拼接」消息的概率（默认 25%，其余走组字卡/原有字卡）" },
         { key: "comboCountMin", name: "拼字卡最少条数", desc: "拼字卡消息最少使用多少张字卡（默认 1 条）", unit: "条" },
         { key: "comboCountMax", name: "拼字卡最多条数", desc: "拼字卡消息最多使用多少张字卡（默认 3 条，范围 1~8）", unit: "条" }

@@ -162,7 +162,7 @@ window.MineChat = (function () {
                 msgs[i].text = res.text;
                 msgs[i].rawText = raw;
                 msgs[i].aiPolished = true;
-                msgs[i].recalled = Math.random() < (window.prob ? window.prob("recallGenerated") : 0.2);
+                msgs[i].recalled = Math.random() < prob("recallGenerated");
                 save();
                 if (typeof renderMessages === "function") renderMessages();
                 break;
@@ -2116,7 +2116,7 @@ window.MineChat = (function () {
                   msgs[i].rawText = raw;  // 保存原始文本
                   msgs[i].aiPolished = true;
                   /* 撤回机制：和 sendGeneratedCard 一样，20% 概率撤回态发送 */
-                  msgs[i].recalled = Math.random() < window.prob ? window.prob("recallGenerated") : 0.2;
+                  msgs[i].recalled = Math.random() < prob("recallGenerated");
                   save();
                   /* 更新 DOM */
                   if (typeof renderMessages === "function") renderMessages();
