@@ -127,7 +127,7 @@ window.MineChat = (function () {
     var senderName = contact.name || "未知";
     var senderAvatar = contact.avatar || null;
     var beforeLen = msgs.length;
-    msgs.push({
+    var newMsg = {
       id: uid(),
       from: contact.id,
       text: card,
@@ -135,7 +135,8 @@ window.MineChat = (function () {
       isProactive: true,
       senderName: senderName,
       senderAvatar: senderAvatar
-    });
+    };
+    msgs.push(newMsg);
     // 文字字卡有概率附加 1~3 条 emoji（图片/语音字卡不附加）
     if (!isImageCard(card) && !isAudioCard(card) && !isEmojiCard(card)) {
       var emojis = pickEmojiAttachments(contact.cards || []);
@@ -150,6 +151,26 @@ window.MineChat = (function () {
           senderAvatar: senderAvatar
         });
       }
+    }
+    /* AI 润色：所有文字字卡（拼字卡/普通单字卡）都经过 AI 润色 */
+    if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card)) {
+      (function (id, raw, cid) {
+        window.MineAI.polish({ raw: raw, route: "template", contactId: cid }).then(function (res) {
+          if (res && res.ok && res.text && res.text !== raw) {
+            for (var i = 0; i < msgs.length; i++) {
+              if (msgs[i].id === id) {
+                msgs[i].text = res.text;
+                msgs[i].rawText = raw;
+                msgs[i].aiPolished = true;
+                msgs[i].recalled = Math.random() < (window.prob ? window.prob("recallGenerated") : 0.2);
+                save();
+                if (typeof renderMessages === "function") renderMessages();
+                break;
+              }
+            }
+          }
+        });
+      })(newMsg.id, card, contact.id);
     }
     save();
     // 未查看该会话时增加未读计数（并触发后台系统通知）
@@ -2074,13 +2095,37 @@ window.MineChat = (function () {
     var senderAvatar = (contact && contact.avatar) ? contact.avatar : null;
     var beforeLen = msgs.length;
     if (card) {
-      msgs.push({ id: uid(), from: contact.id, text: card, time: Date.now(), senderName: senderName, senderAvatar: senderAvatar });
+      var newMsg = { id: uid(), from: contact.id, text: card, time: Date.now(), senderName: senderName, senderAvatar: senderAvatar };
+      msgs.push(newMsg);
       // 文字字卡有 15% 概率附加 1~3 条 emoji（图片/语音字卡不附加）
       if (!isImageCard(card) && !isAudioCard(card) && !isEmojiCard(card)) {
         var emojis = pickEmojiAttachments(contact.cards || []);
         for (var i = 0; i < emojis.length; i++) {
           msgs.push({ id: uid(), from: contact.id, text: emojis[i], time: Date.now(), senderName: senderName, senderAvatar: senderAvatar });
         }
+      }
+      /* AI 润色：所有文字字卡（拼字卡/普通单字卡）都经过 AI 润色 */
+      if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card)) {
+        (function (id, raw, cid, msgObj) {
+          window.MineAI.polish({ raw: raw, route: "template", contactId: cid }).then(function (res) {
+            if (res && res.ok && res.text && res.text !== raw) {
+              /* 找到这条消息，替换文本 */
+              for (var i = 0; i < msgs.length; i++) {
+                if (msgs[i].id === id) {
+                  msgs[i].text = res.text;
+                  msgs[i].rawText = raw;  // 保存原始文本
+                  msgs[i].aiPolished = true;
+                  /* 撤回机制：和 sendGeneratedCard 一样，20% 概率撤回态发送 */
+                  msgs[i].recalled = Math.random() < window.prob ? window.prob("recallGenerated") : 0.2;
+                  save();
+                  /* 更新 DOM */
+                  if (typeof renderMessages === "function") renderMessages();
+                  break;
+                }
+              }
+            }
+          });
+        })(newMsg.id, card, contact.id, newMsg);
       }
     } else {
       // 无字卡 → 沉默占位
