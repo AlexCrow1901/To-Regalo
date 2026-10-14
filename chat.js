@@ -152,8 +152,8 @@ window.MineChat = (function () {
         });
       }
     }
-    /* AI 润色：所有文字字卡（拼字卡/普通单字卡）都经过 AI 润色 */
-    if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card)) {
+    /* AI 润色：所有文字字卡（拼字卡/普通单字卡）都经过 AI 润色（太短的短句跳过） */
+    if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 4) {
       (function (id, raw, cid) {
         window.MineAI.polish({ raw: raw, route: "template", contactId: cid }).then(function (res) {
           if (res && res.ok && res.text && res.text !== raw) {
@@ -2046,7 +2046,7 @@ window.MineChat = (function () {
     var senderName = (contact && contact.name) ? contact.name : "未知";
     var senderAvatar = (contact && contact.avatar) ? contact.avatar : null;
     var beforeLen = msgs.length;
-    msgs.push({
+    var newMsg = {
       id: uid(),
       from: contact.id,
       text: card,
@@ -2054,7 +2054,8 @@ window.MineChat = (function () {
       isAutoReply: true,
       senderName: senderName,
       senderAvatar: senderAvatar
-    });
+    };
+    msgs.push(newMsg);
     // 文字字卡有 15% 概率附加 1~3 条 emoji（图片/语音字卡不附加）
     if (!isImageCard(card) && !isAudioCard(card) && !isEmojiCard(card)) {
       var emojis = pickEmojiAttachments(contact.cards || []);
@@ -2068,6 +2069,29 @@ window.MineChat = (function () {
           senderName: senderName,
           senderAvatar: senderAvatar
         });
+      }
+    }
+    /* AI 润色：所有文字字卡都经过润色（太短的短句跳过，比如"我爱你""真的"） */
+    if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card)) {
+      /* 跳过太短的短句（≤4字，意思已经很明确） */
+      if (card.length > 4) {
+        (function (id, raw, cid) {
+          window.MineAI.polish({ raw: raw, route: "template", contactId: cid }).then(function (res) {
+            if (res && res.ok && res.text && res.text !== raw) {
+              for (var i = 0; i < msgs.length; i++) {
+                if (msgs[i].id === id) {
+                  msgs[i].text = res.text;
+                  msgs[i].rawText = raw;
+                  msgs[i].aiPolished = true;
+                  msgs[i].recalled = Math.random() < prob("recallGenerated");
+                  save();
+                  if (typeof renderMessages === "function") renderMessages();
+                  break;
+                }
+              }
+            }
+          });
+        })(newMsg.id, card, contact.id);
       }
     }
     save();
@@ -2104,8 +2128,8 @@ window.MineChat = (function () {
           msgs.push({ id: uid(), from: contact.id, text: emojis[i], time: Date.now(), senderName: senderName, senderAvatar: senderAvatar });
         }
       }
-      /* AI 润色：所有文字字卡（拼字卡/普通单字卡）都经过 AI 润色 */
-      if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card)) {
+      /* AI 润色：所有文字字卡（拼字卡/普通单字卡）都经过 AI 润色（太短的短句跳过） */
+      if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 4) {
         (function (id, raw, cid, msgObj) {
           window.MineAI.polish({ raw: raw, route: "template", contactId: cid }).then(function (res) {
             if (res && res.ok && res.text && res.text !== raw) {
