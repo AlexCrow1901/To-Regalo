@@ -970,7 +970,7 @@ window.MineCardGenerator = (function () {
       /* AI 润色（异步不阻塞）：润色成功 → text=润色后、rawText=原始组卡内容（审批页对照显示） */
       if (window.MineAI && window.MineAI.isEnabled()) {
         (function (it) {
-          window.MineAI.polish({ raw: it.text, input: it.input, route: it.route, contactId: it.contactId })
+          window.MineAI.polish({ raw: it.text, input: it.input, route: it.route, contactId: it.contactId, chatType: "single" })
             .then(function (res) {
               if (res && res.ok && res.text && res.text !== it.text) {
                 var list = getItems();
@@ -1112,7 +1112,7 @@ window.MineCardGenerator = (function () {
          异步执行，不占用本次同步回复链路（返回 null 由调用方走原有字卡）。 */
       if (window.MineAI && window.MineAI.isEnabled()) {
         (function (cid2, raw, inp, route) {
-          window.MineAI.polish({ raw: raw, input: inp, route: route, contactId: cid2 })
+          window.MineAI.polish({ raw: raw, input: inp, route: route, contactId: cid2, chatType: "single" })
             .then(function (res) {
               var finalText = (res && res.ok && res.text) ? res.text : raw;
               if (window.MineChat && window.MineChat.sendGeneratedCard) {

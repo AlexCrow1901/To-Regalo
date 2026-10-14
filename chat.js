@@ -155,7 +155,7 @@ window.MineChat = (function () {
     /* AI 润色：所有文字字卡（拼字卡/普通单字卡）都经过 AI 润色（太短的短句跳过） */
     if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 4) {
       (function (id, raw, cid) {
-        window.MineAI.polish({ raw: raw, route: "template", contactId: cid }).then(function (res) {
+        window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
           if (res && res.ok && res.text && res.text !== raw) {
             for (var i = 0; i < msgs.length; i++) {
               if (msgs[i].id === id) {
@@ -2076,7 +2076,7 @@ window.MineChat = (function () {
       /* 跳过太短的短句（≤4字，意思已经很明确） */
       if (card.length > 4) {
         (function (id, raw, cid) {
-          window.MineAI.polish({ raw: raw, route: "template", contactId: cid }).then(function (res) {
+          window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
             if (res && res.ok && res.text && res.text !== raw) {
               for (var i = 0; i < msgs.length; i++) {
                 if (msgs[i].id === id) {
@@ -2131,7 +2131,7 @@ window.MineChat = (function () {
       /* AI 润色：所有文字字卡（拼字卡/普通单字卡）都经过 AI 润色（太短的短句跳过） */
       if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 4) {
         (function (id, raw, cid, msgObj) {
-          window.MineAI.polish({ raw: raw, route: "template", contactId: cid }).then(function (res) {
+          window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
             if (res && res.ok && res.text && res.text !== raw) {
               /* 找到这条消息，替换文本 */
               for (var i = 0; i < msgs.length; i++) {
