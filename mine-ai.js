@@ -181,34 +181,47 @@ window.MineAI = (function () {
     var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctrl) try { ctrl.abort(); } catch (e) {} }, 20000);
 
-    return fetch(ep.url + "/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + ep.key },
-      body: JSON.stringify({
-        model: ep.model,
-        messages: [
-          { role: "system", content: sys },
-          { role: "user", content: user }
-        ],
-        temperature: 0.8,
-        max_tokens: 200
-      }),
-      signal: ctrl ? ctrl.signal : undefined
-    }).then(function (r) {
-      clearTimeout(timer);
-      if (!r.ok) throw new Error("http-" + r.status);
-      return r.json();
-    }).then(function (data) {
-      var text = data && data.choices && data.choices[0] && data.choices[0].message &&
-        String(data.choices[0].message.content || "").trim();
-      if (!text) throw new Error("empty-response");
-      /* 剥掉模型可能加的引号/书名号包裹 */
-      text = text.replace(/^["'「『《\s]+|["'」』》\s]+$/g, "");
-      return { ok: true, text: text, raw: raw, via: "ai" };
-    }).catch(function (e) {
-      clearTimeout(timer);
-      return { ok: false, error: (e && e.message) || "request-failed" };
-    });
+    /* 带重试的请求：失败后自动重试，间隔指数增长（1s→2s→4s→8s→16s→30s→60s→120s） */
+    function doRequest(attempt) {
+      var retryDelays = [1000, 2000, 4000, 8000, 16000, 30000, 60000, 120000];
+      return fetch(ep.url + "/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + ep.key },
+        body: JSON.stringify({
+          model: ep.model,
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: user }
+          ],
+          temperature: 0.8,
+          max_tokens: 200
+        }),
+        signal: ctrl ? ctrl.signal : undefined
+      }).then(function (r) {
+        clearTimeout(timer);
+        if (!r.ok) throw new Error("http-" + r.status);
+        return r.json();
+      }).then(function (data) {
+        var text = data && data.choices && data.choices[0] && data.choices[0].message &&
+          String(data.choices[0].message.content || "").trim();
+        if (!text) throw new Error("empty-response");
+        text = text.replace(/^["'「『《\s]+|["'」』》\s]+$/g, "");
+        return { ok: true, text: text, raw: raw, via: "ai" };
+      }).catch(function (e) {
+        clearTimeout(timer);
+        /* 最多重试 8 次 */
+        if (attempt < retryDelays.length) {
+          var delay = retryDelays[attempt];
+          return new Promise(function (resolve) {
+            setTimeout(function () {
+              resolve(doRequest(attempt + 1));
+            }, delay);
+          });
+        }
+        return { ok: false, error: (e && e.message) || "request-failed" };
+      });
+    }
+    return doRequest(0);
   }
 
   return {
