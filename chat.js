@@ -1415,7 +1415,7 @@ window.MineChat = (function () {
     } else if (msg.isChoice) {
       bubbleText = renderChoiceText(msg);
     } else {
-      bubbleText = wrapText(msg.text, 12);
+      bubbleText = escapeHtml(msg.text);
     }
     // 自动回复标记
     var autoTag = "";
