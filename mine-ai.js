@@ -16,7 +16,8 @@
 window.MineAI = (function () {
   "use strict";
 
-  var CFG_KEY = "mine.cards.gen.config.v1";
+  var CFG_KEY = "mine.ai.config.v1";
+  var CFG_BACKUP_KEY = "mine.ai.config.backup.v1";
   var PERSONA_KEY = "mine.contacts.persona.v1";
 
   /* ---------------- 服务商预设（OpenAI 兼容格式） ---------------- */
@@ -29,13 +30,29 @@ window.MineAI = (function () {
   };
 
   function getConfig() {
-    try { return JSON.parse(localStorage.getItem(CFG_KEY)) || {}; } catch (e) { return {}; }
+    var cfg = {};
+    try { cfg = JSON.parse(localStorage.getItem(CFG_KEY)) || {}; } catch (e) {}
+    /* 如果主配置为空，自动从备份恢复 */
+    if (!cfg.aiApiKey) {
+      try {
+        var backup = JSON.parse(localStorage.getItem(CFG_BACKUP_KEY)) || {};
+        if (backup.aiApiKey) {
+          cfg = backup;
+          try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) {}
+        }
+      } catch (e) {}
+    }
+    return cfg;
   }
   function setConfig(patch) {
     var cfg = getConfig();
     if (patch && typeof patch === "object") {
       Object.keys(patch).forEach(function (k) { cfg[k] = patch[k]; });
-      try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) {}
+      try {
+        localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+        /* 同时存一份备份，防止主配置丢失 */
+        localStorage.setItem(CFG_BACKUP_KEY, JSON.stringify(cfg));
+      } catch (e) {}
     }
     return getConfig();
   }
