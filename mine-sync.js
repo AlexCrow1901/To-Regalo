@@ -85,7 +85,7 @@
     if (!state.enabled || !state.token || state.downloading) return Promise.resolve();
     state.downloading = true;
 
-    return fetch("https://api.github.com/gists/" + GIST_ID, {
+    return fetch("https://api.github.com/gists/" + state.gistId, {
       headers: {
         "Authorization": "token " + state.token,
         "Accept": "application/vnd.github.v3+json"
