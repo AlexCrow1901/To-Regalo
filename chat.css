@@ -346,8 +346,8 @@
   border-color: var(--bd-medium);
 }
 .card-item.is-current .card-text {
-  color: var(--c-ghost);
-  font-weight: 500;
+  color: var(--t-primary);
+  font-weight: 600;
 }
 .status-dot {
   flex: 0 0 auto;
