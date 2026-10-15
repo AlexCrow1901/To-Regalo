@@ -245,6 +245,7 @@ window.MineAI = (function () {
     /* 带重试的请求：失败后自动重试，间隔指数增长（1s→2s→4s→8s→16s→30s→60s→120s） */
     function doRequest(attempt) {
       var retryDelays = [1000, 2000, 4000, 8000, 16000, 30000, 60000, 120000];
+      setState({ status: "loading", pendingCount: aiState.pendingCount + 1 });
       return fetch(ep.url + "/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + ep.key },
@@ -269,6 +270,7 @@ window.MineAI = (function () {
         text = text.replace(/^["'「『《\s]+|["'」』》\s]+$/g, "");
         /* 本地人称转换兜底：AI可能漏改，本地再强制转一次 */
         text = localPronounFix(text, opts.chatType);
+        setState({ status: "ok", pendingCount: aiState.pendingCount - 1, lastOkTime: Date.now(), lastError: "" });
         return { ok: true, text: text, raw: raw, via: "ai" };
       }).catch(function (e) {
         clearTimeout(timer);
@@ -281,7 +283,9 @@ window.MineAI = (function () {
             }, delay);
           });
         }
-        return { ok: false, error: (e && e.message) || "request-failed" };
+        var errMsg = (e && e.message) || "request-failed";
+        setState({ status: "error", pendingCount: aiState.pendingCount - 1, lastError: errMsg });
+        return { ok: false, error: errMsg };
       });
     }
     return doRequest(0);
@@ -337,7 +341,27 @@ window.MineAI = (function () {
     return text;
   }
 
-  /* ---------------- 连接测试 ----------------
+  /* ---------------- 全局状态管理（供UI实时显示） ---------------- */
+  var aiState = {
+    status: "idle",        // idle | loading | ok | error
+    lastOkTime: 0,         // 最近一次成功时间戳
+    lastError: "",         // 最近一次错误信息
+    pendingCount: 0,       // 当前正在进行的请求数
+    listeners: []          // 状态变化监听者
+  };
+
+  function getAIState() { return Object.assign({}, aiState); }
+  function onStateChange(fn) {
+    if (typeof fn === "function") aiState.listeners.push(fn);
+  }
+  function emitState() {
+    var s = getAIState();
+    aiState.listeners.forEach(function(fn) { try { fn(s); } catch(e) {} });
+  }
+  function setState(patch) {
+    Object.assign(aiState, patch);
+    emitState();
+  }
      发一个最小请求测试API是否连通，返回 { ok, status, latency, error } */
   function testConnection() {
     var ep = resolveEndpoint();
@@ -395,6 +419,8 @@ window.MineAI = (function () {
     setProtectWords: setProtectWords,
     testConnection: testConnection,
     getLastStatus: getLastStatus,
-    setLastStatus: setLastStatus
+    setLastStatus: setLastStatus,
+    getAIState: getAIState,
+    onStateChange: onStateChange
   };
 })();

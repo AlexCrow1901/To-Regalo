@@ -1354,6 +1354,7 @@ window.MineChat = (function () {
         '<button class="nav-btn" data-act="back">' + I.svg("back", 20) + '返回</button>' +
         '<div class="chat-nav-info">' +
           '<span class="chat-nav-title">' + escapeHtml(ctx.title) + '</span>' +
+          '<span class="ai-status-dot" id="ai-status-dot" title="AI润色状态"></span>' +
           '<span class="chat-nav-sub">' + escapeHtml(ctx.subtitle) + '</span>' +
         '</div>' +
         '<span class="nav-right">' +
@@ -1414,9 +1415,25 @@ window.MineChat = (function () {
     applyChatFontColor();
     // 绑定事件
     bindChatEvents();
+    // 初始化AI状态指示灯
+    initAIStatusDot();
     // 滚到底部（首次打开强制）
     scrollToBottom(true);
     hideBackBottom();
+  }
+
+  /* AI 状态指示灯初始化 */
+  function initAIStatusDot() {
+    var dot = document.getElementById("ai-status-dot");
+    if (!dot || !window.MineAI) return;
+    function updateDot(state) {
+      dot.classList.remove("is-loading", "is-ok", "is-error");
+      if (state.status === "loading") dot.classList.add("is-loading");
+      else if (state.status === "ok") dot.classList.add("is-ok");
+      else if (state.status === "error") dot.classList.add("is-error");
+    }
+    updateDot(window.MineAI.getAIState());
+    window.MineAI.onStateChange(updateDot);
   }
   /* ---------------- 渲染所有消息 ---------------- */
   function renderMessages() {

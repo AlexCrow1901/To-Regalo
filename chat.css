@@ -1752,6 +1752,32 @@
   gap: var(--sp-3);
   padding: var(--sp-2) 0;
 }
+
+/* AI 状态指示灯 */
+.ai-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ccc;
+  margin: 0 6px;
+  vertical-align: middle;
+  transition: background 0.3s;
+}
+.ai-status-dot.is-loading {
+  background: #f0ad4e;
+  animation: ai-pulse 1s infinite;
+}
+.ai-status-dot.is-ok {
+  background: #5cb85c;
+}
+.ai-status-dot.is-error {
+  background: #d9534f;
+}
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
 .msg-action-btn {
   display: flex;
   align-items: center;
