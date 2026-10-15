@@ -215,7 +215,7 @@ window.MineChat = (function () {
     var recalled = Math.random() < prob("recallGenerated");
     /* 本地人称转换兜底：一对一聊天，她/他 → 你，保护人名不被转换 */
     text = window.MineAI.fixPronoun(text, "single", contact.id);
-    msgs.push({
+    var newMsg = {
       id: uid(),
       from: contact.id,
       text: text,
@@ -225,7 +225,22 @@ window.MineChat = (function () {
       recalled: recalled || undefined,
       senderName: senderName,
       senderAvatar: senderAvatar
-    });
+    };
+    msgs.push(newMsg);
+    /* AI 润色：所有文字字卡都经过AI润色 */
+    if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(text) && !isAudioCard(text) && text.length > 1) {
+      (function (id, raw, cid, msgObj) {
+        window.MineAI.polish({ raw: raw, route: "generated", contactId: cid, chatType: "single" }).then(function (res) {
+          if (res && res.ok && res.text && res.text !== raw) {
+            msgObj.text = res.text;
+            msgObj.rawText = raw;
+            msgObj.aiPolished = true;
+            save();
+            if (typeof renderMessages === "function") renderMessages();
+          }
+        });
+      })(newMsg.id, text, contact.id, newMsg);
+    }
     save();
     // 未查看该会话时增加未读计数（并触发后台系统通知）
     if (!isViewingConv(convKey)) {

@@ -246,10 +246,7 @@ window.MineAI = (function () {
     function doRequest(attempt) {
       var retryDelays = [1000, 2000, 4000, 8000, 16000, 30000, 60000, 120000];
       setState({ status: "loading", pendingCount: aiState.pendingCount + 1 });
-      /* 用CORS代理转发，解决浏览器跨域问题 */
-      var apiUrl = ep.url + "/chat/completions";
-      var proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(apiUrl);
-      return fetch(proxyUrl, {
+      return fetch(ep.url + "/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + ep.key },
         body: JSON.stringify({
@@ -374,9 +371,7 @@ window.MineAI = (function () {
     var t0 = Date.now();
     var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctrl) try { ctrl.abort(); } catch (e) {} }, 10000);
-    var apiUrl = ep.url + "/chat/completions";
-    var proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(apiUrl);
-    return fetch(proxyUrl, {
+    return fetch(ep.url + "/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + ep.key },
       body: JSON.stringify({
