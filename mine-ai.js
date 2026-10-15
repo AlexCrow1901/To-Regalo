@@ -365,7 +365,7 @@ window.MineAI = (function () {
     Object.assign(aiState, patch);
     emitState();
   }
-     发一个最小请求测试API是否连通，返回 { ok, status, latency, error } */
+  /* 发一个最小请求测试API是否连通，返回 { ok, status, latency, error } */
   function testConnection() {
     var ep = resolveEndpoint();
     if (!ep.url || !ep.key || !ep.model) {
