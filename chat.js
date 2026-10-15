@@ -1571,11 +1571,18 @@ window.MineChat = (function () {
     if (isMe && msg.read) {
       readMark = '<span class="msg-read is-read">' + I.svg("check", 13) + '</span>';
     }
+    // 原始字卡（AI润色过的消息，点击可展开查看原始组卡）
+    var rawCardHTML = "";
+    if (msg.rawText && !msg.recalled) {
+      bubbleClass += " has-raw-card";
+      rawCardHTML = '<div class="raw-card-content" style="display:none;font-size:11px;color:#999;margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,0.08);">原始组卡：' + escapeHtml(msg.rawText) + '</div>';
+    }
     return '<div class="' + rowClass + '" data-msg-id="' + escapeHtml(msg.id || "") + '">' +
       (isMe ? "" : avatarHTML) +
       '<div class="msg-content">' +
         senderNameHTML +
         '<div class="msg-bubble ' + bubbleClass + '">' + autoTag + (recalledWrap || bubbleText) + '</div>' +
+        rawCardHTML +
         deleteButtons +
         '<div class="msg-time">' + readMark +
         '<span class="time-text" data-time="' + fmtTime(msg.time) + '" data-date="' + fmtDateSep(msg.time) + '">' + fmtTime(msg.time) + '</span>' +
@@ -1730,6 +1737,15 @@ window.MineChat = (function () {
       var bubble = e.target.closest ? e.target.closest(".msg-bubble.is-recalled") : null;
       if (!bubble) return;
       bubble.classList.toggle("is-revealed");
+    });
+    // 点击AI润色过的消息气泡 → 展开/收起原始组卡
+    msgContainer.addEventListener("click", function (e) {
+      var bubble = e.target.closest ? e.target.closest(".msg-bubble.has-raw-card") : null;
+      if (!bubble) return;
+      var rawCard = bubble.parentElement.querySelector(".raw-card-content");
+      if (rawCard) {
+        rawCard.style.display = rawCard.style.display === "none" ? "block" : "none";
+      }
     });
     // 点击删卡请求按钮 → 同意删除 / 留着
     msgContainer.addEventListener("click", function (e) {
