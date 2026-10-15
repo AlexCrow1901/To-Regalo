@@ -6,13 +6,14 @@
 (function () {
   "use strict";
 
-  var GIST_ID = "0b601e352111c57fd3067a6afb43e227";
+  var GIST_ID_STORAGE_KEY = "mine.sync.gistId";
   var GIST_FILE = "data.json";
   var TOKEN_STORAGE_KEY = "mine.sync.githubToken";
   var LAST_SYNC_KEY = "mine.sync.lastSync";
 
   var state = {
     enabled: true,
+    gistId: localStorage.getItem(GIST_ID_STORAGE_KEY) || "",
     token: localStorage.getItem(TOKEN_STORAGE_KEY) || "",
     uploading: false,
     downloading: false,
@@ -53,7 +54,7 @@
       keys: data
     };
 
-    fetch("https://api.github.com/gists/" + GIST_ID, {
+    fetch("https://api.github.com/gists/" + state.gistId, {
       method: "PATCH",
       headers: {
         "Authorization": "token " + state.token,
@@ -135,23 +136,27 @@
 
   /* 弹出配置框 */
   function showConfigDialog() {
-    if (state.token) return;
+    if (state.token && state.gistId) return;
     var dialog = document.createElement("div");
     dialog.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;";
     dialog.innerHTML = `
       <div style="background:#fff;border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
         <h3 style="margin:0 0 12px;font-size:18px;">云同步配置</h3>
-        <p style="margin:0 0 16px;color:#666;font-size:14px;line-height:1.5;">粘贴你的GitHub Token，开启网页版和PWA版自动同步</p>
-        <input type="text" id="sync-token-input" placeholder="粘贴GitHub Token" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:12px;" />
+        <p style="margin:0 0 16px;color:#666;font-size:14px;line-height:1.5;">填写你的GitHub Gist ID和Token，开启跨设备同步</p>
+        <input type="text" id="sync-gistid-input" placeholder="Gist ID" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:12px;" value="${state.gistId || ''}" />
+        <input type="text" id="sync-token-input" placeholder="GitHub Token" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:12px;" value="${state.token || ''}" />
         <button id="sync-save-btn" style="width:100%;padding:12px;background:#333;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;">保存并开启同步</button>
       </div>
     `;
     document.body.appendChild(dialog);
     document.getElementById("sync-save-btn").onclick = function () {
-      var val = document.getElementById("sync-token-input").value.trim();
-      if (val) {
-        localStorage.setItem(TOKEN_STORAGE_KEY, val);
-        state.token = val;
+      var gistId = document.getElementById("sync-gistid-input").value.trim();
+      var token = document.getElementById("sync-token-input").value.trim();
+      if (gistId && token) {
+        localStorage.setItem(GIST_ID_STORAGE_KEY, gistId);
+        localStorage.setItem(TOKEN_STORAGE_KEY, token);
+        state.gistId = gistId;
+        state.token = token;
         dialog.remove();
         location.reload();
       }
