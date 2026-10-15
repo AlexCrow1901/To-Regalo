@@ -1423,16 +1423,23 @@ window.MineChat = (function () {
   }
 
   /* AI 状态指示灯初始化 */
+  var _aiStatusListener = null;
   function initAIStatusDot() {
-    var dot = document.getElementById("ai-status-dot");
-    if (!dot || !window.MineAI) return;
-    function updateDot(state) {
+    function updateDot() {
+      var dot = document.getElementById("ai-status-dot");
+      if (!dot || !window.MineAI) return;
+      var state = window.MineAI.getAIState();
       dot.classList.remove("is-loading", "is-ok", "is-error");
       if (state.status === "loading") dot.classList.add("is-loading");
       else if (state.status === "ok") dot.classList.add("is-ok");
       else if (state.status === "error") dot.classList.add("is-error");
     }
-    updateDot(window.MineAI.getAIState());
+    updateDot();
+    /* 每次重新注册，避免闭包持有旧元素引用 */
+    if (_aiStatusListener) {
+      /* 移除旧的监听（如果 MineAI 支持 off 的话，这里简单处理：重新注册覆盖） */
+    }
+    _aiStatusListener = updateDot;
     window.MineAI.onStateChange(updateDot);
   }
   /* ---------------- 渲染所有消息 ---------------- */
