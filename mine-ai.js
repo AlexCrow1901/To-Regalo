@@ -149,7 +149,8 @@ window.MineAI = (function () {
   /* ---------------- 启用判断 ---------------- */
   function isEnabled() {
     var c = getConfig();
-    return !!(c.aiEnabled && c.aiApiKey && (c.aiModel || PROVIDERS[c.aiProvider]));
+    /* 只要配了API key就默认启用，不用用户手动开开关 */
+    return !!(c.aiApiKey && (c.aiModel || PROVIDERS[c.aiProvider]));
   }
   function resolveEndpoint() {
     var c = getConfig();
