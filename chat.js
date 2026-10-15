@@ -168,9 +168,22 @@ window.MineChat = (function () {
                 break;
               }
             }
+          } else {
+            /* AI失败兜底：本地人称转换 */
+            for (var i = 0; i < msgs.length; i++) {
+              if (msgs[i].id === id) {
+                msgs[i].text = window.MineAI.fixPronoun(msgs[i].text, "single", cid);
+                save();
+                if (typeof renderMessages === "function") renderMessages();
+                break;
+              }
+            }
           }
         });
       })(newMsg.id, card, contact.id);
+    } else if (!isImageCard(card) && !isAudioCard(card)) {
+      /* 没开AI时，本地直接做人称转换 */
+      newMsg.text = window.MineAI.fixPronoun(newMsg.text, "single", contact.id);
     }
     save();
     // 未查看该会话时增加未读计数（并触发后台系统通知）
@@ -200,6 +213,8 @@ window.MineChat = (function () {
     /* 联系人二次复核：系统审批通过后，联系人仍有概率（默认 10%）驳回并撤回消息。
        撤回消息保留原文（用户点击气泡可展开/收起），仅标记 recalled。 */
     var recalled = Math.random() < prob("recallGenerated");
+    /* 本地人称转换兜底：一对一聊天，她/他 → 你，保护人名不被转换 */
+    text = window.MineAI.fixPronoun(text, "single", contact.id);
     msgs.push({
       id: uid(),
       from: contact.id,
@@ -2183,10 +2198,26 @@ window.MineChat = (function () {
                   break;
                 }
               }
+            } else {
+              /* AI失败兜底：本地人称转换 */
+              for (var i = 0; i < msgs.length; i++) {
+                if (msgs[i].id === id) {
+                  msgs[i].text = window.MineAI.fixPronoun(msgs[i].text, "single", cid);
+                  save();
+                  if (typeof renderMessages === "function") renderMessages();
+                  break;
+                }
+              }
             }
           });
         })(newMsg.id, card, contact.id);
+      } else {
+        /* 短句直接本地人称转换 */
+        newMsg.text = window.MineAI.fixPronoun(newMsg.text, "single", contact.id);
       }
+    } else if (!isImageCard(card) && !isAudioCard(card)) {
+      /* 没开AI时，本地直接做人称转换 */
+      newMsg.text = window.MineAI.fixPronoun(newMsg.text, "single", contact.id);
     }
     save();
     // 未查看时增加未读计数
@@ -2241,9 +2272,22 @@ window.MineChat = (function () {
                   break;
                 }
               }
+            } else {
+              /* AI失败兜底：本地人称转换 */
+              for (var i = 0; i < msgs.length; i++) {
+                if (msgs[i].id === id) {
+                  msgs[i].text = window.MineAI.fixPronoun(msgs[i].text, "single", cid);
+                  save();
+                  if (typeof renderMessages === "function") renderMessages();
+                  break;
+                }
+              }
             }
           });
         })(newMsg.id, card, contact.id, newMsg);
+      } else if (!isImageCard(card) && !isAudioCard(card)) {
+        /* 短句或没开AI时，本地直接做人称转换 */
+        newMsg.text = window.MineAI.fixPronoun(newMsg.text, "single", contact.id);
       }
     } else {
       // 无字卡 → 沉默占位

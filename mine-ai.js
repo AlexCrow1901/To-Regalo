@@ -171,18 +171,33 @@ window.MineAI = (function () {
     if (!raw) return Promise.resolve({ ok: false, error: "empty" });
     if (!isEnabled()) return Promise.resolve({ ok: false, error: "disabled" });
 
+    /* 超短词（≤3字）直接返回原句，不走AI，防止AI脑补加戏 */
+    if (raw.length <= 3) {
+      return Promise.resolve({ ok: true, text: raw, raw: raw, via: "short-skip" });
+    }
+
     var ep = resolveEndpoint();
     if (!ep.url || !ep.key || !ep.model) return Promise.resolve({ ok: false, error: "incomplete-config" });
 
     var persona = getPersona(opts.contactId);
     var sys = "你正在以一个角色的身份和朋友聊天。请根据下面的角色设定，把「输入内容」改写为一条自然的中文聊天消息。" +
       "要求：1) 意思保持不变；2) 像真人随手打字，口语化，不要书面腔；3) 充分体现角色的性格和说话习惯；4) 只输出改写后的消息本身，不要引号、解释、前缀。";
+    /* 说话人定位：最重要的规则 */
+    sys += "\n\n【说话人定位 - 必须严格遵守】" +
+      "\n· 这句话是【联系人本人】说的，是联系人主动发给你的聊天消息。" +
+      "\n· 句子里的「我」= 联系人本人（说话人自己）。" +
+      "\n· 句子里的「你」= 聊天对象 = 用户（也就是宝宝）。" +
+      "\n· 绝对不能搞反谁在说谁，绝对不能把「我」和「你」的身份互换。" +
+      "\n· 绝对不要反问、不要追问输入内容是什么意思、不要加戏扩展内容。" +
+      "\n· 你只负责把这句话润色得更口语更自然，核心意思、主语、宾语都不能变。";
     /* 人称转换规则 */
     if (opts.chatType === "group") {
       sys += "\n\n【人称转换】如果这句话是对着聊天对象说的，请把第三人称「她/他」转换成第二人称「你」；如果是说第三方的，则保留原称。";
     } else {
-      sys += "\n\n【人称转换】这是一对一聊天，请把所有第三人称「她/他」都转换成第二人称「你」。";
+      sys += "\n\n【人称转换】这是一对一聊天，请把第三人称「她/他」都转换成第二人称「你」。";
     }
+    /* 保护词规则：人名、特定称呼绝对不能改 */
+    sys += "\n\n【重要保护规则】人名、昵称、特定称呼是固定的，绝对不能改写、替换或转换成其他称呼。例如提到「夏以昼」就还是「夏以昼」，提到「小鹿」就还是「小鹿」，不能改成「我」「你」「他」或其他名字。只润色句子的语气和衔接，保留所有专有名詞不变。";
     if (persona) {
       sys += "\n\n【角色设定】\n" + persona + "\n\n请严格按照这个角色的身份、性格、说话习惯来改写消息。";
     }
@@ -209,6 +224,19 @@ window.MineAI = (function () {
       user = "这是一串拼音：「" + opts.input + "」。请先还原它想表达的意思，再改写成自然的聊天消息。";
     } else {
       user = "输入内容：" + raw;
+    }
+
+    /* ---------------- 本地人称转换兜底（AI可能漏改，本地再强制转一次） ---------------- */
+    function localPronounFix(text, chatType) {
+      if (!text) return text;
+      /* 一对一聊天：所有「她/他」→「你」（联系人在和你说话，第三人称就是指你） */
+      if (chatType === "single") {
+        text = text.replace(/她/g, "你").replace(/他/g, "你");
+        /* 修正：避免出现 "你你" 这种重复 */
+        text = text.replace(/你你/g, "你");
+      }
+      /* 群聊：AI按语境判断，本地不做硬转 */
+      return text;
     }
 
     var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
@@ -239,6 +267,8 @@ window.MineAI = (function () {
           String(data.choices[0].message.content || "").trim();
         if (!text) throw new Error("empty-response");
         text = text.replace(/^["'「『《\s]+|["'」』》\s]+$/g, "");
+        /* 本地人称转换兜底：AI可能漏改，本地再强制转一次 */
+        text = localPronounFix(text, opts.chatType);
         return { ok: true, text: text, raw: raw, via: "ai" };
       }).catch(function (e) {
         clearTimeout(timer);
@@ -257,6 +287,101 @@ window.MineAI = (function () {
     return doRequest(0);
   }
 
+  /* ---------------- 保护词配置（人名/特定称呼，不被人称转换） ---------------- */
+  var PROTECT_KEY = "mine.ai.protectWords.v1";
+  function getProtectWords() {
+    try { return JSON.parse(localStorage.getItem(PROTECT_KEY)) || []; } catch (e) { return []; }
+  }
+  function setProtectWords(list) {
+    try {
+      localStorage.setItem(PROTECT_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+    } catch (e) {}
+  }
+
+  /* 公开：本地人称转换（供chat.js在AI失败时兜底用） */
+  function localPronounFix(text, chatType, contactId) {
+    if (!text) return text;
+    text = String(text);
+    if (chatType === "single") {
+      /* 1. 先把保护词临时替换成占位符，防止被误转 */
+      var protectWords = getProtectWords();
+      /* 自动加入联系人名字作为保护词 */
+      if (contactId && window.MineContacts) {
+        try {
+          var contact = window.MineContacts.findContact(contactId);
+          if (contact && contact.name) protectWords.push(contact.name);
+        } catch (e) {}
+      }
+      /* 去重 + 按长度降序（长的先替换，防止短词先匹配破坏长词） */
+      protectWords = protectWords.filter(function(v, i, a) { return v && a.indexOf(v) === i; });
+      protectWords.sort(function(a, b) { return b.length - a.length; });
+
+      var placeholders = [];
+      protectWords.forEach(function(word, i) {
+        if (text.indexOf(word) >= 0) {
+          var ph = "\u0000P" + i + "\u0000";
+          placeholders.push({ ph: ph, word: word });
+          text = text.split(word).join(ph);
+        }
+      });
+
+      /* 2. 做人称转换 */
+      text = text.replace(/她/g, "你").replace(/他/g, "你");
+      text = text.replace(/你你/g, "你");
+
+      /* 3. 把保护词换回来 */
+      placeholders.forEach(function(item) {
+        text = text.split(item.ph).join(item.word);
+      });
+    }
+    return text;
+  }
+
+  /* ---------------- 连接测试 ----------------
+     发一个最小请求测试API是否连通，返回 { ok, status, latency, error } */
+  function testConnection() {
+    var ep = resolveEndpoint();
+    if (!ep.url || !ep.key || !ep.model) {
+      return Promise.resolve({ ok: false, error: "未配置完整（缺少地址/Key/模型）" });
+    }
+    var t0 = Date.now();
+    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) try { ctrl.abort(); } catch (e) {} }, 10000);
+    return fetch(ep.url + "/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + ep.key },
+      body: JSON.stringify({
+        model: ep.model,
+        messages: [{ role: "user", content: "hi" }],
+        max_tokens: 5
+      }),
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function (r) {
+      clearTimeout(timer);
+      var latency = Date.now() - t0;
+      if (r.ok) return { ok: true, status: r.status, latency: latency };
+      return r.text().then(function (body) {
+        var msg = "HTTP " + r.status;
+        if (r.status === 401) msg = "Key无效或已过期（401）";
+        else if (r.status === 404) msg = "接口地址错误（404）";
+        else if (r.status === 429) msg = "请求过多被限流（429）";
+        return { ok: false, status: r.status, latency: latency, error: msg, detail: body.slice(0, 200) };
+      });
+    }).catch(function (e) {
+      clearTimeout(timer);
+      var latency = Date.now() - t0;
+      var msg = "网络请求失败";
+      if (e && e.name === "AbortError") msg = "请求超时（10秒）";
+      else if (e && e.message) msg = e.message;
+      return { ok: false, latency: latency, error: msg };
+    });
+  }
+
+  /* ---------------- 状态缓存（供UI实时显示） ---------------- */
+  var lastStatus = { checked: false, ok: false, latency: 0, error: "", time: 0 };
+  function getLastStatus() { return lastStatus; }
+  function setLastStatus(s) { lastStatus = s; }
+
   return {
     isEnabled: isEnabled,
     getConfig: getConfig,
@@ -264,6 +389,12 @@ window.MineAI = (function () {
     listProviders: listProviders,
     getPersona: getPersona,
     setPersona: setPersona,
-    polish: polish
+    polish: polish,
+    fixPronoun: localPronounFix,
+    getProtectWords: getProtectWords,
+    setProtectWords: setProtectWords,
+    testConnection: testConnection,
+    getLastStatus: getLastStatus,
+    setLastStatus: setLastStatus
   };
 })();

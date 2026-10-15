@@ -623,6 +623,14 @@ window.MineLexiconAdmin = (function () {
       rowText("rg-ai-url", "接口地址", "留空用服务商默认地址；自定义时填完整 base URL（如 https://api.example.com/v1）", cfg.aiBaseUrl || "", "https://api.deepseek.com") +
       rowText("rg-ai-model", "模型名", "如 deepseek-chat / gpt-4o-mini / qwen-plus / moonshot-v1-8k", cfg.aiModel, "deepseek-chat") +
       rowText("rg-ai-key", "API Key", "存储在本机浏览器（请注意保管，勿外泄）", cfg.aiApiKey, "") +
+      /* AI 连接状态检测 */
+      '<div style="margin:10px 12px;padding:12px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:space-between;">' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<span id="rg-ai-dot" style="width:10px;height:10px;border-radius:50%;background:#ccc;display:inline-block;"></span>' +
+          '<span id="rg-ai-status" style="font-size:13px;color:#666;">未检测</span>' +
+        '</div>' +
+        '<button id="rg-ai-test" style="padding:6px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;cursor:pointer;">测试连接</button>' +
+      '</div>' +
       '<div style="padding:14px 12px;">' +
         '<button id="rg-save" style="width:100%;padding:12px;border-radius:10px;background:#4a90d9;color:#fff;border:none;font-size:14px;">' + iconSvg("check", 14) + ' 保存运行规则</button>' +
       '</div>' +
@@ -650,6 +658,47 @@ window.MineLexiconAdmin = (function () {
       G.setConfig(patch);
       toast("运行规则已保存并即时生效");
     });
+
+    /* AI 连接测试按钮 */
+    var testBtn = detail.querySelector("#rg-ai-test");
+    var dot = detail.querySelector("#rg-ai-dot");
+    var statusText = detail.querySelector("#rg-ai-status");
+    if (testBtn && window.MineAI) {
+      testBtn.addEventListener("click", function () {
+        /* 先把页面上填的配置临时写入，再测试 */
+        var tempCfg = {
+          aiEnabled: true,
+          aiProvider: detail.querySelector("#rg-ai-provider").value,
+          aiBaseUrl: detail.querySelector("#rg-ai-url").value.trim(),
+          aiModel: detail.querySelector("#rg-ai-model").value.trim(),
+          aiApiKey: detail.querySelector("#rg-ai-key").value.trim()
+        };
+        /* 临时保存配置（测试用） */
+        var oldCfg = window.MineAI.getConfig();
+        window.MineAI.setConfig(tempCfg);
+
+        dot.style.background = "#f0ad4e";
+        statusText.textContent = "测试中...";
+        testBtn.disabled = true;
+        testBtn.textContent = "测试中...";
+
+        window.MineAI.testConnection().then(function (res) {
+          testBtn.disabled = false;
+          testBtn.textContent = "测试连接";
+          if (res.ok) {
+            dot.style.background = "#5cb85c";
+            statusText.textContent = "连接正常 · " + res.latency + "ms";
+            window.MineAI.setLastStatus({ checked: true, ok: true, latency: res.latency, time: Date.now() });
+          } else {
+            dot.style.background = "#d9534f";
+            statusText.textContent = res.error || "连接失败";
+            window.MineAI.setLastStatus({ checked: true, ok: false, error: res.error, time: Date.now() });
+          }
+          /* 恢复原配置（测试不自动保存） */
+          window.MineAI.setConfig(oldCfg);
+        });
+      });
+    }
   }
   /* ==================== 5. 联系人人设 ==================== */
   function renderPersona() {

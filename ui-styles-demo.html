@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI风格对比 - To Regalo</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #1a1a1a;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+h1 { color: #fff; font-size: 20px; font-weight: 300; letter-spacing: 2px; margin-bottom: 10px; }
+.style-row {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.style-label {
+  color: #888;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 12px;
+  letter-spacing: 1px;
+}
+
+/* ============================================================
+   通用手机外壳
+   ============================================================ */
+.phone {
+  width: 320px;
+  height: 650px;
+  border-radius: 36px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.phone-content {
+  position: absolute;
+  inset: 0;
+  padding: 40px 20px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 状态栏 */
+.status-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 20px 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  z-index: 10;
+  font-weight: 600;
+}
+
+/* ============================================================
+   风格 1：极简黑白 + 英伦阴郁（推荐）
+   ============================================================ */
+.style-british {
+  background: linear-gradient(180deg, #2c2c2c 0%, #1a1a1a 100%);
+  color: #e0e0e0;
+}
+.style-british .status-bar { color: #888; }
+.style-british .greeting {
+  margin-bottom: 30px;
+}
+.style-british .hello {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 6px;
+}
+.style-british .date {
+  font-size: 32px;
+  font-weight: 200;
+  letter-spacing: -1px;
+  color: #e8e8e8;
+}
+.style-british .search-bar {
+  height: 36px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 24px;
+}
+.style-british .icon-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px 10px;
+  margin-bottom: 24px;
+}
+.style-british .icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.style-british .icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.style-british .icon-label {
+  font-size: 11px;
+  color: #888;
+}
+.style-british .quote-card {
+  padding: 16px;
+  background: rgba(255,255,255,0.03);
+  border-left: 2px solid #555;
+  margin-bottom: 20px;
+}
+.style-british .quote-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #999;
+  font-style: italic;
+}
+.style-british .dock {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-around;
+  padding: 12px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.style-british .dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #666;
+}
+.style-british .dock-icon { font-size: 18px; }
+
+/* ============================================================
+   风格 2：纯白极简（X 原版风）
+   ============================================================ */
+.style-clean {
+  background: #fafafa;
+  color: #1a1a1a;
+}
+.style-clean .status-bar { color: #333; }
+.style-clean .greeting { margin-bottom: 30px; }
+.style-clean .hello {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 6px;
+}
+.style-clean .date {
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: -1px;
+  color: #1a1a1a;
+}
+.style-clean .search-bar {
+  height: 36px;
+  background: #f0f0f0;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 24px;
+}
+.style-clean .icon-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px 10px;
+  margin-bottom: 24px;
+}
+.style-clean .icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.style-clean .icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.style-clean .icon-label {
+  font-size: 11px;
+  color: #666;
+}
+.style-clean .quote-card {
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  margin-bottom: 20px;
+}
+.style-clean .quote-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #666;
+}
+.style-clean .dock {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-around;
+  padding: 12px;
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid #eee;
+}
+.style-clean .dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #999;
+}
+.style-clean .dock-icon { font-size: 18px; }
+
+/* ============================================================
+   风格 3：哥特暗黑
+   ============================================================ */
+.style-gothic {
+  background: linear-gradient(180deg, #0d0d0d 0%, #000 100%);
+  color: #d4c8b0;
+}
+.style-gothic .status-bar { color: #666; }
+.style-gothic .greeting { margin-bottom: 30px; }
+.style-gothic .hello {
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #5a5040;
+  margin-bottom: 6px;
+}
+.style-gothic .date {
+  font-size: 32px;
+  font-weight: 200;
+  letter-spacing: 2px;
+  color: #d4c8b0;
+  font-family: Georgia, serif;
+}
+.style-gothic .search-bar {
+  height: 36px;
+  background: rgba(212, 200, 176, 0.05);
+  border: 1px solid rgba(212, 200, 176, 0.15);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 13px;
+  color: #5a5040;
+  margin-bottom: 24px;
+}
+.style-gothic .icon-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px 10px;
+  margin-bottom: 24px;
+}
+.style-gothic .icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.style-gothic .icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 2px;
+  background: rgba(212, 200, 176, 0.05);
+  border: 1px solid rgba(212, 200, 176, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.style-gothic .icon-label {
+  font-size: 11px;
+  color: #8a7d65;
+  font-family: Georgia, serif;
+}
+.style-gothic .quote-card {
+  padding: 16px;
+  background: rgba(212, 200, 176, 0.03);
+  border: 1px solid rgba(212, 200, 176, 0.1);
+  margin-bottom: 20px;
+}
+.style-gothic .quote-text {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #8a7d65;
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+.style-gothic .dock {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-around;
+  padding: 12px;
+  background: rgba(212, 200, 176, 0.03);
+  border-radius: 2px;
+  border: 1px solid rgba(212, 200, 176, 0.15);
+}
+.style-gothic .dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #6a5d45;
+  font-family: Georgia, serif;
+}
+.style-gothic .dock-icon { font-size: 18px; }
+
+/* ============================================================
+   风格 4：灰调极简
+   ============================================================ */
+.style-gray {
+  background: #e8e8e8;
+  color: #2a2a2a;
+}
+.style-gray .status-bar { color: #555; }
+.style-gray .greeting { margin-bottom: 30px; }
+.style-gray .hello {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 6px;
+}
+.style-gray .date {
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: -0.5px;
+  color: #2a2a2a;
+}
+.style-gray .search-bar {
+  height: 36px;
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 24px;
+}
+.style-gray .icon-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px 10px;
+  margin-bottom: 24px;
+}
+.style-gray .icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.style-gray .icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.style-gray .icon-label {
+  font-size: 11px;
+  color: #666;
+}
+.style-gray .quote-card {
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.style-gray .quote-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #666;
+}
+.style-gray .dock {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-around;
+  padding: 12px;
+  background: #fff;
+  border-radius: 16px;
+}
+.style-gray .dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #888;
+}
+.style-gray .dock-icon { font-size: 18px; }
+</style>
+</head>
+<body>
+
+<h1>选择你喜欢的风格</h1>
+
+<div class="style-row">
+
+  <!-- 风格 1：英伦阴郁 -->
+  <div>
+    <div class="phone style-british">
+      <div class="status-bar">
+        <span>19:27</span>
+        <span>85%</span>
+      </div>
+      <div class="phone-content">
+        <div class="greeting">
+          <div class="hello">Good Evening</div>
+          <div class="date">19:27</div>
+        </div>
+        <div class="search-bar">🔍 搜索应用…</div>
+        <div class="icon-grid">
+          <div class="icon-cell"><div class="icon-box">💬</div><div class="icon-label">聊天</div></div>
+          <div class="icon-cell"><div class="icon-box">📞</div><div class="icon-label">电话</div></div>
+          <div class="icon-cell"><div class="icon-box">👥</div><div class="icon-label">通讯录</div></div>
+          <div class="icon-cell"><div class="icon-box">🌙</div><div class="icon-label">陪伴</div></div>
+          <div class="icon-cell"><div class="icon-box">📖</div><div class="icon-label">朋友圈</div></div>
+          <div class="icon-cell"><div class="icon-box">⚙️</div><div class="icon-label">设置</div></div>
+          <div class="icon-cell"><div class="icon-box">🌤️</div><div class="icon-label">天气</div></div>
+          <div class="icon-cell"><div class="icon-box">🌐</div><div class="icon-label">浏览器</div></div>
+        </div>
+        <div class="quote-card">
+          <div class="quote-text">"也许我们应该在自我热切的自由中执着。"</div>
+        </div>
+        <div class="dock">
+          <div class="dock-item"><div class="dock-icon">👥</div><div>通讯录</div></div>
+          <div class="dock-item"><div class="dock-icon">🌙</div><div>陪伴</div></div>
+          <div class="dock-item"><div class="dock-icon">👤</div><div>我的</div></div>
+          <div class="dock-item"><div class="dock-icon">⚙️</div><div>设置</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="style-label">① 英伦阴郁（深灰+细边）</div>
+  </div>
+
+  <!-- 风格 2：纯白极简 -->
+  <div>
+    <div class="phone style-clean">
+      <div class="status-bar">
+        <span>19:27</span>
+        <span>85%</span>
+      </div>
+      <div class="phone-content">
+        <div class="greeting">
+          <div class="hello">Good Evening</div>
+          <div class="date">19:27</div>
+        </div>
+        <div class="search-bar">🔍 搜索应用…</div>
+        <div class="icon-grid">
+          <div class="icon-cell"><div class="icon-box">💬</div><div class="icon-label">聊天</div></div>
+          <div class="icon-cell"><div class="icon-box">📞</div><div class="icon-label">电话</div></div>
+          <div class="icon-cell"><div class="icon-box">👥</div><div class="icon-label">通讯录</div></div>
+          <div class="icon-cell"><div class="icon-box">🌙</div><div class="icon-label">陪伴</div></div>
+          <div class="icon-cell"><div class="icon-box">📖</div><div class="icon-label">朋友圈</div></div>
+          <div class="icon-cell"><div class="icon-box">⚙️</div><div class="icon-label">设置</div></div>
+          <div class="icon-cell"><div class="icon-box">🌤️</div><div class="icon-label">天气</div></div>
+          <div class="icon-cell"><div class="icon-box">🌐</div><div class="icon-label">浏览器</div></div>
+        </div>
+        <div class="quote-card">
+          <div class="quote-text">也许我们应该在自我热切的自由中执着。</div>
+        </div>
+        <div class="dock">
+          <div class="dock-item"><div class="dock-icon">👥</div><div>通讯录</div></div>
+          <div class="dock-item"><div class="dock-icon">🌙</div><div>陪伴</div></div>
+          <div class="dock-item"><div class="dock-icon">👤</div><div>我的</div></div>
+          <div class="dock-item"><div class="dock-icon">⚙️</div><div>设置</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="style-label">② 纯白极简（X 原版风）</div>
+  </div>
+
+  <!-- 风格 3：哥特暗黑 -->
+  <div>
+    <div class="phone style-gothic">
+      <div class="status-bar">
+        <span>19:27</span>
+        <span>85%</span>
+      </div>
+      <div class="phone-content">
+        <div class="greeting">
+          <div class="hello">Good Evening</div>
+          <div class="date">19:27</div>
+        </div>
+        <div class="search-bar">🔍 搜索应用…</div>
+        <div class="icon-grid">
+          <div class="icon-cell"><div class="icon-box">💬</div><div class="icon-label">聊天</div></div>
+          <div class="icon-cell"><div class="icon-box">📞</div><div class="icon-label">电话</div></div>
+          <div class="icon-cell"><div class="icon-box">👥</div><div class="icon-label">通讯录</div></div>
+          <div class="icon-cell"><div class="icon-box">🌙</div><div class="icon-label">陪伴</div></div>
+          <div class="icon-cell"><div class="icon-box">📖</div><div class="icon-label">朋友圈</div></div>
+          <div class="icon-cell"><div class="icon-box">⚙️</div><div class="icon-label">设置</div></div>
+          <div class="icon-cell"><div class="icon-box">🌤️</div><div class="icon-label">天气</div></div>
+          <div class="icon-cell"><div class="icon-box">🌐</div><div class="icon-label">浏览器</div></div>
+        </div>
+        <div class="quote-card">
+          <div class="quote-text">"影像之外的蝴蝶，以什么形态致死缠绵。"</div>
+        </div>
+        <div class="dock">
+          <div class="dock-item"><div class="dock-icon">👥</div><div>通讯录</div></div>
+          <div class="dock-item"><div class="dock-icon">🌙</div><div>陪伴</div></div>
+          <div class="dock-item"><div class="dock-icon">👤</div><div>我的</div></div>
+          <div class="dock-item"><div class="dock-icon">⚙️</div><div>设置</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="style-label">③ 哥特暗黑（金棕+衬线）</div>
+  </div>
+
+  <!-- 风格 4：灰调极简 -->
+  <div>
+    <div class="phone style-gray">
+      <div class="status-bar">
+        <span>19:27</span>
+        <span>85%</span>
+      </div>
+      <div class="phone-content">
+        <div class="greeting">
+          <div class="hello">Good Evening</div>
+          <div class="date">19:27</div>
+        </div>
+        <div class="search-bar">🔍 搜索应用…</div>
+        <div class="icon-grid">
+          <div class="icon-cell"><div class="icon-box">💬</div><div class="icon-label">聊天</div></div>
+          <div class="icon-cell"><div class="icon-box">📞</div><div class="icon-label">电话</div></div>
+          <div class="icon-cell"><div class="icon-box">👥</div><div class="icon-label">通讯录</div></div>
+          <div class="icon-cell"><div class="icon-box">🌙</div><div class="icon-label">陪伴</div></div>
+          <div class="icon-cell"><div class="icon-box">📖</div><div class="icon-label">朋友圈</div></div>
+          <div class="icon-cell"><div class="icon-box">⚙️</div><div class="icon-label">设置</div></div>
+          <div class="icon-cell"><div class="icon-box">🌤️</div><div class="icon-label">天气</div></div>
+          <div class="icon-cell"><div class="icon-box">🌐</div><div class="icon-label">浏览器</div></div>
+        </div>
+        <div class="quote-card">
+          <div class="quote-text">也许我们应该在自我热切的自由中执着。</div>
+        </div>
+        <div class="dock">
+          <div class="dock-item"><div class="dock-icon">👥</div><div>通讯录</div></div>
+          <div class="dock-item"><div class="dock-icon">🌙</div><div>陪伴</div></div>
+          <div class="dock-item"><div class="dock-icon">👤</div><div>我的</div></div>
+          <div class="dock-item"><div class="dock-icon">⚙️</div><div>设置</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="style-label">④ 灰调极简（中性灰+圆角）</div>
+  </div>
+
+</div>
+
+</body>
+</html>

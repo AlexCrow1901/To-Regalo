@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>To Regalo - 双手机UI演示</title>
+<style>
+/* ============================================================
+   全局重置
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #1a1a1a;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  gap: 20px;
+}
+
+/* ============================================================
+   背景上传按钮
+   ============================================================ */
+.bg-upload-btn {
+  padding: 12px 24px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.bg-upload-btn:hover { background: rgba(255,255,255,0.25); }
+
+/* ============================================================
+   双手机容器
+   ============================================================ */
+.phones-container {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   单个手机屏幕
+   ============================================================ */
+.phone {
+  width: 375px;
+  height: 812px;
+  border-radius: 40px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  border: 8px solid #222;
+}
+
+/* 背景图层 */
+.phone-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #a8c0a8, #8ba88b);
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+/* 主色叠加层（JS动态生成） */
+.bg-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.3;
+  transition: background 0.5s;
+}
+
+/* 水雾/闪光装饰层 */
+.sparkle-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+.sparkle {
+  position: absolute;
+  color: rgba(255,255,255,0.7);
+  text-shadow: 0 0 10px rgba(255,255,255,0.8);
+  animation: sparkle 3s ease-in-out infinite;
+}
+@keyframes sparkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+}
+
+/* UI内容层（最上层） */
+.phone-content {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: 40px 24px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   通用毛玻璃卡片
+   ============================================================ */
+.glass-card {
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================================
+   左侧手机 - 音乐播放器卡片
+   ============================================================ */
+.music-card {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.music-cover {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+.music-info { flex: 1; }
+.music-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.music-progress {
+  height: 3px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 2px;
+  margin-bottom: 10px;
+}
+.music-progress-bar {
+  width: 40%;
+  height: 100%;
+  background: #fff;
+  border-radius: 2px;
+}
+.music-controls {
+  display: flex;
+  gap: 14px;
+  font-size: 18px;
+  color: rgba(255,255,255,0.8);
+}
+
+/* ============================================================
+   图标按钮组（两列方形）
+   ============================================================ */
+.icon-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.icon-box {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.icon-box:active { transform: scale(0.92); }
+.icon-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.9);
+  text-align: center;
+  margin-top: 8px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ============================================================
+   拍立得卡片（倾斜堆叠）
+   ============================================================ */
+.polaroid-stack {
+  position: relative;
+  height: 180px;
+  margin: 10px 0 20px;
+}
+.polaroid {
+  position: absolute;
+  width: 130px;
+  padding: 10px 10px 30px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.polaroid:nth-child(1) {
+  top: 0;
+  left: 40px;
+  transform: rotate(-6deg);
+  z-index: 1;
+}
+.polaroid:nth-child(2) {
+  top: 20px;
+  left: 100px;
+  transform: rotate(4deg);
+  z-index: 2;
+}
+.polaroid-img {
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(135deg, #c8d8c8, #a8c0a8);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+}
+.polaroid-caption {
+  text-align: center;
+  font-size: 11px;
+  color: #666;
+  margin-top: 8px;
+}
+
+/* ============================================================
+   推文消息卡片
+   ============================================================ */
+.tweet-card {
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.tweet-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.tweet-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffb6c1, #ff69b4);
+}
+.tweet-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+.tweet-time {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  margin-left: auto;
+}
+.tweet-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.95);
+}
+
+/* ============================================================
+   2×2圆形图标组
+   ============================================================ */
+.icon-grid-2x2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.round-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin: 0 auto;
+}
+.grid-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ============================================================
+   底部Dock栏
+   ============================================================ */
+.dock {
+  margin-top: auto;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(24px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 24px;
+  display: flex;
+  justify-content: space-around;
+}
+.dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.dock-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.dock-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.8);
+}
+
+/* ============================================================
+   右侧手机 - 大时间
+   ============================================================ */
+.big-time {
+  font-size: 64px;
+  font-weight: 200;
+  letter-spacing: -2px;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.big-weather {
+  font-size: 16px;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 24px;
+}
+
+/* ============================================================
+   日历卡片
+   ============================================================ */
+.calendar-card {
+  padding: 18px;
+  margin-bottom: 24px;
+}
+.calendar-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 14px;
+}
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 10px;
+}
+.calendar-dates {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 14px;
+  color: #fff;
+  gap: 6px 0;
+}
+.calendar-dates span {
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  margin: 0 auto;
+}
+.calendar-dates .today {
+  background: #fff;
+  color: #333;
+  border-radius: 50%;
+  font-weight: 600;
+}
+
+/* ============================================================
+   黑胶唱片
+   ============================================================ */
+.vinyl-container {
+  position: relative;
+  height: 140px;
+  margin-bottom: 24px;
+}
+.vinyl-disc {
+  position: absolute;
+  left: 20px;
+  top: 10px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #333 0%, #111 30%, #333 35%, #111 100%);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.vinyl-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+  border: 4px solid #222;
+}
+.vinyl-polaroid {
+  position: absolute;
+  right: 10px;
+  top: 0;
+  width: 110px;
+  padding: 8px 8px 24px;
+  background: #fff;
+  border-radius: 4px;
+  transform: rotate(5deg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+/* ============================================================
+   语录气泡卡片
+   ============================================================ */
+.quote-card {
+  padding: 16px 20px;
+  margin-top: auto;
+  margin-bottom: 20px;
+}
+.quote-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #fff;
+}
+
+/* ============================================================
+   状态时间（顶部状态栏）
+   ============================================================ */
+.status-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 14px 24px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #fff;
+  z-index: 4;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+
+<button class="bg-upload-btn" onclick="document.getElementById('bgInput').click()">
+  📷 更换背景图
+</button>
+<input type="file" id="bgInput" accept="image/*" style="display:none">
+
+<div class="phones-container">
+
+  <!-- ============================================================
+       左侧手机
+       ============================================================ -->
+  <div class="phone">
+    <div class="phone-bg" id="leftBg"></div>
+    <div class="bg-tint" id="leftTint"></div>
+    <div class="sparkle-layer" id="leftSparkles"></div>
+
+    <div class="status-bar">
+      <span id="leftTime">19:27</span>
+      <span>85%</span>
+    </div>
+
+    <div class="phone-content">
+      <!-- 音乐播放器卡片 -->
+      <div class="music-card glass-card">
+        <div class="music-cover">🎵</div>
+        <div class="music-info">
+          <div class="music-title">CosmicLove</div>
+          <div class="music-progress"><div class="music-progress-bar"></div></div>
+        </div>
+        <div class="music-controls">
+          <span>⏮</span>
+          <span>▶️</span>
+          <span>⏭</span>
+        </div>
+      </div>
+
+      <!-- 第一行图标：简讯、约会 -->
+      <div class="icon-row">
+        <div class="icon-cell">
+          <div class="icon-box">💬</div>
+          <div class="icon-label">简讯</div>
+        </div>
+        <div class="icon-cell">
+          <div class="icon-box">📅</div>
+          <div class="icon-label">约会</div>
+        </div>
+      </div>
+
+      <!-- 第二行图标：论坛、群组 -->
+      <div class="icon-row">
+        <div class="icon-cell">
+          <div class="icon-box">💭</div>
+          <div class="icon-label">论坛</div>
+        </div>
+        <div class="icon-cell">
+          <div class="icon-box">👥</div>
+          <div class="icon-label">群组</div>
+        </div>
+      </div>
+
+      <!-- 拍立得堆叠 -->
+      <div class="polaroid-stack">
+        <div class="polaroid">
+          <div class="polaroid-img">🌿</div>
+          <div class="polaroid-caption">美好瞬间</div>
+        </div>
+        <div class="polaroid">
+          <div class="polaroid-img">✨</div>
+          <div class="polaroid-caption">闪闪发光</div>
+        </div>
+      </div>
+
+      <!-- 推文消息卡片 -->
+      <div class="tweet-card glass-card">
+        <div class="tweet-header">
+          <div class="tweet-avatar"></div>
+          <div class="tweet-name">无限秦秦</div>
+          <div class="tweet-time">4月8日</div>
+        </div>
+        <div class="tweet-text">
+          也许我们应该在<br>自我热切的自由中执着。
+        </div>
+      </div>
+
+      <!-- 2×2圆形图标：灵犀、日记、轨迹、记忆 -->
+      <div class="icon-grid-2x2">
+        <div class="grid-cell">
+          <div class="round-icon">💗</div>
+          <div class="icon-label">灵犀</div>
+        </div>
+        <div class="grid-cell">
+          <div class="round-icon">🦋</div>
+          <div class="icon-label">日记</div>
+        </div>
+        <div class="grid-cell">
+          <div class="round-icon">👣</div>
+          <div class="icon-label">轨迹</div>
+        </div>
+        <div class="grid-cell">
+          <div class="round-icon">∞</div>
+          <div class="icon-label">记忆</div>
+        </div>
+      </div>
+
+      <!-- 底部Dock：世界、终端、主题、设置 -->
+      <div class="dock">
+        <div class="dock-item">
+          <div class="dock-icon">🌍</div>
+          <div class="dock-label">世界</div>
+        </div>
+        <div class="dock-item">
+          <div class="dock-icon">💻</div>
+          <div class="dock-label">终端</div>
+        </div>
+        <div class="dock-item">
+          <div class="dock-icon">🎨</div>
+          <div class="dock-label">主题</div>
+        </div>
+        <div class="dock-item">
+          <div class="dock-icon">⚙️</div>
+          <div class="dock-label">设置</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       右侧手机
+       ============================================================ -->
+  <div class="phone">
+    <div class="phone-bg" id="rightBg"></div>
+    <div class="bg-tint" id="rightTint"></div>
+    <div class="sparkle-layer" id="rightSparkles"></div>
+
+    <div class="status-bar">
+      <span id="rightTime">19:27</span>
+      <span>85%</span>
+    </div>
+
+    <div class="phone-content">
+      <!-- 大时间 + 天气 -->
+      <div class="big-time" id="bigTime">19:27</div>
+      <div class="big-weather">☁️ 24°C</div>
+
+      <!-- 日历卡片 -->
+      <div class="calendar-card glass-card">
+        <div class="calendar-title">2026年4月</div>
+        <div class="calendar-weekdays">
+          <span>SUN</span><span>MON</span><span>TUE</span>
+          <span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
+        </div>
+        <div class="calendar-dates">
+          <span>5</span><span>6</span><span>7</span><span class="today">8</span>
+          <span>9</span><span>10</span><span>11</span>
+        </div>
+      </div>
+
+      <!-- 黑胶唱片 + 拍立得 -->
+      <div class="vinyl-container">
+        <div class="vinyl-disc">
+          <div class="vinyl-center"></div>
+        </div>
+        <div class="vinyl-polaroid">
+          <div class="polaroid-img">🍴</div>
+        </div>
+      </div>
+
+      <!-- 一行4个图标：信笺、织梦、情辑、棱镜 -->
+      <div class="icon-row" style="justify-content: space-between;">
+        <div class="icon-cell">
+          <div class="icon-box">✉️</div>
+          <div class="icon-label">信笺</div>
+        </div>
+        <div class="icon-cell">
+          <div class="icon-box">🎬</div>
+          <div class="icon-label">织梦</div>
+        </div>
+        <div class="icon-cell">
+          <div class="icon-box">💛</div>
+          <div class="icon-label">情辑</div>
+        </div>
+        <div class="icon-cell">
+          <div class="icon-box">🔮</div>
+          <div class="icon-label">棱镜</div>
+        </div>
+      </div>
+
+      <!-- 语录气泡卡片 -->
+      <div class="quote-card glass-card">
+        <div class="quote-text">
+          影像之外的蝴蝶<br>以什么形态致死缠绵。
+        </div>
+      </div>
+
+      <!-- 底部Dock -->
+      <div class="dock">
+        <div class="dock-item">
+          <div class="dock-icon">🌍</div>
+          <div class="dock-label">世界</div>
+        </div>
+        <div class="dock-item">
+          <div class="dock-icon">💻</div>
+          <div class="dock-label">终端</div>
+        </div>
+        <div class="dock-item">
+          <div class="dock-icon">🎨</div>
+          <div class="dock-label">主题</div>
+        </div>
+        <div class="dock-item">
+          <div class="dock-icon">⚙️</div>
+          <div class="dock-label">设置</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   实时时间同步
+   ============================================================ */
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const timeStr = h + ':' + m;
+  document.getElementById('leftTime').textContent = timeStr;
+  document.getElementById('rightTime').textContent = timeStr;
+  document.getElementById('bigTime').textContent = timeStr;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ============================================================
+   生成星星闪光装饰
+   ============================================================ */
+function generateSparkles(containerId) {
+  const container = document.getElementById(containerId);
+  const symbols = ['✦', '✧', '⋆', '✶'];
+  for (let i = 0; i < 8; i++) {
+    const sparkle = document.createElement('div');
+    sparkle.className = 'sparkle';
+    sparkle.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    sparkle.style.left = Math.random() * 100 + '%';
+    sparkle.style.top = Math.random() * 100 + '%';
+    sparkle.style.fontSize = (10 + Math.random() * 12) + 'px';
+    sparkle.style.animationDelay = (Math.random() * 3) + 's';
+    container.appendChild(sparkle);
+  }
+}
+generateSparkles('leftSparkles');
+generateSparkles('rightSparkles');
+
+/* ============================================================
+   背景图主色提取（核心逻辑）
+   ------------------------------------------------------------
+   原理：
+   1. 创建一个隐藏的 canvas
+   2. 把背景图画到 canvas 上
+   3. 采样图片中心区域的像素颜色
+   4. 计算平均主色调
+   5. 生成低饱和的同色系叠加层颜色
+   ============================================================ */
+function extractMainColor(imageUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 缩放到小尺寸加速计算
+      const size = 50;
+      canvas.width = size;
+      canvas.height = size;
+      ctx.drawImage(img, 0, 0, size, size);
+      
+      // 采样中心区域像素
+      const data = ctx.getImageData(0, 0, size, size).data;
+      let r = 0, g = 0, b = 0, count = 0;
+      
+      for (let i = 0; i < data.length; i += 16) { // 每隔几个像素采样一次
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+        count++;
+      }
+      
+      r = Math.round(r / count);
+      g = Math.round(g / count);
+      b = Math.round(b / count);
+      
+      resolve({ r, g, b });
+    };
+    img.src = imageUrl;
+  });
+}
+
+/* ============================================================
+   应用背景图 + 主色叠加层
+   ============================================================ */
+async function applyBackground(imageUrl) {
+  // 设置两个手机的背景图
+  document.getElementById('leftBg').style.backgroundImage = `url(${imageUrl})`;
+  document.getElementById('rightBg').style.backgroundImage = `url(${imageUrl})`;
+  
+  // 提取主色，生成叠加层
+  const { r, g, b } = await extractMainColor(imageUrl);
+  
+  // 生成低饱和的柔和叠加色（稍微提亮+降低饱和度）
+  const tintColor = `rgba(${Math.min(r + 40, 255)}, ${Math.min(g + 40, 255)}, ${Math.min(b + 40, 255)}, 0.35)`;
+  
+  document.getElementById('leftTint').style.background = tintColor;
+  document.getElementById('rightTint').style.background = tintColor;
+  
+  console.log('主色提取结果:', { r, g, b }, '→ 叠加层:', tintColor);
+}
+
+/* ============================================================
+   上传按钮事件
+   ============================================================ */
+document.getElementById('bgInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    applyBackground(e.target.result);
+  };
+  reader.readAsDataURL(file);
+});
+
+/* 默认背景（绿色调，和参考图一致） */
+document.getElementById('leftTint').style.background = 'rgba(168, 192, 168, 0.35)';
+document.getElementById('rightTint').style.background = 'rgba(168, 192, 168, 0.35)';
+</script>
+
+</body>
+</html>
