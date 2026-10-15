@@ -171,8 +171,8 @@ window.MineAI = (function () {
     if (!raw) return Promise.resolve({ ok: false, error: "empty" });
     if (!isEnabled()) return Promise.resolve({ ok: false, error: "disabled" });
 
-    /* 超短词（≤3字）直接返回原句，不走AI，防止AI脑补加戏 */
-    if (raw.length <= 3) {
+    /* 单字直接跳过，不走AI（2字以上都润色） */
+    if (raw.length <= 1) {
       return Promise.resolve({ ok: true, text: raw, raw: raw, via: "short-skip" });
     }
 

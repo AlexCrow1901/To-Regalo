@@ -153,7 +153,7 @@ window.MineChat = (function () {
       }
     }
     /* AI 润色：所有文字字卡（拼字卡/普通单字卡）都经过 AI 润色（太短的短句跳过） */
-    if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 4) {
+    if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 2) {
       (function (id, raw, cid) {
         window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
           if (res && res.ok && res.text && res.text !== raw) {
@@ -2200,7 +2200,7 @@ window.MineChat = (function () {
     /* AI 润色：所有文字字卡都经过润色（太短的短句跳过，比如"我爱你""真的"） */
     if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card)) {
       /* 跳过太短的短句（≤4字，意思已经很明确） */
-      if (card.length > 4) {
+      if (card.length > 2) {
         (function (id, raw, cid) {
           window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
             if (res && res.ok && res.text && res.text !== raw) {
@@ -2271,7 +2271,7 @@ window.MineChat = (function () {
         }
       }
       /* AI 润色：所有文字字卡（拼字卡/普通单字卡）都经过 AI 润色（太短的短句跳过） */
-      if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 4) {
+      if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 2) {
         (function (id, raw, cid, msgObj) {
           window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
             if (res && res.ok && res.text && res.text !== raw) {
