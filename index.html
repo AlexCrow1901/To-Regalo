@@ -3440,20 +3440,58 @@ body {
     if (!pg || pg === "home") return;
     /* 聊天 / 通讯录 / 电话 / 朋友圈（含详情子页）按用户要求使用 zip 蓝本 UI：
        zip 的 applyHash 已监听 hashchange 并渲染这些页面（示例内容+交互），此处不再触发模块覆盖 */
-    var zipUiPages = ["chat", "chat-detail", "contacts", "contact", "group", "phone", "moments", "cm"];
-    if (zipUiPages.indexOf(pg) >= 0) return;
+    var zipUiPages = ["chat", "chat-detail", "contacts", "contact", "group", "phone", "moments", "cm", "companion"];
+    if (zipUiPages.indexOf(pg) >= 0) {
+      if (pg === "companion") {
+        function fillZipCache() {
+          try {
+            var cc = document.getElementById("page-companion");
+            if (cc && cc.querySelector(".comp-app") && !window.__zipCompanionHTML) {
+              window.__zipCompanionHTML = cc.innerHTML;
+            }
+          } catch (e) {}
+        }
+        fillZipCache();
+        setTimeout(fillZipCache, 250);
+      }
+      return;
+    }
     if (window.MineApp && MineApp.page) MineApp.page(pg);
     if (pg === "moments" && window.MineMoments) MineMoments.open();
   }
   window.addEventListener("hashchange", mount);
   mount();
-  /* 陪伴组件点击兜底（capture 拦截：确保 detail 系模块渲染进正确容器并切换显示） */
+  /* 陪伴组件点击兜底（capture 拦截：确保 detail 系模块渲染进正确容器并切换显示）
+     v1.0.53 起陪伴页为 zip 蓝本 UI（.comp-app 卡片），按 data-app 映射回原模块功能 */
   try {
     var comp = document.getElementById("page-companion");
     if (comp) comp.addEventListener("click", function (e) {
-      var card = e.target && e.target.closest ? e.target.closest(".comp-card") : null;
+      /* radio / 觅食内切视图的返回按钮：拦截模块重渲染，恢复 zip 陪伴页 */
+      var backBtn = e.target && e.target.closest ? e.target.closest('[data-act="back"]') : null;
+      if (backBtn) {
+        var cc = document.getElementById("page-companion");
+        if (cc && !cc.querySelector(".comp-app")) {
+          e.stopPropagation();
+          if (window.__zipCompanionHTML) {
+            cc.innerHTML = window.__zipCompanionHTML;
+          } else {
+            /* 无缓存时用 hash 重路由让 zip applyHash 重新渲染陪伴页 */
+            var h = location.hash;
+            location.hash = "#home|L";
+            location.hash = h;
+          }
+          return;
+        }
+      }
+      var card = e.target && e.target.closest ? (e.target.closest(".comp-card") || e.target.closest(".comp-app")) : null;
       if (!card) return;
       var appId = card.getAttribute("data-app");
+      function zipToast(msg) {
+        var t = document.getElementById("toast");
+        if (!t) return;
+        t.textContent = msg; t.classList.add("on");
+        clearTimeout(t._tm); t._tm = setTimeout(function () { t.classList.remove("on"); }, 1800);
+      }
       if (appId === "time-mailbox" && window.MineMail) {
         e.stopPropagation();
         window.__grantDetail("mail");
@@ -3462,6 +3500,24 @@ body {
         e.stopPropagation();
         window.__grantDetail("treehole");
         MineTreeHole.open();
+      } else if (appId === "mailbox" && window.MineMail) {
+        e.stopPropagation();
+        window.__grantDetail("mail");
+        MineMail.open();
+      } else if (appId === "treehole" && window.MineTreeHole) {
+        e.stopPropagation();
+        window.__grantDetail("treehole");
+        MineTreeHole.open();
+      } else if (appId === "radio" && window.MineRadio) {
+        e.stopPropagation();
+        MineRadio.open();
+      } else if (appId === "food" && window.MineFoodie) {
+        e.stopPropagation();
+        MineFoodie.open();
+      } else if (card.classList.contains("soon")) {
+        e.stopPropagation();
+        var n = card.querySelector(".ca-n");
+        zipToast((n ? n.textContent : "该功能") + " · 待开放");
       }
     }, true);
   } catch (e) {}
@@ -3471,6 +3527,45 @@ body {
     try { if (window[p[0]] && window[p[0]][p[1]]) window[p[0]][p[1]](); } catch (e) { console.error("[V2] init fail", p[0], e); }
   });
   try { if (window.MineNotify) MineNotify.refreshBadges(); } catch (e) {}
+  /* 无条件缓存 zip 陪伴页 HTML（供 radio/觅食内切视图返回时恢复）：渲染完成即捕获 */
+  try {
+    var cc0 = document.getElementById("page-companion");
+    if (cc0) {
+      var fillZipCache = function () {
+        try {
+          if (cc0.querySelector(".comp-app") && !window.__zipCompanionHTML) {
+            window.__zipCompanionHTML = cc0.innerHTML;
+          }
+        } catch (e) {}
+      };
+      if (window.MutationObserver) {
+        new MutationObserver(fillZipCache).observe(cc0, { childList: true, subtree: true });
+      }
+      setTimeout(fillZipCache, 200);
+      setTimeout(fillZipCache, 800);
+    }
+  } catch (e) {}
+})();
+</script>
+<script>
+/* 独立兜底：缓存 zip 陪伴页 HTML（供 radio/觅食内切视图返回时恢复 zip 陪伴 UI） */
+(function () {
+  function grab() {
+    try {
+      var cc = document.getElementById("page-companion");
+      if (cc && cc.querySelector(".comp-app") && !window.__zipCompanionHTML) {
+        window.__zipCompanionHTML = cc.innerHTML;
+      }
+    } catch (e) {}
+  }
+  try {
+    if (window.MutationObserver) {
+      new MutationObserver(grab).observe(document.getElementById("page-companion"), { childList: true, subtree: true });
+    }
+  } catch (e) {}
+  setTimeout(grab, 300);
+  setTimeout(grab, 900);
+  window.addEventListener("hashchange", grab);
 })();
 </script>
 </body>
