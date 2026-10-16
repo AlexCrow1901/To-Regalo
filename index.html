@@ -3457,6 +3457,21 @@ body {
       return;
     }
     if (window.MineApp && MineApp.page) MineApp.page(pg);
+    /* 字卡管理页（zip 无对应 .page 容器，渲染进 #page-detail=设置容器）：
+       zip showPage 会因找不到 data-page 而清空 .on，这里恢复容器 .on 与 Dock 高亮（设置） */
+    if (pg.indexOf("card-") === 0) {
+      try {
+        var detail = document.getElementById("page-detail");
+        if (detail) {
+          document.querySelectorAll('.phone[data-pi="L"] .page').forEach(function (p) { p.classList.remove("on"); });
+          detail.classList.add("on");
+          var dock = document.querySelector('.phone[data-pi="L"] .dock');
+          if (dock) Array.prototype.forEach.call(dock.querySelectorAll(".di"), function (di) {
+            di.classList.toggle("on", di.getAttribute("data-app") === "settings");
+          });
+        }
+      } catch (e) {}
+    }
     if (pg === "moments" && window.MineMoments) MineMoments.open();
   }
   window.addEventListener("hashchange", mount);
