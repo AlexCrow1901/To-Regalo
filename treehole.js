@@ -27,9 +27,9 @@ window.MineTreeHole = (function () {
      { question: "", options: [], correctIndex: 0 }
   */
   var verifyTemplate = {
-    question: "深夜的树洞，你确定要推开这扇门吗？",
-    options: ["是的，我确定", "不，我走错了", "让我想想", "无所谓"],
-    correctIndex: 0
+    question: "今天的心情如何？选一个词形容一下吧",
+    options: ["晴朗", "多云", "小雨", "狂风"],
+    correctIndex: 1
   };
 
   function loadVerify() {

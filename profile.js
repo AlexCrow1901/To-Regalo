@@ -74,6 +74,20 @@ window.MineProfile = (function () {
       '<span class="profile-status">在"我的"中修改昵称与头像</span>' +
       '</div>';
 
+    /* 蓝本对齐：字卡统计（系统字卡 / 我的字卡 / 全部字卡），数字来自真实字卡数据 */
+    var sysCount = 0, myCount = 0;
+    try {
+      if (window.MineCards) {
+        sysCount = (MineCards.getSysCards() || []).length;
+        myCount = (MineCards.getPublicCards() || []).length + (MineCards.getPerCards() || []).length;
+      }
+    } catch (e) {}
+    html += '<div class="me-stats">' +
+      '<div class="me-stat"><b>' + sysCount + '</b><span>系统字卡</span></div>' +
+      '<div class="me-stat"><b>' + myCount + '</b><span>我的字卡</span></div>' +
+      '<div class="me-stat"><b>' + (sysCount + myCount) + '</b><span>全部字卡</span></div>' +
+      '</div>';
+
     html += '<div class="list-sep"></div>';
 
     // 我的：昵称 + 头像合并为"我的资料"

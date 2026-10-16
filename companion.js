@@ -30,19 +30,19 @@ window.MineCompanion = (function () {
      ======================================================================== */
   var CONTENT_APPS = [
     // —— 每日陪伴 ——
-    { id: "daily-companion", icon: "sunrise", title: "每日陪伴", desc: "晨间问候 · 今日心境", wide: true, accent: true, soon: true },
-    { id: "mood-radio",      icon: "music",    title: "心情电台", desc: "依心绪而生的旋律", soon: true },
-    { id: "breathing",       icon: "wind",     title: "呼吸练习", desc: "四拍呼吸 · 安定心神", soon: true },
+    { id: "daily-companion", icon: "sunrise", title: "每日陪伴", desc: "晨间问候", wide: true, accent: true, soon: true },
+    { id: "mood-radio",      icon: "music",    title: "心情电台", desc: "依心而生", soon: true },
+    { id: "breathing",       icon: "wind",     title: "呼吸练习", desc: "安定心神", soon: true },
 
     // —— 时光记录 ——
-    { id: "time-mailbox",    icon: "feather",  title: "次元信箱", desc: "跨越次元的来信", soon: false },
-    { id: "memory-album",   icon: "book",     title: "记忆相册", desc: "收藏温暖瞬间", soon: true },
-    { id: "night-whispers",  icon: "moon",     title: "深夜树洞", desc: "倾诉此刻的心声", wide: true, soon: false },
+    { id: "time-mailbox",    icon: "feather",  title: "次元信箱", desc: "跨越次元", soon: false },
+    { id: "memory-album",   icon: "book",     title: "记忆相册", desc: "收藏瞬间", soon: true },
+    { id: "night-whispers",  icon: "moon",     title: "深夜树洞", desc: "倾诉心声", wide: true, soon: false },
 
     // —— 温暖陪伴 ——
-    { id: "food-hunt",      icon: "utensils",  title: "觅食", desc: "塔罗牌抽签今日食", soon: false },
-    { id: "quiet-flame",     icon: "flame",    title: "静默炉火", desc: "凝视跳动的火光", soon: true },
-    { id: "companion-heart", icon: "heart",   title: "陪伴之心", desc: "此刻有人惦念着你", wide: true, accent: true, soon: true }
+    { id: "food-hunt",      icon: "utensils",  title: "觅食", desc: "今日食签", soon: false },
+    { id: "quiet-flame",     icon: "flame",    title: "静默炉火", desc: "凝视火光", soon: true },
+    { id: "companion-heart", icon: "heart",   title: "陪伴之心", desc: "有人惦念", wide: true, accent: true, soon: true }
   ];
 
   /* ========================================================================
