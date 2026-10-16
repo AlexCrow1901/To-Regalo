@@ -3438,6 +3438,10 @@ body {
   function mount() {
     var pg = (location.hash || "").replace("#", "").split("|")[0];
     if (!pg || pg === "home") return;
+    /* 聊天 / 通讯录 / 电话 / 朋友圈（含详情子页）按用户要求使用 zip 蓝本 UI：
+       zip 的 applyHash 已监听 hashchange 并渲染这些页面（示例内容+交互），此处不再触发模块覆盖 */
+    var zipUiPages = ["chat", "chat-detail", "contacts", "contact", "group", "phone", "moments", "cm"];
+    if (zipUiPages.indexOf(pg) >= 0) return;
     if (window.MineApp && MineApp.page) MineApp.page(pg);
     if (pg === "moments" && window.MineMoments) MineMoments.open();
   }
