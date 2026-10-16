@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="To Regalo" />
-<meta name="app-version" content="1.0.50-v2settings" />
+<meta name="app-version" content="1.0.51-allmods" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
@@ -831,14 +831,14 @@ body {
           <div class="lib-list"></div>
           <div class="lib-empty">没有找到组件</div>
         </div>
-        <div class="page" data-page="chat"></div>
+        <div class="page" data-page="chat" id="page-chat"></div>
         <div class="page" data-page="chat-detail"></div>
         <div class="page" data-page="phone"></div>
-        <div class="page" data-page="contacts"></div>
+        <div class="page" data-page="contacts" id="page-contacts"></div>
         <div class="page" data-page="contact"></div>
         <div class="page" data-page="group"></div>
-        <div class="page" data-page="companion"></div>
-        <div class="page" data-page="moments"></div>
+        <div class="page" data-page="companion" id="page-companion"></div>
+        <div class="page" data-page="moments" id="page-moments"></div>
         <div class="page" data-page="settings"></div>
         <div class="page" data-page="me"></div>
         <div class="page" data-page="weather"></div>
@@ -3297,27 +3297,33 @@ body {
 .file-hidden{display:none}
 </style>
 
-<!-- ===== V2 设置页真实功能接入：storage 最先，依赖原加载顺序 ===== -->
-<script src="storage.js?v4"></script>
-<script src="utils.js?v8"></script>
-<script src="notify.js?v1"></script>
-<script src="keepalive.js?v8"></script>
-<script src="icons.js?v1047"></script>
-<script src="settings.js?v16"></script>
-
+<style>
+/* ===== V2 功能接入补丁（对齐 zip 双模式：暗金 #c9a96e / 暗色 #2a2a2a / 亮色 #f0f0ed） ===== */
+.proactive-switch{position:relative; display:inline-block; width:40px; height:23px; flex:0 0 auto; margin-left:auto; cursor:pointer; -webkit-tap-highlight-color:transparent}
+.proactive-switch input{position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; z-index:2}
+.proactive-switch-track{display:block; position:relative; width:100%; height:100%; border-radius:12px; background:#2a2a2a; transition:background .15s; pointer-events:none}
+.phone.light .proactive-switch-track{background:#ddd}
+.proactive-switch-track::after{content:""; position:absolute; top:2px; left:2px; width:19px; height:19px; border-radius:50%; background:#999; transition:left .15s, background .15s}
+.phone.light .proactive-switch-track::after{background:#fff}
+.proactive-switch input:checked + .proactive-switch-track{background:#c9a96e}
+.proactive-switch input:checked + .proactive-switch-track::after{left:19px; background:#fff}
+.func-icon{width:22px; height:22px; border-radius:8px; background:#262626; color:#c9a96e; display:flex; align-items:center; justify-content:center; flex:0 0 auto}
+.phone.light .func-icon{background:#f0f0ed; color:#b8860b}
+.func-icon svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
+.chat-bg-btn{background:none; border:none; padding:6px; cursor:pointer; color:inherit; opacity:.6; display:flex; align-items:center; justify-content:center; border-radius:10px; flex:0 0 auto; -webkit-tap-highlight-color:transparent}
+.chat-bg-btn.icon-only svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
+.card-hint{font-size:11px; line-height:1.6; opacity:.55; padding:2px 2px 0}
+.me-scroll{padding-top:10px}
+.file-hidden{display:none}
+.chevron{transform:rotate(180deg); opacity:.45; flex:0 0 auto; display:flex}
+.chevron svg{width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
+.list-sep{height:10px}
+</style>
 <script>
-/* ===== V2 接入层（bridge）：MineApp shim + 动态容器 + hash 驱动 ===== */
+/* ===== 功能接入层（bridge-shim）：MineApp 全量，必须在所有模块之前加载 ===== */
 (function () {
   "use strict";
-  function grantDetail(pg) {
-    document.querySelectorAll(".page").forEach(function (p) {
-      if (p.id === "page-detail") p.removeAttribute("id");
-    });
-    var t = document.querySelector('.page[data-page="' + pg + '"]');
-    if (t) t.id = "page-detail";
-    return t;
-  }
-  function toast(msg) {
+  function v2Toast(msg) {
     var old = document.querySelector(".v2-toast");
     if (old) old.remove();
     var d = document.createElement("div");
@@ -3327,26 +3333,130 @@ body {
     document.body.appendChild(d);
     setTimeout(function () { try { d.remove(); } catch (e) {} }, 3200);
   }
-  /* MineApp shim：返回/入口跳转走 zip 的 hash 路由 */
+  function grantDetail(pg) {
+    document.querySelectorAll(".page").forEach(function (p) {
+      if (p.id === "page-detail") p.removeAttribute("id");
+    });
+    var t = document.querySelector('.page[data-page="' + pg + '"]');
+    if (t) t.id = "page-detail";
+    return t;
+  }
+  var lastDetail = null;
   window.MineApp = window.MineApp || {};
-  window.MineApp.goHome = function () { try { location.hash = "#home|L"; } catch (e) {} };
-  window.MineApp.switchPage = function (kind, pg) { try { location.hash = "#" + pg + "|L"; } catch (e) {} };
-  window.MineApp.page = function (pg) {
-    if (pg === "settings") { mountSettings(); return; }
-    toast("「" + pg + "」待接入（原模块保留于仓库，见功能对照清单）");
+  var A = window.MineApp;
+  A.goHome = function () { try { location.hash = "#home|L"; } catch (e) {} };
+  A.goBack = function () { try { window.history.back(); } catch (e) { A.goHome(); } };
+  A.refreshGreeting = function () {};
+  A.addDesktopWidget = function () {};
+  A.toastMsg = function (m) { v2Toast(String(m)); };
+  A.openPlaceholder = function (id) { v2Toast("「" + id + "」待接入（原模块保留于仓库，见清单）"); };
+  A.openByType = function (t) { v2Toast("「" + t + "」待接入"); };
+  A.switchPage = function (name, appId) {
+    if (name === "home") { try { location.hash = "#home|L"; } catch (e) {} return; }
+    if (name === "detail") {
+      var pg = appId || lastDetail;
+      if (!pg) {
+        var cur = document.querySelector("#page-detail");
+        if (cur) pg = cur.getAttribute("data-page");
+      }
+      if (pg) { lastDetail = pg; try { location.hash = "#" + pg + "|L"; } catch (e) {} }
+      return;
+    }
+    try { location.hash = "#" + name + "|L"; } catch (e) {}
   };
-  window.MineApp.refreshGreeting = function () {};
-  function mountSettings() {
-    if (!window.MineSettings) return;
-    grantDetail("settings");
-    try { MineSettings.renderPage(); } catch (e) { console.error("[V2] settings render fail", e); }
-  }
-  function onHash() {
+  var prevPage = A.page;
+  A.page = function (id) {
+    if (id === "settings" && window.MineSettings) { lastDetail = "settings"; grantDetail("settings"); MineSettings.renderPage(); return true; }
+    if (id === "me" && window.MineProfile) { lastDetail = "me"; grantDetail("me"); MineProfile.renderPage(); return true; }
+    if (id === "phone" && window.MinePhone) { lastDetail = "phone"; grantDetail("phone"); MinePhone.renderPage(); return true; }
+    if (id === "files" && window.MineFiles) { lastDetail = "files"; grantDetail("files"); MineFiles.renderPage(); return true; }
+    if (id === "browser" && window.MineBrowser) { lastDetail = "browser"; grantDetail("browser"); MineBrowser.renderPage(); return true; }
+    if (id === "mail" && window.MineMail) { lastDetail = "mail"; grantDetail("mail"); MineMail.open(); return true; }
+    if (id === "treehole" && window.MineTreeHole) { lastDetail = "treehole"; grantDetail("treehole"); MineTreeHole.open(); return true; }
+    return prevPage ? prevPage(id) : false;
+  };
+  window.__grantDetail = grantDetail;
+  window.__lastDetailGet = function () { return lastDetail; };
+  /* MineScroll：原 app.js 提供的通用渲染器（mail/contacts 等模块依赖） */
+  window.MineScroll = {
+    render: function (container, html, keepTop, bindFn) {
+      var saved = 0;
+      if (keepTop && container) { try { saved = container.scrollTop; } catch (e) {} }
+      if (container) container.innerHTML = html;
+      if (bindFn) { try { bindFn(); } catch (e) {} }
+      if (keepTop && saved > 0 && container) { try { container.scrollTop = saved; } catch (e) {} }
+    }
+  };
+})();
+</script>
+<!-- ===== 全部原模块（顺序对齐原 index.html；storage 最先） ===== -->
+<script src="storage.js?v4"></script>
+<script src="utils.js?v8"></script>
+<script src="notify.js?v1"></script>
+<script src="keepalive.js?v8"></script>
+<script src="settings.js?v16"></script>
+<script src="icons.js?v1047"></script>
+<script src="background.js?v1047"></script>
+<script src="probabilities.js?v1047"></script>
+<script src="contacts.js?v1047"></script>
+<script src="cards.js?v1047"></script>
+<script src="lexicon.js?v1047"></script>
+<script src="lexicon-engine.js?v1047"></script>
+<script src="mine-ai.js?v1047"></script>
+<script src="mine-sync.js?v1047"></script>
+<script src="lexicon-card-generator.js?v1047"></script>
+<script src="lexicon-admin.js?v1047"></script>
+<script src="chat.js?v1047"></script>
+<script src="phone.js?v1047"></script>
+<script src="companion.js?v1047"></script>
+<script src="profile.js?v1047"></script>
+<script src="mail.js?v1047"></script>
+<script src="treehole.js?v1047"></script>
+<script src="radio.js?v1047"></script>
+<script src="netease.js?v1047"></script>
+<script src="foodie.js?v1047"></script>
+<script src="moments.js?v1047"></script>
+<script src="contact-moments.js?v1047"></script>
+<script src="theme-manager.js?v1047"></script>
+<script src="bubble-manager.js?v1047"></script>
+<script src="files.js?v1047"></script>
+<script src="browser.js?v1047"></script>
+<script>
+/* ===== 功能接入层（bridge-init）：页面渲染钩子 + 模块初始化 ===== */
+(function () {
+  "use strict";
+  function mount() {
     var pg = (location.hash || "").replace("#", "").split("|")[0];
-    if (pg === "settings") mountSettings();
+    if (!pg || pg === "home") return;
+    if (window.MineApp && MineApp.page) MineApp.page(pg);
+    if (pg === "moments" && window.MineMoments) MineMoments.open();
   }
-  window.addEventListener("hashchange", onHash);
-  onHash();
+  window.addEventListener("hashchange", mount);
+  mount();
+  /* 陪伴组件点击兜底（capture 拦截：确保 detail 系模块渲染进正确容器并切换显示） */
+  try {
+    var comp = document.getElementById("page-companion");
+    if (comp) comp.addEventListener("click", function (e) {
+      var card = e.target && e.target.closest ? e.target.closest(".comp-card") : null;
+      if (!card) return;
+      var appId = card.getAttribute("data-app");
+      if (appId === "time-mailbox" && window.MineMail) {
+        e.stopPropagation();
+        window.__grantDetail("mail");
+        MineMail.open();
+      } else if (appId === "night-whispers" && window.MineTreeHole) {
+        e.stopPropagation();
+        window.__grantDetail("treehole");
+        MineTreeHole.open();
+      }
+    }, true);
+  } catch (e) {}
+  /* 模块初始化（对齐原 app.js init 的关键调用；各自容错，一个失败不中断后续） */
+  [["MineBackground","init"],["MineProfile","init"],["MineCards","init"],["MineMail","init"],
+   ["MineTreeHole","init"],["MinePhone","init"],["MineTheme","init"],["MineLook","init"]].forEach(function (p) {
+    try { if (window[p[0]] && window[p[0]][p[1]]) window[p[0]][p[1]](); } catch (e) { console.error("[V2] init fail", p[0], e); }
+  });
+  try { if (window.MineNotify) MineNotify.refreshBadges(); } catch (e) {}
 })();
 </script>
 </body>
