@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="To Regalo" />
-<meta name="app-version" content="1.0.49-ui-zip" />
+<meta name="app-version" content="1.0.50-v2settings" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
@@ -3275,6 +3275,79 @@ body {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(function () {});
   }
+</script>
+
+<style>
+/* ===== V2 设置页接入补丁（对齐 zip 双模式：暗金 #c9a96e / 暗色 #2a2a2a / 亮色 #f0f0ed） ===== */
+.proactive-switch{position:relative; display:inline-block; width:40px; height:23px; flex:0 0 auto; margin-left:auto; cursor:pointer; -webkit-tap-highlight-color:transparent}
+.proactive-switch input{position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; z-index:2}
+.proactive-switch-track{display:block; position:relative; width:100%; height:100%; border-radius:12px; background:#2a2a2a; transition:background .15s; pointer-events:none}
+.phone.light .proactive-switch-track{background:#ddd}
+.proactive-switch-track::after{content:""; position:absolute; top:2px; left:2px; width:19px; height:19px; border-radius:50%; background:#999; transition:left .15s, background .15s}
+.phone.light .proactive-switch-track::after{background:#fff}
+.proactive-switch input:checked + .proactive-switch-track{background:#c9a96e}
+.proactive-switch input:checked + .proactive-switch-track::after{left:19px; background:#fff}
+.func-icon{width:22px; height:22px; border-radius:8px; background:#262626; color:#c9a96e; display:flex; align-items:center; justify-content:center; flex:0 0 auto}
+.phone.light .func-icon{background:#f0f0ed; color:#b8860b}
+.func-icon svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
+.chat-bg-btn{background:none; border:none; padding:6px; cursor:pointer; color:inherit; opacity:.6; display:flex; align-items:center; justify-content:center; border-radius:10px; flex:0 0 auto; -webkit-tap-highlight-color:transparent}
+.chat-bg-btn.icon-only svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
+.card-hint{font-size:11px; line-height:1.6; opacity:.55; padding:2px 2px 0}
+.me-scroll{padding-top:10px}
+.file-hidden{display:none}
+</style>
+
+<!-- ===== V2 设置页真实功能接入：storage 最先，依赖原加载顺序 ===== -->
+<script src="storage.js?v4"></script>
+<script src="utils.js?v8"></script>
+<script src="notify.js?v1"></script>
+<script src="keepalive.js?v8"></script>
+<script src="icons.js?v1047"></script>
+<script src="settings.js?v16"></script>
+
+<script>
+/* ===== V2 接入层（bridge）：MineApp shim + 动态容器 + hash 驱动 ===== */
+(function () {
+  "use strict";
+  function grantDetail(pg) {
+    document.querySelectorAll(".page").forEach(function (p) {
+      if (p.id === "page-detail") p.removeAttribute("id");
+    });
+    var t = document.querySelector('.page[data-page="' + pg + '"]');
+    if (t) t.id = "page-detail";
+    return t;
+  }
+  function toast(msg) {
+    var old = document.querySelector(".v2-toast");
+    if (old) old.remove();
+    var d = document.createElement("div");
+    d.className = "v2-toast";
+    d.textContent = msg;
+    d.style.cssText = "position:fixed;left:50%;bottom:120px;transform:translateX(-50%);max-width:80%;padding:10px 14px;border-radius:12px;background:rgba(0,0,0,.78);color:#fff;font-size:13px;line-height:1.5;z-index:99999;pointer-events:none;";
+    document.body.appendChild(d);
+    setTimeout(function () { try { d.remove(); } catch (e) {} }, 3200);
+  }
+  /* MineApp shim：返回/入口跳转走 zip 的 hash 路由 */
+  window.MineApp = window.MineApp || {};
+  window.MineApp.goHome = function () { try { location.hash = "#home|L"; } catch (e) {} };
+  window.MineApp.switchPage = function (kind, pg) { try { location.hash = "#" + pg + "|L"; } catch (e) {} };
+  window.MineApp.page = function (pg) {
+    if (pg === "settings") { mountSettings(); return; }
+    toast("「" + pg + "」待接入（原模块保留于仓库，见功能对照清单）");
+  };
+  window.MineApp.refreshGreeting = function () {};
+  function mountSettings() {
+    if (!window.MineSettings) return;
+    grantDetail("settings");
+    try { MineSettings.renderPage(); } catch (e) { console.error("[V2] settings render fail", e); }
+  }
+  function onHash() {
+    var pg = (location.hash || "").replace("#", "").split("|")[0];
+    if (pg === "settings") mountSettings();
+  }
+  window.addEventListener("hashchange", onHash);
+  onHash();
+})();
 </script>
 </body>
 </html>
