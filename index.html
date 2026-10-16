@@ -10,42 +10,44 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="To Regalo" />
-  <meta name="app-version" content="1.0.45-prompt-tune" />
+  <meta name="app-version" content="1.0.48-ui-v2" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>To Regalo</title>
   <!-- 主题变量：修改此处即可整体换肤 -->
-  <link rel="stylesheet" href="theme.css?v1045" />
+  <link rel="stylesheet" href="theme.css?v1048" />
   <!-- 基础样式 + 雾霭背景层 -->
-  <link rel="stylesheet" href="base.css?v1045" />
-  <!-- Home 页面布局 -->
-  <link rel="stylesheet" href="home.css?v1045" />
+  <link rel="stylesheet" href="base.css?v1048" />
+  <!-- Home 页面布局（旧版桌面样式，迁移期保留） -->
+  <link rel="stylesheet" href="home.css?v1048" />
   <!-- 通用组件（图标雾面 / 面板 / 背景管理 / 滑块） -->
-  <link rel="stylesheet" href="components.css?v1045" />
+  <link rel="stylesheet" href="components.css?v1048" />
   <!-- 通讯录页面（联系人列表 / 群聊） -->
-  <link rel="stylesheet" href="contacts.css?v1045" />
+  <link rel="stylesheet" href="contacts.css?v1048" />
   <!-- 聊天页面（消息气泡 / 输入栏 / 字卡 / 会话列表） -->
-  <link rel="stylesheet" href="chat.css?v1045" />
+  <link rel="stylesheet" href="chat.css?v1048" />
   <!-- 陪伴页面（内容应用入口 / bento 网格） -->
-  <link rel="stylesheet" href="companion.css?v1045" />
-  <link rel="stylesheet" href="profile.css?v1045" />
-  <link rel="stylesheet" href="mail.css?v1045" />
-  <link rel="stylesheet" href="treehole.css?v1045" />
+  <link rel="stylesheet" href="companion.css?v1048" />
+  <link rel="stylesheet" href="profile.css?v1048" />
+  <link rel="stylesheet" href="mail.css?v1048" />
+  <link rel="stylesheet" href="treehole.css?v1048" />
   <!-- 心情电台（悬浮唱片 / 播放控制） -->
-  <link rel="stylesheet" href="radio.css?v1045" />
-  <link rel="stylesheet" href="foodie.css?v1045" />
+  <link rel="stylesheet" href="radio.css?v1048" />
+  <link rel="stylesheet" href="foodie.css?v1048" />
   <!-- 朋友圈（动态流 / 封面 / 九宫格 / 评论交互） -->
-  <link rel="stylesheet" href="moments.css?v1045" />
+  <link rel="stylesheet" href="moments.css?v1048" />
    <!-- 联系人朋友圈（字卡管理） -->
-  <link rel="stylesheet" href="contact-moments.css?v1045" />
+  <link rel="stylesheet" href="contact-moments.css?v1048" />
   <!-- 电话模块（呼出 / 来电 / 群电话预留） -->
-  <link rel="stylesheet" href="phone.css?v1045" />
+  <link rel="stylesheet" href="phone.css?v1048" />
   <!-- 浏览器模块（基础浏览壳） -->
-  <link rel="stylesheet" href="browser.css?v1045" />
+  <link rel="stylesheet" href="browser.css?v1048" />
   <!-- 全局通知角标 -->
-  <link rel="stylesheet" href="notify.css?v1045" />
+  <link rel="stylesheet" href="notify.css?v1048" />
   <!-- 奶油软新拟态主题（可选主题，通过 theme-manager.js 切换） -->
-  <link rel="stylesheet" href="theme-neumorphism.css?v1045" />
+  <link rel="stylesheet" href="theme-neumorphism.css?v1048" />
+  <!-- ===== UI v2：组件化桌面 + 双模式设计体系（改版蓝本：all-ui-preview）===== -->
+  <link rel="stylesheet" href="ui-v2.css?v1048" />
 </head>
 <body>
   <!-- ===== 多层雾霭背景（见 base.css） ===== -->
@@ -56,52 +58,68 @@
     <div class="bg-layer bg-noise"></div>
     <div class="bg-layer bg-vignette"></div>
   </div>
-  <!-- ===== 沉浸式应用外壳 ===== -->
+  <!-- ===== 沉浸式应用外壳（UI v2：手机形态 + 组件化桌面） ===== -->
   <main class="app-shell">
-    <!-- ============ Home 页面 ============ -->
-    <section class="page is-active" data-page="home">
-      <!-- 顶部状态区 -->
-      <header class="status-bar">
-        <span class="status-time" id="status-time">--:--</span>
-        <div class="status-indicators">
-          <span class="sig-dots"><i></i><i></i><i></i><i></i></span>
-          <span id="status-wifi"></span>
-          <span class="battery">
-            <span class="battery-body"><span class="battery-fill"></span></span>
-          </span>
-        </div>
-      </header>
-      <!-- 可滚动主体 -->
-      <div class="app-grid-wrap scroll">
-        <div class="greeting">
-          <div class="hello">你好</div>
-          <div class="date">—</div>
-        </div>
-        <!-- 搜索条 -->
-        <div class="search-pill" role="button" tabindex="0">
-          <span id="search-icon"></span>
-          <span>搜索应用…</span>
-        </div>
-        <!-- 应用图标网格（由 app.js 渲染） -->
-        <div class="app-grid" id="app-grid"></div>
+    <div class="phone light" id="phone" data-mode="light">
+      <!-- 状态栏：时间 + 编辑圆点 + 电量（预览稿极简风格） -->
+      <div class="status-bar">
+        <span id="status-time">--:--</span>
+        <div class="edit-dot" id="edit-dot" title="编辑模式"></div>
+        <span id="status-battery">85%</span>
+      </div>
+      <!-- 问候条（保留原有问候语功能，点击回主页） -->
+      <div class="home-greeting" id="home-greeting">
+        <span class="hello" id="hello-text">你好</span>
+        <span class="date" id="date-text">—</span>
+      </div>
+      <!-- 组件化桌面：3 屏滑动 -->
+      <div class="home-scroll" id="home-scroll">
+        <div class="h-page"><div class="canvas" id="canvas-0"></div></div>
+        <div class="h-page"><div class="canvas" id="canvas-1"></div></div>
+        <div class="h-page"><div class="canvas" id="canvas-2"></div></div>
       </div>
       <!-- 页面指示点 -->
-      <div class="page-dots"><i class="is-active"></i><i></i></div>
-      <!-- 底部 Dock -->
-      <nav class="dock">
-        <div class="dock-inner" id="dock-inner"></div>
-      </nav>
-    </section>
-    <!-- ============ 通用详情页（占位，由 app.js 注入） ============ -->
-    <section class="page" data-page="detail" id="page-detail"></section>
-    <!-- ============ 通讯录页（由 contacts.js 接管） ============ -->
-    <section class="page" data-page="contacts" id="page-contacts"></section>
-    <!-- ============ 聊天页（由 chat.js 接管） ============ -->
-    <section class="page" data-page="chat" id="page-chat"></section>
-    <!-- ============ 陪伴页（由 companion.js 接管） ============ -->
-    <section class="page" data-page="companion" id="page-companion"></section>
-    <!-- ============ 朋友圈页（由 moments.js 接管） ============ -->
-    <section class="page" data-page="moments" id="page-moments"></section>
+      <div class="page-dots" id="page-dots"><i class="on"></i><i></i><i></i></div>
+      <!-- 底部 Dock：主页 / 陪伴 / 个人中心 / 设置 -->
+      <div class="dock" id="dock"></div>
+      <!-- 组件库：编辑模式下从底部下拉 -->
+      <div class="lib-grip" id="lib-grip"><div class="bar"></div><div class="lbl">组件库 · 下拉</div></div>
+      <div class="lib-panel" id="lib-panel">
+        <div class="lib-head">
+          <div class="lib-title">组件库 · 点击添加，自动顺位</div>
+          <div class="lib-close" id="lib-close">×</div>
+        </div>
+        <input class="lib-search" id="lib-search" type="text" placeholder="搜索组件…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+        <div class="lib-list" id="lib-list"></div>
+        <div class="lib-empty" id="lib-empty">没有找到组件</div>
+      </div>
+      <!-- ===== 功能页容器 =====
+           保留旧 id（page-chat/contacts/companion/moments/detail）兼容各模块渲染；
+           新增预览稿页面容器（contact/group/settings/me/…）供逐模块迁移。 -->
+      <div class="page" data-page="chat" id="page-chat"></div>
+      <div class="page" data-page="contacts" id="page-contacts"></div>
+      <div class="page" data-page="companion" id="page-companion"></div>
+      <div class="page" data-page="moments" id="page-moments"></div>
+      <div class="page" data-page="detail" id="page-detail"></div>
+      <div class="page" data-page="contact" id="page-contact"></div>
+      <div class="page" data-page="group" id="page-group"></div>
+      <div class="page" data-page="settings" id="page-settings"></div>
+      <div class="page" data-page="me" id="page-me"></div>
+      <div class="page" data-page="phone" id="page-phone"></div>
+      <div class="page" data-page="mail" id="page-mail"></div>
+      <div class="page" data-page="treehole" id="page-treehole"></div>
+      <div class="page" data-page="radio" id="page-radio"></div>
+      <div class="page" data-page="food" id="page-food"></div>
+      <div class="page" data-page="browser" id="page-browser"></div>
+      <div class="page" data-page="files" id="page-files"></div>
+      <div class="page" data-page="weather" id="page-weather"></div>
+      <div class="page" data-page="card" id="page-card"></div>
+      <div class="page" data-page="cards" id="page-cards"></div>
+      <div class="page" data-page="cm" id="page-cm"></div>
+      <div class="page" data-page="vinyl" id="page-vinyl"></div>
+      <div class="page" data-page="quote" id="page-quote"></div>
+      <div class="page" data-page="album" id="page-album"></div>
+    </div>
   </main>
   <!-- ===== 脚本 ===== -->
   <!-- storage.js 必须最先加载：拦截 localStorage，底层使用 IndexedDB 大容量存储 -->
@@ -112,46 +130,43 @@
   <script src="keepalive.js?v8"></script>
   <!-- 设置（后台保活开关：消息通知 / 后台运行 / 逐条弹 / 不抢声音） -->
   <script src="settings.js?v16"></script>
-  <script src="icons.js?v1045"></script>
-  <script src="background.js?v1045"></script>
-  <script src="probabilities.js?v1045"></script>
-  <script src="contacts.js?v1045"></script>
-  <script src="cards.js?v1045"></script>
+  <script src="icons.js?v1048"></script>
+  <script src="background.js?v1048"></script>
+  <script src="probabilities.js?v1048"></script>
+  <script src="contacts.js?v1048"></script>
+  <script src="cards.js?v1048"></script>
   <!-- 字卡生成器：词库 → 引擎（拼音还原+评分）→ 生成器（双路生成+双轨审批），依赖 MineCards -->
-  <script src="lexicon.js?v1045"></script>
-  <script src="lexicon-engine.js?v1045"></script>
+  <script src="lexicon.js?v1048"></script>
+  <script src="lexicon-engine.js?v1048"></script>
   <!-- AI 润色客户端（OpenAI 兼容格式，DeepSeek 默认可换家）+ 联系人人设存储，需在生成器前加载 -->
-  <script src="mine-ai.js?v1045"></script>
+  <script src="mine-ai.js?v1048"></script>
   <!-- 云同步模块：网页版和PWA版自动同步数据 -->
-  <script src="mine-sync.js?v1045"></script>
-  <script src="lexicon-card-generator.js?v1045"></script>
+  <script src="mine-sync.js?v1048"></script>
+  <script src="lexicon-card-generator.js?v1048"></script>
   <!-- 字卡管理界面（审批 / 字卡池 / 运行规则 / 联系人人设 / 词库管理） -->
-  <script src="lexicon-admin.js?v1045"></script>
-  <script src="chat.js?v1045"></script>
+  <script src="lexicon-admin.js?v1048"></script>
+  <script src="chat.js?v1048"></script>
   <!-- 电话模块（依赖 MineContacts / MineIcons） -->
-  <script src="phone.js?v1045"></script>
-  <script src="companion.js?v1045"></script>
-  <script src="profile.js?v1045"></script>
-  <script src="mail.js?v1045"></script>
-  <script src="treehole.js?v1045"></script>
-  <script src="radio.js?v1045"></script>
-  <script src="netease.js?v1045"></script>
-  <script src="foodie.js?v1045"></script>
-  <script src="moments.js?v1045"></script>
-  <script src="contact-moments.js?v1045"></script>
+  <script src="phone.js?v1048"></script>
+  <script src="companion.js?v1048"></script>
+  <script src="profile.js?v1048"></script>
+  <script src="mail.js?v1048"></script>
+  <script src="treehole.js?v1048"></script>
+  <script src="radio.js?v1048"></script>
+  <script src="netease.js?v1048"></script>
+  <script src="foodie.js?v1048"></script>
+  <script src="moments.js?v1048"></script>
+  <script src="contact-moments.js?v1048"></script>
   <!-- 主题管理器（主题切换 + 小组件 + 拖拽） -->
-  <script src="theme-manager.js?v1045"></script>
+  <script src="theme-manager.js?v1048"></script>
   <!-- 聊天气泡 / 系统主题 上传管理器（依赖 MineTheme / MineBackground） -->
-  <script src="bubble-manager.js?v1045"></script>
+  <script src="bubble-manager.js?v1048"></script>
   <!-- 文件管理（数据导出 / 清除 / 存储扩容） -->
-  <script src="files.js?v1045"></script>
+  <script src="files.js?v1048"></script>
   <!-- 浏览器（入口 + 基础浏览壳） -->
-  <script src="browser.js?v1045"></script>
-  <script src="app.js?v1045"></script>
+  <script src="browser.js?v1048"></script>
+  <script src="app.js?v1048"></script>
   <script>
-    // 状态栏 wifi 图标 / 搜索图标（等 icons.js 就绪后注入）
-    document.getElementById("status-wifi").innerHTML = MineIcons.svg("wifi", 16);
-    document.getElementById("search-icon").innerHTML = MineIcons.svg("search", 16);
     // 主题管理器初始化
     if (window.MineTheme) MineTheme.init();
     // 聊天气泡 / 系统主题 上传管理器初始化（恢复自定义气泡）
