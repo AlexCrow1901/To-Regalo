@@ -436,6 +436,12 @@ body {
 .msg-row.me .msg-bubble{background:#DBE6F2; color:#1A2B3C; border-bottom-right-radius:5px}
 .phone:not(.light) .msg-row.me .msg-bubble{background:#3D4A5E; color:#EEF2F7}
 .msg-recalled .msg-bubble{background:rgba(128,128,128,.14); color:rgba(128,128,128,.75); font-style:italic; font-size:12.5px}
+/* 撤回消息：点击展开/收回原文（对齐原网站 is-recalled/is-revealed 交互） */
+.msg-bubble.is-recalled{background:rgba(128,128,128,.14); color:rgba(128,128,128,.75); font-style:italic; font-size:12.5px; cursor:pointer}
+.msg-bubble.is-recalled .recalled-text{display:none}
+.msg-bubble.is-recalled.is-revealed .recalled-tag{display:none}
+.msg-bubble.is-recalled.is-revealed .recalled-text{display:inline}
+.msg-bubble.is-recalled.is-revealed{font-style:normal; font-size:13.5px; color:inherit; background:rgba(128,128,128,.22)}
 .msg-bubble.ai-tag::after{content:"AI润色"; position:absolute; top:-9px; right:6px; font-size:8.5px; color:#c9a96e; background:rgba(201,169,110,.14); padding:1px 6px; border-radius:6px}
 .msg-bubble .b-actions{display:flex; gap:8px; margin-top:8px}
 .msg-bubble .b-actions button{flex:1; padding:7px 0; border-radius:10px; border:none; font-size:12px; cursor:pointer}
@@ -680,14 +686,21 @@ body {
 .pill{display:inline-flex; align-items:center; gap:4px; font-size:10px; padding:3px 9px; border-radius:10px; background:rgba(128,128,128,.14)}
 .pill.gold{background:rgba(201,169,110,.16); color:#c9a96e}
 .sheet-overlay{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:90; opacity:0; pointer-events:none; transition:.3s}
-.sheet-overlay.on{opacity:1; pointer-events:auto}
+.sheet-overlay.on,.sheet-overlay.is-open{opacity:1; pointer-events:auto}
 .sheet{position:fixed; left:50%; bottom:0; transform:translate(-50%,105%); width:340px; max-height:64vh; background:#17171b; border-radius:22px 22px 0 0; z-index:91; transition:transform .32s cubic-bezier(.2,.8,.2,1); padding:10px 16px 26px; color:#f0f0f0; overflow-y:auto}
 .sheet.light{background:#f6f3ed; color:#1a1a1a}
-.sheet.on{transform:translate(-50%,0)}
+.sheet.on,.sheet.is-open{transform:translate(-50%,0)}
 .sheet-handle{width:38px; height:4px; border-radius:2px; background:rgba(128,128,128,.4); margin:6px auto 12px}
 .sheet h3{font-size:15px; margin-bottom:12px}
 .sheet .row{padding:11px 2px; border-bottom:1px solid rgba(128,128,128,.12); display:flex; align-items:center; gap:10px; cursor:pointer}
 .sheet .row:last-child{border-bottom:none}
+/* 发起群聊弹层（对齐原网站群聊创建：多选联系人 + 群名） */
+.cg-members{display:flex; flex-direction:column; gap:2px; max-height:220px; overflow-y:auto; margin-bottom:6px}
+.cg-mem{display:flex; align-items:center; gap:10px; padding:8px 2px; border-bottom:1px solid rgba(128,128,128,.1); font-size:13px; cursor:pointer}
+.cg-mem .ag{width:30px;height:30px;border-radius:50%;background:rgba(201,169,110,.18);color:#c9a96e;display:flex;align-items:center;justify-content:center;font-size:12px;flex:none}
+.cg-name{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(128,128,128,.3);background:rgba(128,128,128,.08);color:inherit;font-size:13px;outline:none}
+.cg-create{width:100%;margin-top:12px;padding:12px 0;border:none;border-radius:12px;background:#c9a96e;color:#fff;font-size:14px;cursor:pointer}
+.cg-create:disabled{opacity:.5}
 .cp-palette{display:flex; flex-wrap:wrap; gap:7px; margin-top:8px}
 .cp-swatch{width:26px; height:26px; border-radius:50%; cursor:pointer; border:2px solid rgba(128,128,128,.3)}
 .cp-swatch.on{border-color:#fff; box-shadow:0 0 0 2px #c9a96e}
@@ -1861,7 +1874,7 @@ body {
       '<div class="chat-nav">' +
         '<span class="chat-nav-back" data-act="back">‹</span>' +
         '<span class="chat-nav-title" id="cd-name">夏以昼</span>' +
-        '<span class="chat-nav-more" data-act="more">···</span></div>' +
+        '<span class="chat-nav-more" data-act="more">⋮</span></div>' +
       '<div class="with-me-bar">' +
         '<div class="with-me-toggle"><span class="with-me-label">with me</span><span class="with-me-chevron"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></span></div>' +
         '<div class="with-me-panel"><div class="with-me-content"><div class="with-me-actions">' +
@@ -1874,7 +1887,7 @@ body {
         '<div class="msg-row me"><div class="msg-avatar">我</div><div class="msg-bubble ai-tag">那你早点休息呀，别硬撑</div></div>' +
         '<div class="msg-row"><div class="msg-avatar">🦊</div><div class="msg-bubble">你猜我刚才看到什么了</div></div>' +
         '<div class="msg-row me"><div class="msg-avatar">我</div><div class="msg-bubble ai-tag">什么呀，快说快说</div></div>' +
-        '<div class="msg-row msg-recalled"><div class="msg-avatar">🦊</div><div class="msg-bubble">（一条撤回的消息 · 点击展开）</div></div>' +
+        '<div class="msg-row"><div class="msg-avatar">🦊</div><div class="msg-bubble is-recalled"><span class="recalled-tag">（撤回）</span><span class="recalled-text">好吧那下次再说 · 今天真的太累了，感觉被抽干了</span></div></div>' +
         '<div class="msg-row"><div class="msg-avatar">🦊</div><div class="msg-bubble">我觉得「今天好累」这句话我不想再说了，删掉吧？' +
           '<span class="b-actions"><button class="b-ok">同意删除</button><button class="b-no">留着</button></span></div></div>' +
       '</div>' +
@@ -1900,7 +1913,7 @@ body {
   }
   function contactsPage(){
     var h = '<div class="scroll">' +
-      '<div class="func-row"><div class="func-ic">＋</div><div class="func-text"><span class="func-title">发起群聊</span><span class="func-sub">选择联系人创建群聊</span></div><span class="chev">›</span></div>' +
+      '<div class="func-row" data-act="create-group"><div class="func-ic">＋</div><div class="func-text"><span class="func-title">发起群聊</span><span class="func-sub">选择联系人创建群聊</span></div><span class="chev">›</span></div>' +
       '<div class="group-head">群聊 <span class="count">'+GROUPS.length+'</span></div>';
     GROUPS.forEach(function(g){
       h += '<div class="func-row" data-open="group" data-id="'+g.id+'">' + groupAvatarHTML(g) +
@@ -3292,8 +3305,8 @@ body {
       }
       if (send) send.addEventListener("click", doSend);
       if (inp) inp.addEventListener("keydown", function(e){ if (e.key === "Enter") { e.preventDefault(); doSend(); } });
-      var rc = page.querySelector(".msg-recalled .msg-bubble");
-      if (rc) rc.addEventListener("click", function(){ rc.textContent = "好吧那下次再说 ·（撤回原文）"; rc.closest(".msg-row").classList.remove("msg-recalled"); });
+      var rc = page.querySelector(".msg-bubble.is-recalled");
+      if (rc) rc.addEventListener("click", function(){ rc.classList.toggle("is-revealed"); });
       var wmT = page.querySelector(".with-me-toggle");
       var wmP = page.querySelector(".with-me-panel");
       var wmC = page.querySelector(".with-me-chevron");
@@ -3308,9 +3321,21 @@ body {
         });
       });
       var more = page.querySelector('[data-act="more"]');
-      if (more) more.addEventListener("click", function(){ toastMsg("更多（示例）"); });
+      if (more) more.addEventListener("click", function(){
+        /* 右上角竖三点：展示当前会话对应联系人主页（原网站功能：点联系人进主页） */
+        var name = (page.querySelector("#cd-name") || {}).textContent || "";
+        var c = null, g = null;
+        CONTACTS.forEach(function(x){ if (x.name === name) c = x; });
+        GROUPS.forEach(function(x){ if (x.name === name) g = x; });
+        if (c) openContactPage(phone, c);
+        else if (g) openContactGroup(phone, g);
+        else openContactPage(phone, findContact("c1"));
+      });
     }
     if (pg === "contacts") {
+      /* 发起群聊：多选联系人 + 群名 → 创建（对齐原网站 contacts.js 群聊创建交互） */
+      var cg = page.querySelector('[data-act="create-group"]');
+      if (cg) cg.addEventListener("click", function(){ openCreateGroup(phone); });
       page.querySelectorAll("[data-open]").forEach(function(row){
         row.addEventListener("click", function(){
           var t = row.getAttribute("data-open");
@@ -3602,6 +3627,46 @@ body {
     phone.querySelectorAll(".page").forEach(function(p){ if (p !== page) p.classList.remove("on"); });
     var hs = phone.querySelector(".home-scroll"), pd = phone.querySelector(".page-dots");
     if (hs) { hs._savedLeft = hs.scrollLeft; hs.style.display = "none"; } if (pd) pd.style.display = "none";
+  }
+  /* 发起群聊：多选联系人 + 群名 → 创建并刷新通讯录（对齐原网站群聊创建交互） */
+  function openCreateGroup(phone){
+    var overlay = document.getElementById("sheetOverlay");
+    var sheet = document.getElementById("sheet");
+    if (!overlay || !sheet) return;
+    sheet.classList.toggle("light", phone.getAttribute("data-pi") === "L");
+    var h = '<div class="sheet-handle"></div><h3>发起群聊</h3>' +
+      '<div style="font-size:11px;opacity:.6;margin-bottom:8px">选择联系人，输入群名创建群聊</div>' +
+      '<div class="section-label">选择成员</div>' +
+      '<div class="cg-members">' +
+        CONTACTS.map(function(c){ return '<label class="cg-mem"><input type="checkbox" data-cg="'+c.id+'"><span class="ag">'+esc(c.name.charAt(0))+'</span>'+esc(c.name)+'</label>'; }).join("") +
+      '</div>' +
+      '<div class="section-label">群聊名称</div>' +
+      '<input class="cg-name" placeholder="群聊名称（可选）" maxlength="20">' +
+      '<button class="cg-create">创建群聊（0）</button>';
+    sheet.innerHTML = h;
+    overlay.classList.add("on");
+    sheet.classList.add("on");
+    var closeFn = function(){ overlay.classList.remove("on"); sheet.classList.remove("on"); };
+    overlay.onclick = closeFn;
+    var inputs = sheet.querySelectorAll('[data-cg]');
+    var nameInp = sheet.querySelector(".cg-name");
+    var createBtn = sheet.querySelector(".cg-create");
+    function updateCount(){
+      var n = 0; inputs.forEach(function(i){ if (i.checked) n++; });
+      createBtn.textContent = "创建群聊（" + n + "）";
+    }
+    inputs.forEach(function(i){ i.addEventListener("change", updateCount); });
+    createBtn.addEventListener("click", function(){
+      var ids = [];
+      inputs.forEach(function(i){ if (i.checked) ids.push(i.getAttribute("data-cg")); });
+      if (ids.length < 2) { toastMsg("请至少选择 2 位联系人"); return; }
+      var name = (nameInp.value || "").trim() || ("新群聊" + (GROUPS.length + 1));
+      var members = ids.map(function(id){ return findContact(id).name; });
+      GROUPS.push({ id: "g" + (GROUPS.length + 1), name: name, members: members });
+      closeFn();
+      renderPage(phone, "contacts");
+      toastMsg("已创建群聊「" + name + "」");
+    });
   }
 
   /* ============ 初始化所有手机 ============ */
