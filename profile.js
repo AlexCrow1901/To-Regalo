@@ -231,6 +231,7 @@ window.MineProfile = (function () {
         if (!inline) return;
         if (inline.hidden) {
           inline.hidden = false;
+          inline.classList.add("open");
           if (window.MineProbs && MineProbs.renderInline) MineProbs.renderInline(inline);
           if (chevron) chevron.classList.add("is-open");
           /* 展开后自动滚动到分栏区域：内容较长时会渲染在视口下方，
@@ -247,6 +248,7 @@ window.MineProfile = (function () {
           }, 60);
         } else {
           inline.hidden = true;
+          inline.classList.remove("open");
           if (chevron) chevron.classList.remove("is-open");
         }
       });
