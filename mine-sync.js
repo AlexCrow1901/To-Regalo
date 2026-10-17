@@ -165,29 +165,15 @@
 
   /* 初始化 */
   function init() {
-    console.log("[Sync] 云同步已启动");
-    /* 没有token就弹出配置框 */
-    setTimeout(showConfigDialog, 500);
-    /* 先拉取一次 */
-    pullFromCloud();
-    /* 每30秒自动拉取一次，检查有没有新数据 */
-    setInterval(pullFromCloud, 30000);
-    /* 监听所有localStorage变化，自动推送 */
-    var origSet = localStorage.setItem;
-    localStorage.setItem = function (key, val) {
-      origSet.apply(localStorage, arguments);
-      schedulePush(2000);
-    };
-    var origRemove = localStorage.removeItem;
-    localStorage.removeItem = function (key) {
-      origRemove.apply(localStorage, arguments);
-      schedulePush(2000);
-    };
+    /* 云同步默认关闭，需要用户手动在设置里开启，避免自动请求报错覆盖本地配置 */
+    console.log("[Sync] 云同步模块已加载（未自动启动）");
   }
 
   /* 导出接口 */
   window.MineSync = {
     init: init,
+    showConfig: showConfigDialog,
+    isEnabled: function() { return state.enabled; },
     push: pushToCloud,
     pull: pullFromCloud,
     getState: function () { return Object.assign({}, state); }
