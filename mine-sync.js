@@ -101,7 +101,7 @@
       var localLast = parseInt(localStorage.getItem(LAST_SYNC_KEY) || "0");
       var cloudLast = cloud.lastSync || 0;
 
-      /* 如果云端比本地新，就合并 */
+      /* 如果云端比本地新，就合并（用原生 setItem 写入，避免触发包装推送造成循环） */
       if (cloudLast > localLast) {
         console.log("[Sync] 云端数据更新，正在合并...");
         Object.keys(cloud.keys).forEach(function (key) {
@@ -109,7 +109,8 @@
           var localVal = localStorage.getItem(key);
           /* 如果本地没有，或者云端的更新时间更近，就用云端的 */
           if (localVal !== cloudVal) {
-            localStorage.setItem(key, cloudVal);
+            if (nativeSet) nativeSet(key, cloudVal);
+            else localStorage.setItem(key, cloudVal);
           }
         });
         localStorage.setItem(LAST_SYNC_KEY, String(cloudLast));
@@ -133,6 +134,22 @@
   window.addEventListener("storage", function (e) {
     schedulePush(2000);
   });
+
+  /* 包装 localStorage 写操作：同标签页内数据变化也自动触发推送（防抖），
+     达到"配置一次后全自动同步"（微信/QQ 式"登录即同步"）；同步自身写入的键不触发推送，避免循环 */
+  var nativeSet = null, nativeRemove = null;
+  try {
+    nativeSet = localStorage.setItem.bind(localStorage);
+    nativeRemove = localStorage.removeItem.bind(localStorage);
+    localStorage.setItem = function (k, v) {
+      nativeSet(k, v);
+      if (k !== TOKEN_STORAGE_KEY && k !== LAST_SYNC_KEY && k !== GIST_ID_STORAGE_KEY) schedulePush(3000);
+    };
+    localStorage.removeItem = function (k) {
+      nativeRemove(k);
+      if (k !== TOKEN_STORAGE_KEY && k !== LAST_SYNC_KEY && k !== GIST_ID_STORAGE_KEY) schedulePush(3000);
+    };
+  } catch (e) { /* 包装失败时仅靠 storage 事件兜底 */ }
 
   /* 弹出配置框 */
   function showConfigDialog() {
@@ -165,8 +182,19 @@
 
   /* 初始化 */
   function init() {
-    /* 云同步默认关闭，需要用户手动在设置里开启，避免自动请求报错覆盖本地配置 */
-    console.log("[Sync] 云同步模块已加载（未自动启动）");
+    /* 自动同步模式（方案 A）：不自动弹窗；已配置凭证时启动自动同步——
+       先拉取（云端比本地新则合并刷新），随后延迟推送兜底（云端为空/首次配置时把本地数据推上云），
+       之后每次打开页面数据都会双向对齐，接近"登录即同步"体验 */
+    console.log("[Sync] 云同步模块已加载（已配置凭证时自动同步）");
+    if (state.token && state.gistId) {
+      setTimeout(function () {
+        pullFromCloud();
+        /* 兜底推送：拉取未触发刷新（云端无更新/为空/失败）时，把本地数据推到云端 */
+        setTimeout(function () {
+          if (!state.downloading) pushToCloud();
+        }, 1500);
+      }, 800);
+    }
   }
 
   /* 导出接口 */
