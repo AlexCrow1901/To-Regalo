@@ -13,6 +13,28 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
+<script>
+/* rAF 兜底：页面不可见/后台/省电模式下 requestAnimationFrame 可能被浏览器抑制，
+   导致依赖 rAF 的面板、弹层（is-open）永远加不上 → 按钮"点了没反应"。
+   这里用 setTimeout 兜底：rAF 正常时以 rAF 为准，被抑制时 80ms 后兜底执行。 */
+(function () {
+  var nativeRAF = window.requestAnimationFrame;
+  if (!nativeRAF) return;
+  window.requestAnimationFrame = function (cb) {
+    var called = false;
+    var t = null;
+    function run(ts) {
+      if (called) return;
+      called = true;
+      if (t) { clearTimeout(t); t = null; }
+      cb(ts);
+    }
+    var id = nativeRAF(run);
+    t = setTimeout(function () { run(performance.now()); }, 80);
+    return id;
+  };
+})();
+</script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
