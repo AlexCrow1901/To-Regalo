@@ -1000,6 +1000,24 @@ body {
     }
     if (pg === "moments" && window.MineMoments) MineMoments.open();
   }
+  /* 云同步弹窗兜底：线上 HEAD 版 mine-sync.js 的 init 会在加载约 500ms 后自动弹出全屏
+     "云同步配置"弹窗（position:fixed + z-index:99999 遮罩），盖住整个页面导致所有按钮不可点。
+     此处轮询移除该自动弹窗（对齐用户工作副本 mine-sync.js"默认关闭"；设置页"云同步配置"入口不受影响）。 */
+  (function pollSyncDialog() {
+    var tries = 0;
+    var t = setInterval(function () {
+      tries++;
+      try {
+        var inp = document.getElementById("sync-gistid-input");
+        var done = false;
+        if (inp) {
+          var ov = inp.closest('div[style*="position: fixed"]');
+          if (ov && ov.parentNode) { ov.parentNode.removeChild(ov); done = true; }
+        }
+        if (done || tries > 14) clearInterval(t);
+      } catch (e) { clearInterval(t); }
+    }, 300);
+  })();
   /* mount 触发：zip 脚本（body 末尾）的 applyHash 与 hashchange 监听在 mount 之后注册，
      真实浏览器中 zip 的静态渲染会覆盖模块渲染（设置/个人中心等页显示 zip 静态、入口失效）。
      因此 mount 延迟执行（zip applyHash 先渲染静态，mount 再覆盖为真实模块渲染）。 */
