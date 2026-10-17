@@ -2942,7 +2942,58 @@ window.MineChat = (function () {
     sendGeneratedCard: sendGeneratedCard,
     /* 联系人主动删除字卡 */
     sendDeleteRequest: sendDeleteRequest,
-    resolveDeleteRequest: resolveDeleteRequest
+    resolveDeleteRequest: resolveDeleteRequest,
+    /* 供 zip 蓝本聊天界面调用的真实发送/读取（不依赖原网站聊天 DOM，只读写会话数据） */
+    sendMsg: function (convKey, text) {
+      if (!convKey || !text) return false;
+      var savedCtx = ctx;
+      var parts = String(convKey).split(":");
+      ctx = { convKey: convKey, type: parts[0], id: parts[1] };
+      try {
+        var msgs = conversations[convKey] || [];
+        msgs.push({ id: uid(), from: "me", text: text, time: Date.now(), read: false });
+        conversations[convKey] = msgs;
+        save();
+        /* 原网站回复链（联系人/群数据存在时生效）；zip 蓝本另有自建回复池，
+           此处容错避免通讯录数据缺失（如联系人 id 不匹配）时中断发送 */
+        try { scheduleReply(); } catch (e) {}
+      } finally {
+        ctx = savedCtx;
+      }
+      return true;
+    },
+    getConv: function (convKey) {
+      return (conversations[convKey] || []).map(function (m) {
+        return {
+          id: m.id, from: m.from, text: m.text, time: m.time, recalled: !!m.recalled,
+          rawText: m.rawText || null, senderName: m.senderName || null,
+          isDeleteRequest: !!m.isDeleteRequest, deleteCardText: m.deleteCardText || null,
+          deleteResolved: !!m.deleteResolved, deleteAccepted: !!m.deleteAccepted
+        };
+      });
+    },
+    /* 供 zip 蓝本调度"对方/群成员回复"时写入对方消息（不依赖原网站聊天 DOM） */
+    pushFrom: function (convKey, from, senderName, text, opts) {
+      if (!convKey || !text) return false;
+      var msgs = conversations[convKey] || [];
+      var msg = { id: uid(), from: from, text: text, time: Date.now(), senderName: senderName || "对方" };
+      opts = opts || {};
+      if (opts.recalled) {
+        msg.recalled = true;
+        msg.rawText = text;
+      }
+      if (opts.deleteRequest) {
+        msg.isDeleteRequest = true;
+        msg.deleteCardText = opts.deleteCardText || text;
+        msg.deleteContactId = from;
+        msg.deleteResolved = false;
+        msg.deleteAccepted = false;
+      }
+      msgs.push(msg);
+      conversations[convKey] = msgs;
+      save();
+      return true;
+    }
   };
 
   /* 模块启动：加载主动消息调度状态并启动调度器（立即执行一次以建立初始计划，

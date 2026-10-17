@@ -436,12 +436,11 @@ body {
 .msg-row.me .msg-bubble{background:#DBE6F2; color:#1A2B3C; border-bottom-right-radius:5px}
 .phone:not(.light) .msg-row.me .msg-bubble{background:#3D4A5E; color:#EEF2F7}
 .msg-recalled .msg-bubble{background:rgba(128,128,128,.14); color:rgba(128,128,128,.75); font-style:italic; font-size:12.5px}
-/* 撤回消息：点击展开/收回原文（对齐原网站 is-recalled/is-revealed 交互） */
-.msg-bubble.is-recalled{background:rgba(128,128,128,.14); color:rgba(128,128,128,.75); font-style:italic; font-size:12.5px; cursor:pointer}
+/* 撤回消息：气泡颜色与其他气泡一致，默认显示（撤回），点击展开/收回原文 */
+.msg-bubble.is-recalled{cursor:pointer}
 .msg-bubble.is-recalled .recalled-text{display:none}
 .msg-bubble.is-recalled.is-revealed .recalled-tag{display:none}
 .msg-bubble.is-recalled.is-revealed .recalled-text{display:inline}
-.msg-bubble.is-recalled.is-revealed{font-style:normal; font-size:13.5px; color:inherit; background:rgba(128,128,128,.22)}
 .msg-bubble.ai-tag::after{content:"AI润色"; position:absolute; top:-9px; right:6px; font-size:8.5px; color:#c9a96e; background:rgba(201,169,110,.14); padding:1px 6px; border-radius:6px}
 .msg-bubble .b-actions{display:flex; gap:8px; margin-top:8px}
 .msg-bubble .b-actions button{flex:1; padding:7px 0; border-radius:10px; border:none; font-size:12px; cursor:pointer}
@@ -978,7 +977,7 @@ body {
 <script src="mine-sync.js?v2000"></script>
 <script src="lexicon-card-generator.js?v2000"></script>
 <script src="lexicon-admin.js?v2000"></script>
-<script src="chat.js?v2000"></script>
+<script src="chat.js?v2004"></script>
 <script src="phone.js?v2000"></script>
 <script src="companion.js?v2000"></script>
 <script src="profile.js?v2000"></script>
@@ -1616,9 +1615,12 @@ body {
 
   /* ============ 整合增强：真实功能二级页 ============ */
   var CONTACTS = [
-    { id:"c1", name:"夏以昼", handle:"xiayizhou", avatar:null, statusText:"今天有点忙" },
-    { id:"c2", name:"小鹿", handle:"xiaolu", avatar:null, statusText:"刚醒" },
-    { id:"c3", name:"陆之遥", handle:"luzhiyao", avatar:null, statusText:"勿扰" }
+    { id:"c1", name:"夏以昼", handle:"xiayizhou", avatar:null, statusText:"今天有点忙",
+      cards:["今晚的月亮特别圆，你那边看得见吗？","今天超级累，感觉被抽干了","好吧，那下次再说呀","今天和某人聊天，感觉整个人都被治愈了","你在干嘛呢，出来看星星吗"] },
+    { id:"c2", name:"小鹿", handle:"xiaolu", avatar:null, statusText:"刚醒",
+      cards:["刚醒，你呢？","分享今日份的快乐 ✨","真的诶！我这边也超亮","今天吃什么呀，好纠结","哈哈哈哈这个好好笑"] },
+    { id:"c3", name:"陆之遥", handle:"luzhiyao", avatar:null, statusText:"勿扰",
+      cards:["昨晚没接你电话，抱歉呀","在忙，晚点找你","月亮真好看，适合散步","你发的消息我看到了","改天一起吃饭吧"] }
   ];
   var GROUPS = [
     { id:"g1", name:"今天也要开心", members:["夏以昼","小鹿"] },
@@ -1880,17 +1882,7 @@ body {
         '<div class="with-me-panel"><div class="with-me-content"><div class="with-me-actions">' +
           wmAct("feather","抉择") + wmAct("image","图片") + wmAct("phone","电话") +
         '</div></div></div></div>' +
-      '<div class="chat-body">' +
-        '<div class="msg-time">晚上 9:02</div>' +
-        '<div class="msg-row"><div class="msg-avatar">🦊</div><div class="msg-bubble">我跟你说个事你别笑</div></div>' +
-        '<div class="msg-row"><div class="msg-avatar">🦊</div><div class="msg-bubble">今天真的超级累，感觉被抽干了</div></div>' +
-        '<div class="msg-row me"><div class="msg-avatar">我</div><div class="msg-bubble ai-tag">那你早点休息呀，别硬撑</div></div>' +
-        '<div class="msg-row"><div class="msg-avatar">🦊</div><div class="msg-bubble">你猜我刚才看到什么了</div></div>' +
-        '<div class="msg-row me"><div class="msg-avatar">我</div><div class="msg-bubble ai-tag">什么呀，快说快说</div></div>' +
-        '<div class="msg-row"><div class="msg-avatar">🦊</div><div class="msg-bubble is-recalled"><span class="recalled-tag">（撤回）</span><span class="recalled-text">好吧那下次再说 · 今天真的太累了，感觉被抽干了</span></div></div>' +
-        '<div class="msg-row"><div class="msg-avatar">🦊</div><div class="msg-bubble">我觉得「今天好累」这句话我不想再说了，删掉吧？' +
-          '<span class="b-actions"><button class="b-ok">同意删除</button><button class="b-no">留着</button></span></div></div>' +
-      '</div>' +
+      '<div class="chat-body" id="chat-body"></div>' +
       '<div class="chat-inputbar"><input class="input-box" placeholder="输入消息…"><div class="send-btn">↑</div></div></div>';
   }
   function phonePage(){
@@ -1985,13 +1977,19 @@ body {
       '<div class="p-time">'+esc(time)+'</div>' +
       '<div class="p-acts"><span>💬 '+comments+'</span><span class="rw">↺</span><span class="lk">♥ '+likes+'</span></div></div></div>';
   }
-  function groupPage(){
+  function groupPage(g){
+    g = g || findGroup("g1") || { name:"群聊", members: CONTACTS.map(function(c){ return c.name; }) };
     var h = '<div class="scroll">' +
+      '<div class="func-row" data-act="group-chat"><div class="func-ic">💬</div><div class="func-text"><span class="func-title">进入群聊聊天</span><span class="func-sub">打开与 '+esc(g.name)+' 的群聊会话</span></div><span class="chev">›</span></div>' +
       '<div class="group-head">群自动回复字卡 <span class="count">6</span></div>' +
       '<div class="card-row"><div class="card-txt">哈哈哈哈<span class="card-raw">原组卡：哈哈 哈哈</span></div><button class="card-btn del">删除</button></div>' +
       '<div class="card-row"><div class="card-txt">今天也超级开心呀<span class="card-raw">原组卡：今天 开心</span></div><button class="card-btn del">删除</button></div>' +
-      '<div class="group-head">群成员 <span class="count">'+CONTACTS.length+'</span></div>';
-    CONTACTS.forEach(function(c){ h += '<div class="func-row">'+avatarHTML(c)+'<div class="func-text"><span class="func-title">'+esc(c.name)+'</span><span class="func-sub">'+esc(c.statusText||"在线")+'</span></div></div>'; });
+      '<div class="group-head">群成员 <span class="count">'+g.members.length+'</span></div>';
+    g.members.forEach(function(name){
+      var c = null;
+      CONTACTS.forEach(function(x){ if (x.name === name) c = x; });
+      h += '<div class="func-row">'+avatarHTML(c || {name:name})+'<div class="func-text"><span class="func-title">'+esc(name)+'</span><span class="func-sub">'+(c?esc(c.statusText||"在线"):"群成员")+'</span></div></div>';
+    });
     h += '</div>';
     return h;
   }
@@ -3287,26 +3285,8 @@ body {
       });
     }
     if (pg === "chat-detail") {
-      page.querySelectorAll(".b-ok").forEach(function(b){ b.addEventListener("click", function(){ toastMsg("已同意删除该字卡"); }); });
-      page.querySelectorAll(".b-no").forEach(function(b){ b.addEventListener("click", function(){ toastMsg("保留该字卡"); }); });
-      var inp = page.querySelector(".input-box");
-      var send = page.querySelector(".send-btn");
-      function doSend(){
-        var t = inp ? (inp.value || "").trim() : "";
-        if (!t) { toastMsg("先输入点内容吧"); return; }
-        var body = page.querySelector(".chat-body");
-        var row = document.createElement("div");
-        row.className = "msg-row me";
-        row.innerHTML = '<div class="msg-avatar">我</div><div class="msg-bubble">' + esc(t) + '</div>';
-        body.appendChild(row);
-        if (inp) inp.value = "";
-        body.scrollTop = body.scrollHeight;
-        toastMsg("已发送（示例）");
-      }
-      if (send) send.addEventListener("click", doSend);
-      if (inp) inp.addEventListener("keydown", function(e){ if (e.key === "Enter") { e.preventDefault(); doSend(); } });
-      var rc = page.querySelector(".msg-bubble.is-recalled");
-      if (rc) rc.addEventListener("click", function(){ rc.classList.toggle("is-revealed"); });
+      /* 真实聊天（发送/撤回/删除字卡）由 openDetail → renderConv 动态渲染并绑定。
+         此处只绑定静态骨架元素：with me 折叠、with me 动作、右上角三点 */
       var wmT = page.querySelector(".with-me-toggle");
       var wmP = page.querySelector(".with-me-panel");
       var wmC = page.querySelector(".with-me-chevron");
@@ -3592,7 +3572,11 @@ body {
   }
   function openDetail(phone, view, ctx){
     showPage(phone.getAttribute("data-pi"), "chat-detail");
+    /* 确保聊天详情骨架已渲染（renderPage 会绑定 nav/with-me/三点） */
     var page = phone.querySelector('.page[data-page="chat-detail"]');
+    if (!page) return;
+    if (!page.querySelector(".chat-body")) renderPage(phone, "chat-detail");
+    page = phone.querySelector('.page[data-page="chat-detail"]');
     if (!page) return;
     page.classList.add("on");
     phone.querySelectorAll(".page").forEach(function(p){ if (p !== page) p.classList.remove("on"); });
@@ -3606,6 +3590,144 @@ body {
       av.innerHTML = g.members.map(function(m){ return '<span class="ag">'+esc(m.charAt(0))+'</span>'; }).join("");
     }
     phone.querySelectorAll(".dock .di").forEach(function(d){ d.classList.toggle("on", d.getAttribute("data-app") === "chat"); });
+    /* 真实聊天：记录会话键并渲染真实消息（原网站 MineChat 数据） */
+    page._convKey = (ctx.group ? "group:" : "contact:") + ctx.id;
+    page._isGroup = !!ctx.group;
+    renderConv(page);
+    bindSend(page);
+  }
+  /* 渲染当前会话真实消息（zip 气泡样式；发送/撤回/删除字卡全部走原网站 MineChat） */
+  function renderConv(page){
+    var body = page.querySelector(".chat-body");
+    if (!body) return;
+    var msgs = (window.MineChat && MineChat.getConv) ? MineChat.getConv(page._convKey) : [];
+    body.innerHTML = "";
+    if (!msgs.length) {
+      body.innerHTML = '<div class="msg-time">' + (page._isGroup ? "群聊已建立，开始聊天吧" : "开始聊天吧") + '</div>';
+    } else {
+      var lastDay = "";
+      msgs.forEach(function(m){
+        var d = new Date(m.time || Date.now());
+        var day = (d.getMonth()+1) + "月" + d.getDate() + "日";
+        if (day !== lastDay) {
+          lastDay = day;
+          var sep = document.createElement("div");
+          sep.className = "msg-time";
+          sep.textContent = day;
+          body.appendChild(sep);
+        }
+        body.appendChild(zipMsgRow(page, m));
+      });
+    }
+    body.scrollTop = body.scrollHeight;
+    bindMsgButtons(page);
+  }
+  function zipMsgRow(page, m){
+    var row = document.createElement("div");
+    row.className = "msg-row" + (m.from === "me" ? " me" : "");
+    var who = m.from === "me" ? "我" : esc((m.senderName || "?").charAt(0));
+    if (m.isDeleteRequest) {
+      /* 对方征求意见删除字卡 */
+      row.innerHTML = '<div class="msg-avatar">' + who + '</div>' +
+        '<div class="msg-bubble">' +
+          '<div>「' + esc(m.deleteCardText || "") + '」这条字卡想删掉，可以吗？</div>' +
+          (m.deleteResolved
+            ? '<span class="b-result" style="font-size:11px;opacity:.6">' + (m.deleteAccepted ? "已同意删除" : "已保留") + '</span>'
+            : '<span class="b-actions"><button class="b-ok" data-msgid="' + esc(m.id) + '">同意删除</button><button class="b-no" data-msgid="' + esc(m.id) + '">留着</button></span>') +
+        '</div>';
+    } else if (m.recalled) {
+      /* 撤回消息：默认显示（撤回），点击展开/收回原文 */
+      row.innerHTML = '<div class="msg-avatar">' + who + '</div>' +
+        '<div class="msg-bubble is-recalled"><span class="recalled-tag">（撤回）</span><span class="recalled-text">' + esc(m.rawText || m.text) + '</span></div>';
+    } else {
+      row.innerHTML = '<div class="msg-avatar">' + who + '</div><div class="msg-bubble">' + esc(m.text) + '</div>';
+    }
+    return row;
+  }
+  /* 动态消息按钮（撤回 toggle + 删除字卡同意/留着）——每次渲染后绑定新元素 */
+  function bindMsgButtons(page){
+    var body = page.querySelector(".chat-body");
+    if (!body) return;
+    body.querySelectorAll(".msg-bubble.is-recalled").forEach(function(b){
+      if (b._bound) return;
+      b._bound = true;
+      b.addEventListener("click", function(){ b.classList.toggle("is-revealed"); });
+    });
+    body.querySelectorAll(".b-ok").forEach(function(b){
+      if (b._bound) return;
+      b._bound = true;
+      b.addEventListener("click", function(){
+        if (window.MineChat && MineChat.resolveDeleteRequest) MineChat.resolveDeleteRequest(b.getAttribute("data-msgid"), true);
+        renderConv(page);
+        toastMsg("已同意删除该字卡");
+      });
+    });
+    body.querySelectorAll(".b-no").forEach(function(b){
+      if (b._bound) return;
+      b._bound = true;
+      b.addEventListener("click", function(){
+        if (window.MineChat && MineChat.resolveDeleteRequest) MineChat.resolveDeleteRequest(b.getAttribute("data-msgid"), false);
+        renderConv(page);
+        toastMsg("已保留该字卡");
+      });
+    });
+  }
+  /* 发送栏绑定（每个会话页一次）：真实写入会话并触发对方/群成员回复 */
+  function bindSend(page){
+    if (page._sendBound) return;
+    page._sendBound = true;
+    var inp = page.querySelector(".input-box");
+    var send = page.querySelector(".send-btn");
+    var doSend = function(){
+      var t = inp ? (inp.value || "").trim() : "";
+      if (!t) { toastMsg("先输入点内容吧"); return; }
+      if (window.MineChat && MineChat.sendMsg) MineChat.sendMsg(page._convKey, t);
+      if (inp) inp.value = "";
+      renderConv(page);
+      scheduleZipReply(page);
+      /* 兜底刷新（对方回复随机延迟） */
+      [2500, 4500].forEach(function(ms){ setTimeout(function(){ renderConv(page); }, ms); });
+    };
+    if (send) send.addEventListener("click", doSend);
+    if (inp) inp.addEventListener("keydown", function(e){ if (e.key === "Enter") { e.preventDefault(); doSend(); } });
+  }
+  /* 对方/群成员回复调度：从联系人字卡池随机抽取（zip 设定文案，写入原网站会话数据） */
+  function zipReplyPool(page){
+    var pool = [];
+    if (page._isGroup) {
+      var g = findGroup(page._convKey.split(":")[1]);
+      if (g) g.members.forEach(function(name){
+        var c = null;
+        CONTACTS.forEach(function(x){ if (x.name === name) c = x; });
+        (c && c.cards || []).forEach(function(t){ pool.push({ from: c.id, name: c.name, text: t }); });
+      });
+    } else {
+      var c = findContact(page._convKey.split(":")[1]);
+      (c && c.cards || []).forEach(function(t){ pool.push({ from: c.id, name: c.name, text: t }); });
+    }
+    return pool;
+  }
+  function scheduleZipReply(page){
+    var pool = zipReplyPool(page);
+    if (!pool.length || !window.MineChat || !MineChat.pushFrom) return;
+    var delay = 900 + Math.random() * 2400;
+    setTimeout(function(){
+      var n = page._isGroup ? Math.min(1 + Math.floor(Math.random() * 2), 2) : 1;
+      var used = [];
+      for (var i = 0; i < n && used.length < pool.length; i++) {
+        var pick = pool[Math.floor(Math.random() * pool.length)];
+        if (used.indexOf(pick) >= 0 && used.length < pool.length) continue;
+        used.push(pick);
+        /* 与联系人主页同设定：文字回复小概率为撤回态（点击可展开原文）；
+           另有小概率以"征求意见删除字卡"形式出现（同意删除/留着可用） */
+        var roll = Math.random();
+        var opts = null;
+        if (roll < 0.08) opts = { deleteRequest: true, deleteCardText: pick.text };
+        else if (roll < 0.20) opts = { recalled: true };
+        MineChat.pushFrom(page._convKey, pick.from, pick.name, pick.text, opts);
+      }
+      renderConv(page);
+    }, delay);
   }
   function openContactPage(phone, c){
     showPage(phone.getAttribute("data-pi"), "contact");
@@ -3627,6 +3749,17 @@ body {
     phone.querySelectorAll(".page").forEach(function(p){ if (p !== page) p.classList.remove("on"); });
     var hs = phone.querySelector(".home-scroll"), pd = phone.querySelector(".page-dots");
     if (hs) { hs._savedLeft = hs.scrollLeft; hs.style.display = "none"; } if (pd) pd.style.display = "none";
+    /* 渲染当前群聊设置页（真实群成员 + 进入群聊聊天入口） */
+    var nav = '<div class="nav-bar"><button class="nav-btn" data-act="back">← 返回</button><span class="nav-title">' + esc(g.name) + '</span><span class="nav-right"></span></div>';
+    page.innerHTML = nav + groupPage(g);
+    var back = page.querySelector('[data-act="back"]');
+    if (back) back.addEventListener("click", function(){
+      var h = location.hash || "", pi = phone.getAttribute("data-pi");
+      if (h.indexOf("|" + pi) >= 0 && window.history.length > 1) window.history.back();
+      else showPage(pi, "contacts");
+    });
+    var gc = page.querySelector('[data-act="group-chat"]');
+    if (gc) gc.addEventListener("click", function(){ openDetail(phone, "chat-detail", { name:g.name, id:g.id, group:true }); });
   }
   /* 发起群聊：多选联系人 + 群名 → 创建并刷新通讯录（对齐原网站群聊创建交互） */
   function openCreateGroup(phone){
