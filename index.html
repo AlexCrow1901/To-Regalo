@@ -793,7 +793,329 @@ body {
 .fs-btn{width:30px;height:30px;border-radius:9px;border:1px solid rgba(160,180,200,.18);background:rgba(150,170,190,.08);color:inherit;font-size:13px;flex:none;cursor:pointer}
 .fs-btn:last-child{color:#c98a8a}
 </style>
-</head>
+<script>/* [模块前置] bridge-shim + 模块脚本 + bridge-init 移到 head，避免巨型 zip 内联脚本中断后续 script 执行 */</script><script>
+/* ===== 功能接入层（bridge-shim）：MineApp 全量，必须在所有模块之前加载 ===== */
+(function () {
+  "use strict";
+  function v2Toast(msg) {
+    var old = document.querySelector(".v2-toast");
+    if (old) old.remove();
+    var d = document.createElement("div");
+    d.className = "v2-toast";
+    d.textContent = msg;
+    d.style.cssText = "position:fixed;left:50%;bottom:120px;transform:translateX(-50%);max-width:80%;padding:10px 14px;border-radius:12px;background:rgba(0,0,0,.78);color:#fff;font-size:13px;line-height:1.5;z-index:99999;pointer-events:none;";
+    document.body.appendChild(d);
+    setTimeout(function () { try { d.remove(); } catch (e) {} }, 3200);
+  }
+  function grantDetail(pg) {
+    document.querySelectorAll(".page").forEach(function (p) {
+      if (p.id === "page-detail") p.removeAttribute("id");
+    });
+    var t = document.querySelector('.page[data-page="' + pg + '"]');
+    if (t) t.id = "page-detail";
+    return t;
+  }
+  var lastDetail = null;
+  window.MineApp = window.MineApp || {};
+  var A = window.MineApp;
+  A.goHome = function () { try { location.hash = "#home|L"; } catch (e) {} };
+  A.goBack = function () { try { window.history.back(); } catch (e) { A.goHome(); } };
+  A.refreshGreeting = function () {};
+  A.addDesktopWidget = function () {};
+  A.toastMsg = function (m) { v2Toast(String(m)); };
+  A.openPlaceholder = function (id) { v2Toast("「" + id + "」待接入（原模块保留于仓库，见清单）"); };
+  A.openByType = function (t) { v2Toast("「" + t + "」待接入"); };
+  A.switchPage = function (name, appId) {
+    if (name === "home") { try { location.hash = "#home|L"; } catch (e) {} return; }
+    if (name === "detail") {
+      var pg = appId || lastDetail;
+      if (!pg) {
+        var cur = document.querySelector("#page-detail");
+        if (cur) pg = cur.getAttribute("data-page");
+      }
+      if (pg) { lastDetail = pg; try { location.hash = "#" + pg + "|L"; } catch (e) {} }
+      return;
+    }
+    try { location.hash = "#" + name + "|L"; } catch (e) {}
+  };
+  var prevPage = A.page;
+  /* 云同步配置页渲染（渲染进 #page-detail=设置容器；复用 MineSync API，不改动 mine-sync.js） */
+  function escHtml(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function renderSyncConfig() {
+    var detail = document.getElementById("page-detail");
+    if (!detail) return;
+    var st = (window.MineSync && MineSync.getState) ? MineSync.getState() : {};
+    var gistId = st.gistId || "";
+    var token = st.token || "";
+    var configured = !!(gistId && token);
+    var lastSync = st.lastSync ? new Date(st.lastSync).toLocaleString() : "";
+    var html =
+      '<div class="nav-bar"><button class="nav-btn" data-act="back">← 返回</button><span class="nav-title">云同步配置</span><span class="nav-right"></span></div>' +
+      '<div class="scroll me-scroll">' +
+        '<div class="group-head">当前状态</div>' +
+        '<div class="func-row"><div class="func-text">' +
+          '<span class="func-title">' + (configured ? "已配置 · Gist " + gistId : "未配置") + '</span>' +
+          '<span class="func-sub">' + (configured ? ("上次同步：" + (lastSync || "待首次同步")) : "GitHub Gist 跨设备备份 / 恢复数据") + '</span>' +
+        '</div></div>' +
+        '<div class="card-hint" style="margin:8px 12px 12px">云同步基于 GitHub Gist：配置后自动备份聊天 / 联系人 / 字卡等本地数据，跨设备恢复。</div>' +
+        '<div class="group-head">GitHub Gist</div>' +
+        '<div style="padding:4px 12px 10px">' +
+          '<input id="sync-gistid-input" value="' + escHtml(gistId) + '" placeholder="Gist ID" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid rgba(128,128,128,.35);border-radius:10px;background:transparent;color:inherit;font-size:14px;margin-bottom:10px">' +
+          '<input id="sync-token-input" value="' + escHtml(token) + '" placeholder="GitHub Token（需 gist 权限）" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid rgba(128,128,128,.35);border-radius:10px;background:transparent;color:inherit;font-size:14px">' +
+        '</div>' +
+        '<div class="func-row"><div class="func-text"><span class="func-title">保存配置</span><span class="func-sub">保存后自动刷新页面以启用同步</span></div><button class="chat-bg-btn" id="sync-save-btn">保存</button></div>' +
+        '<div class="func-row"><div class="func-text"><span class="func-title">立即同步</span><span class="func-sub">手动推送当前数据到云端</span></div><button class="chat-bg-btn" id="sync-push-btn">同步</button></div>' +
+        '<div id="sync-result" style="padding:0 12px"></div>' +
+      '</div>';
+    detail.innerHTML = html;
+    var save = detail.querySelector("#sync-save-btn");
+    if (save) save.addEventListener("click", function () {
+      var g = (detail.querySelector("#sync-gistid-input") || {}).value || "";
+      var t = (detail.querySelector("#sync-token-input") || {}).value || "";
+      var res = detail.querySelector("#sync-result");
+      g = String(g).trim(); t = String(t).trim();
+      if (!g || !t) { if (res) res.innerHTML = '<div class="card-hint">请填写 Gist ID 与 Token</div>'; return; }
+      localStorage.setItem("mine.sync.gistId", g);
+      localStorage.setItem("mine.sync.githubToken", t);
+      if (res) res.innerHTML = '<div class="card-hint">已保存，正在刷新以启用同步…</div>';
+      setTimeout(function () { try { location.reload(); } catch (e) {} }, 900);
+    });
+    var push = detail.querySelector("#sync-push-btn");
+    if (push) push.addEventListener("click", function () {
+      var res = detail.querySelector("#sync-result");
+      if (!configured) { if (res) res.innerHTML = '<div class="card-hint">请先保存 Gist ID 与 Token</div>'; return; }
+      if (window.MineSync && MineSync.push) {
+        try {
+          MineSync.push();
+          if (res) res.innerHTML = '<div class="card-hint">已触发同步，请稍候…</div>';
+        } catch (e) {
+          if (res) res.innerHTML = '<div class="card-hint">同步失败：' + escHtml(e.message) + '</div>';
+        }
+      }
+    });
+    var back = detail.querySelector('[data-act="back"]');
+    if (back) back.addEventListener("click", function () {
+      /* 返回：先切回 #settings（zip 显示静态设置页），再触发 settings.js 动态渲染（云同步/文件/版本等入口） */
+      try { location.hash = "#settings|L"; } catch (e) {}
+      if (window.MineApp && MineApp.page) { try { MineApp.page("settings"); return; } catch (e) {} }
+      if (window.MineApp && MineApp.switchPage) MineApp.switchPage("settings"); else window.history.back();
+    });
+  }
+  A.page = function (id) {
+    if (id === "settings" && window.MineSettings) { lastDetail = "settings"; grantDetail("settings"); MineSettings.renderPage(); return true; }
+    if (id === "sync-config" && window.MineSync) { lastDetail = "settings"; grantDetail("settings"); renderSyncConfig(); return true; }
+    if (id === "me" && window.MineProfile) { lastDetail = "me"; grantDetail("me"); MineProfile.renderPage(); return true; }
+    if (id === "phone" && window.MinePhone) { lastDetail = "phone"; grantDetail("phone"); MinePhone.renderPage(); return true; }
+    if (id === "files" && window.MineFiles) { lastDetail = "files"; grantDetail("files"); MineFiles.renderPage(); return true; }
+    if (id === "browser" && window.MineBrowser) { lastDetail = "browser"; grantDetail("browser"); MineBrowser.renderPage(); return true; }
+    if (id === "mail" && window.MineMail) { lastDetail = "mail"; grantDetail("mail"); MineMail.open(); return true; }
+    if (id === "treehole" && window.MineTreeHole) { lastDetail = "treehole"; grantDetail("treehole"); MineTreeHole.open(); return true; }
+    return prevPage ? prevPage(id) : false;
+  };
+  window.__grantDetail = grantDetail;
+  window.__lastDetailGet = function () { return lastDetail; };
+  /* MineScroll：原 app.js 提供的通用渲染器（mail/contacts 等模块依赖） */
+  window.MineScroll = {
+    render: function (container, html, keepTop, bindFn) {
+      var saved = 0;
+      if (keepTop && container) { try { saved = container.scrollTop; } catch (e) {} }
+      if (container) container.innerHTML = html;
+      if (bindFn) { try { bindFn(); } catch (e) {} }
+      if (keepTop && saved > 0 && container) { try { container.scrollTop = saved; } catch (e) {} }
+    }
+  };
+})();
+</script><script src="storage.js?v2000"></script>
+<script src="utils.js?v2000"></script>
+<script src="notify.js?v2000"></script>
+<script src="keepalive.js?v2000"></script>
+<script src="settings.js?v2000"></script>
+<script src="icons.js?v2000"></script>
+<script src="background.js?v2000"></script>
+<script src="probabilities.js?v2000"></script>
+<script src="contacts.js?v2000"></script>
+<script src="cards.js?v2000"></script>
+<script src="lexicon.js?v2000"></script>
+<script src="lexicon-engine.js?v2000"></script>
+<script src="mine-ai.js?v2000"></script>
+<script src="mine-sync.js?v2000"></script>
+<script src="lexicon-card-generator.js?v2000"></script>
+<script src="lexicon-admin.js?v2000"></script>
+<script src="chat.js?v2000"></script>
+<script src="phone.js?v2000"></script>
+<script src="companion.js?v2000"></script>
+<script src="profile.js?v2000"></script>
+<script src="mail.js?v2000"></script>
+<script src="treehole.js?v2000"></script>
+<script src="radio.js?v2000"></script>
+<script src="netease.js?v2000"></script>
+<script src="foodie.js?v2000"></script>
+<script src="moments.js?v2000"></script>
+<script src="contact-moments.js?v2000"></script>
+<script src="theme-manager.js?v2000"></script>
+<script src="bubble-manager.js?v2000"></script>
+<script src="files.js?v2000"></script>
+<script src="browser.js?v2000"></script><script>
+/* ===== 功能接入层（bridge-init）：页面渲染钩子 + 模块初始化 ===== */
+(function () {
+  "use strict";
+  function mount() {
+    var pg = (location.hash || "").replace("#", "").split("|")[0];
+    if (!pg || pg === "home") return;
+    /* 聊天 / 通讯录 / 电话 / 朋友圈（含详情子页）按用户要求使用 zip 蓝本 UI：
+       zip 的 applyHash 已监听 hashchange 并渲染这些页面（示例内容+交互），此处不再触发模块覆盖 */
+    var zipUiPages = ["chat", "chat-detail", "contacts", "contact", "group", "phone", "moments", "cm", "companion"];
+    if (zipUiPages.indexOf(pg) >= 0) {
+      if (pg === "companion") {
+        function fillZipCache() {
+          try {
+            var cc = document.getElementById("page-companion");
+            if (cc && cc.querySelector(".comp-app") && !window.__zipCompanionHTML) {
+              window.__zipCompanionHTML = cc.innerHTML;
+            }
+          } catch (e) {}
+        }
+        fillZipCache();
+        setTimeout(fillZipCache, 250);
+      }
+      return;
+    }
+    if (window.MineApp && MineApp.page) MineApp.page(pg);
+    /* 字卡管理 / 云同步配置页（zip 无对应 .page 容器，渲染进 #page-detail=设置容器）：
+       zip showPage 会因找不到 data-page 而清空 .on，这里恢复容器 .on 与 Dock 高亮（设置） */
+    if (pg.indexOf("card-") === 0 || pg === "sync-config") {
+      try {
+        var detail = document.getElementById("page-detail");
+        if (detail) {
+          document.querySelectorAll('.phone[data-pi="L"] .page').forEach(function (p) { p.classList.remove("on"); });
+          detail.classList.add("on");
+          var dock = document.querySelector('.phone[data-pi="L"] .dock');
+          if (dock) Array.prototype.forEach.call(dock.querySelectorAll(".di"), function (di) {
+            di.classList.toggle("on", di.getAttribute("data-app") === "settings");
+          });
+        }
+      } catch (e) {}
+    }
+    if (pg === "moments" && window.MineMoments) MineMoments.open();
+  }
+  /* mount 触发：zip 脚本（body 末尾）的 applyHash 与 hashchange 监听在 mount 之后注册，
+     真实浏览器中 zip 的静态渲染会覆盖模块渲染（设置/个人中心等页显示 zip 静态、入口失效）。
+     因此 mount 延迟执行（zip applyHash 先渲染静态，mount 再覆盖为真实模块渲染）。 */
+  function safeMount() { try { setTimeout(mount, 0); } catch (e) {} }
+  window.addEventListener("hashchange", safeMount);
+  if (document.readyState === "loading") {
+    window.addEventListener("DOMContentLoaded", safeMount);
+  } else {
+    setTimeout(safeMount, 100);
+  }
+  /* 陪伴组件点击兜底（capture 拦截：确保 detail 系模块渲染进正确容器并切换显示）
+     v1.0.53 起陪伴页为 zip 蓝本 UI（.comp-app 卡片），按 data-app 映射回原模块功能 */
+  try {
+    var comp = document.getElementById("page-companion");
+    if (comp) comp.addEventListener("click", function (e) {
+      /* radio / 觅食内切视图的返回按钮：拦截模块重渲染，恢复 zip 陪伴页 */
+      var backBtn = e.target && e.target.closest ? e.target.closest('[data-act="back"]') : null;
+      if (backBtn) {
+        var cc = document.getElementById("page-companion");
+        if (cc && !cc.querySelector(".comp-app")) {
+          e.stopPropagation();
+          if (window.__zipCompanionHTML) {
+            cc.innerHTML = window.__zipCompanionHTML;
+          } else {
+            /* 无缓存时用 hash 重路由让 zip applyHash 重新渲染陪伴页 */
+            var h = location.hash;
+            location.hash = "#home|L";
+            location.hash = h;
+          }
+          return;
+        }
+      }
+      var card = e.target && e.target.closest ? (e.target.closest(".comp-card") || e.target.closest(".comp-app")) : null;
+      if (!card) return;
+      var appId = card.getAttribute("data-app");
+      function zipToast(msg) {
+        var t = document.getElementById("toast");
+        if (!t) return;
+        t.textContent = msg; t.classList.add("on");
+        clearTimeout(t._tm); t._tm = setTimeout(function () { t.classList.remove("on"); }, 1800);
+      }
+      if (appId === "time-mailbox" && window.MineMail) {
+        e.stopPropagation();
+        window.__grantDetail("mail");
+        MineMail.open();
+      } else if (appId === "night-whispers" && window.MineTreeHole) {
+        e.stopPropagation();
+        window.__grantDetail("treehole");
+        MineTreeHole.open();
+      } else if (appId === "mailbox" && window.MineMail) {
+        e.stopPropagation();
+        window.__grantDetail("mail");
+        MineMail.open();
+      } else if (appId === "treehole" && window.MineTreeHole) {
+        e.stopPropagation();
+        window.__grantDetail("treehole");
+        MineTreeHole.open();
+      } else if (appId === "radio" && window.MineRadio) {
+        e.stopPropagation();
+        MineRadio.open();
+      } else if (appId === "food" && window.MineFoodie) {
+        e.stopPropagation();
+        MineFoodie.open();
+      } else if (card.classList.contains("soon")) {
+        e.stopPropagation();
+        var n = card.querySelector(".ca-n");
+        zipToast((n ? n.textContent : "该功能") + " · 待开放");
+      }
+    }, true);
+  } catch (e) {}
+  /* 模块初始化（对齐原 app.js init 的关键调用；各自容错，一个失败不中断后续） */
+  [["MineBackground","init"],["MineProfile","init"],["MineCards","init"],["MineMail","init"],
+   ["MineTreeHole","init"],["MinePhone","init"],["MineTheme","init"],["MineLook","init"]].forEach(function (p) {
+    try { if (window[p[0]] && window[p[0]][p[1]]) window[p[0]][p[1]](); } catch (e) { console.error("[V2] init fail", p[0], e); }
+  });
+  try { if (window.MineNotify) MineNotify.refreshBadges(); } catch (e) {}
+  /* 无条件缓存 zip 陪伴页 HTML（供 radio/觅食内切视图返回时恢复）：渲染完成即捕获 */
+  try {
+    var cc0 = document.getElementById("page-companion");
+    if (cc0) {
+      var fillZipCache = function () {
+        try {
+          if (cc0.querySelector(".comp-app") && !window.__zipCompanionHTML) {
+            window.__zipCompanionHTML = cc0.innerHTML;
+          }
+        } catch (e) {}
+      };
+      if (window.MutationObserver) {
+        new MutationObserver(fillZipCache).observe(cc0, { childList: true, subtree: true });
+      }
+      setTimeout(fillZipCache, 200);
+      setTimeout(fillZipCache, 800);
+    }
+  } catch (e) {}
+})();
+</script><script>
+/* 独立兜底：缓存 zip 陪伴页 HTML（供 radio/觅食内切视图返回时恢复 zip 陪伴 UI） */
+(function () {
+  function grab() {
+    try {
+      var cc = document.getElementById("page-companion");
+      if (cc && cc.querySelector(".comp-app") && !window.__zipCompanionHTML) {
+        window.__zipCompanionHTML = cc.innerHTML;
+      }
+    } catch (e) {}
+  }
+  try {
+    if (window.MutationObserver) {
+      new MutationObserver(grab).observe(document.getElementById("page-companion"), { childList: true, subtree: true });
+    }
+  } catch (e) {}
+  setTimeout(grab, 300);
+  setTimeout(grab, 900);
+  window.addEventListener("hashchange", grab);
+})();
+</script></head>
 <body>
   <div class="phones">
 
@@ -3328,260 +3650,24 @@ body {
 .me-stat b{display:block; font-size:19px; font-weight:700; color:#c9a96e; line-height:1.2}
 .me-stat span{display:block; font-size:10.5px; opacity:.6; margin-top:2px; letter-spacing:.5px}
 .phone.light .me-stat b{color:#a3874d}
+/* ===== 移动端全屏适配：手机屏幕上网页四边正好占满（桌面预览保持手机框卡片） ===== */
+@media (max-width: 520px) {
+  body { padding: 0; background: #0a0a0a; }
+  .phones { gap: 0; }
+  .phone {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .page-title, .page-sub, .mode-tag { display: none; }
+}
 </style>
-<script>
-/* ===== 功能接入层（bridge-shim）：MineApp 全量，必须在所有模块之前加载 ===== */
-(function () {
-  "use strict";
-  function v2Toast(msg) {
-    var old = document.querySelector(".v2-toast");
-    if (old) old.remove();
-    var d = document.createElement("div");
-    d.className = "v2-toast";
-    d.textContent = msg;
-    d.style.cssText = "position:fixed;left:50%;bottom:120px;transform:translateX(-50%);max-width:80%;padding:10px 14px;border-radius:12px;background:rgba(0,0,0,.78);color:#fff;font-size:13px;line-height:1.5;z-index:99999;pointer-events:none;";
-    document.body.appendChild(d);
-    setTimeout(function () { try { d.remove(); } catch (e) {} }, 3200);
-  }
-  function grantDetail(pg) {
-    document.querySelectorAll(".page").forEach(function (p) {
-      if (p.id === "page-detail") p.removeAttribute("id");
-    });
-    var t = document.querySelector('.page[data-page="' + pg + '"]');
-    if (t) t.id = "page-detail";
-    return t;
-  }
-  var lastDetail = null;
-  window.MineApp = window.MineApp || {};
-  var A = window.MineApp;
-  A.goHome = function () { try { location.hash = "#home|L"; } catch (e) {} };
-  A.goBack = function () { try { window.history.back(); } catch (e) { A.goHome(); } };
-  A.refreshGreeting = function () {};
-  A.addDesktopWidget = function () {};
-  A.toastMsg = function (m) { v2Toast(String(m)); };
-  A.openPlaceholder = function (id) { v2Toast("「" + id + "」待接入（原模块保留于仓库，见清单）"); };
-  A.openByType = function (t) { v2Toast("「" + t + "」待接入"); };
-  A.switchPage = function (name, appId) {
-    if (name === "home") { try { location.hash = "#home|L"; } catch (e) {} return; }
-    if (name === "detail") {
-      var pg = appId || lastDetail;
-      if (!pg) {
-        var cur = document.querySelector("#page-detail");
-        if (cur) pg = cur.getAttribute("data-page");
-      }
-      if (pg) { lastDetail = pg; try { location.hash = "#" + pg + "|L"; } catch (e) {} }
-      return;
-    }
-    try { location.hash = "#" + name + "|L"; } catch (e) {}
-  };
-  var prevPage = A.page;
-  A.page = function (id) {
-    if (id === "settings" && window.MineSettings) { lastDetail = "settings"; grantDetail("settings"); MineSettings.renderPage(); return true; }
-    if (id === "me" && window.MineProfile) { lastDetail = "me"; grantDetail("me"); MineProfile.renderPage(); return true; }
-    if (id === "phone" && window.MinePhone) { lastDetail = "phone"; grantDetail("phone"); MinePhone.renderPage(); return true; }
-    if (id === "files" && window.MineFiles) { lastDetail = "files"; grantDetail("files"); MineFiles.renderPage(); return true; }
-    if (id === "browser" && window.MineBrowser) { lastDetail = "browser"; grantDetail("browser"); MineBrowser.renderPage(); return true; }
-    if (id === "mail" && window.MineMail) { lastDetail = "mail"; grantDetail("mail"); MineMail.open(); return true; }
-    if (id === "treehole" && window.MineTreeHole) { lastDetail = "treehole"; grantDetail("treehole"); MineTreeHole.open(); return true; }
-    return prevPage ? prevPage(id) : false;
-  };
-  window.__grantDetail = grantDetail;
-  window.__lastDetailGet = function () { return lastDetail; };
-  /* MineScroll：原 app.js 提供的通用渲染器（mail/contacts 等模块依赖） */
-  window.MineScroll = {
-    render: function (container, html, keepTop, bindFn) {
-      var saved = 0;
-      if (keepTop && container) { try { saved = container.scrollTop; } catch (e) {} }
-      if (container) container.innerHTML = html;
-      if (bindFn) { try { bindFn(); } catch (e) {} }
-      if (keepTop && saved > 0 && container) { try { container.scrollTop = saved; } catch (e) {} }
-    }
-  };
-})();
-</script>
+
 <!-- ===== 全部原模块（顺序对齐原 index.html；storage 最先） ===== -->
-<script src="storage.js?v4"></script>
-<script src="utils.js?v8"></script>
-<script src="notify.js?v1"></script>
-<script src="keepalive.js?v8"></script>
-<script src="settings.js?v16"></script>
-<script src="icons.js?v1047"></script>
-<script src="background.js?v1047"></script>
-<script src="probabilities.js?v1047"></script>
-<script src="contacts.js?v1047"></script>
-<script src="cards.js?v1047"></script>
-<script src="lexicon.js?v1047"></script>
-<script src="lexicon-engine.js?v1047"></script>
-<script src="mine-ai.js?v1047"></script>
-<script src="mine-sync.js?v1047"></script>
-<script src="lexicon-card-generator.js?v1047"></script>
-<script src="lexicon-admin.js?v1047"></script>
-<script src="chat.js?v1047"></script>
-<script src="phone.js?v1047"></script>
-<script src="companion.js?v1048"></script>
-<script src="profile.js?v1048"></script>
-<script src="mail.js?v1047"></script>
-<script src="treehole.js?v1048"></script>
-<script src="radio.js?v1047"></script>
-<script src="netease.js?v1047"></script>
-<script src="foodie.js?v1047"></script>
-<script src="moments.js?v1047"></script>
-<script src="contact-moments.js?v1047"></script>
-<script src="theme-manager.js?v1047"></script>
-<script src="bubble-manager.js?v1047"></script>
-<script src="files.js?v1047"></script>
-<script src="browser.js?v1047"></script>
-<script>
-/* ===== 功能接入层（bridge-init）：页面渲染钩子 + 模块初始化 ===== */
-(function () {
-  "use strict";
-  function mount() {
-    var pg = (location.hash || "").replace("#", "").split("|")[0];
-    if (!pg || pg === "home") return;
-    /* 聊天 / 通讯录 / 电话 / 朋友圈（含详情子页）按用户要求使用 zip 蓝本 UI：
-       zip 的 applyHash 已监听 hashchange 并渲染这些页面（示例内容+交互），此处不再触发模块覆盖 */
-    var zipUiPages = ["chat", "chat-detail", "contacts", "contact", "group", "phone", "moments", "cm", "companion"];
-    if (zipUiPages.indexOf(pg) >= 0) {
-      if (pg === "companion") {
-        function fillZipCache() {
-          try {
-            var cc = document.getElementById("page-companion");
-            if (cc && cc.querySelector(".comp-app") && !window.__zipCompanionHTML) {
-              window.__zipCompanionHTML = cc.innerHTML;
-            }
-          } catch (e) {}
-        }
-        fillZipCache();
-        setTimeout(fillZipCache, 250);
-      }
-      return;
-    }
-    if (window.MineApp && MineApp.page) MineApp.page(pg);
-    /* 字卡管理页（zip 无对应 .page 容器，渲染进 #page-detail=设置容器）：
-       zip showPage 会因找不到 data-page 而清空 .on，这里恢复容器 .on 与 Dock 高亮（设置） */
-    if (pg.indexOf("card-") === 0) {
-      try {
-        var detail = document.getElementById("page-detail");
-        if (detail) {
-          document.querySelectorAll('.phone[data-pi="L"] .page').forEach(function (p) { p.classList.remove("on"); });
-          detail.classList.add("on");
-          var dock = document.querySelector('.phone[data-pi="L"] .dock');
-          if (dock) Array.prototype.forEach.call(dock.querySelectorAll(".di"), function (di) {
-            di.classList.toggle("on", di.getAttribute("data-app") === "settings");
-          });
-        }
-      } catch (e) {}
-    }
-    if (pg === "moments" && window.MineMoments) MineMoments.open();
-  }
-  window.addEventListener("hashchange", mount);
-  mount();
-  /* 陪伴组件点击兜底（capture 拦截：确保 detail 系模块渲染进正确容器并切换显示）
-     v1.0.53 起陪伴页为 zip 蓝本 UI（.comp-app 卡片），按 data-app 映射回原模块功能 */
-  try {
-    var comp = document.getElementById("page-companion");
-    if (comp) comp.addEventListener("click", function (e) {
-      /* radio / 觅食内切视图的返回按钮：拦截模块重渲染，恢复 zip 陪伴页 */
-      var backBtn = e.target && e.target.closest ? e.target.closest('[data-act="back"]') : null;
-      if (backBtn) {
-        var cc = document.getElementById("page-companion");
-        if (cc && !cc.querySelector(".comp-app")) {
-          e.stopPropagation();
-          if (window.__zipCompanionHTML) {
-            cc.innerHTML = window.__zipCompanionHTML;
-          } else {
-            /* 无缓存时用 hash 重路由让 zip applyHash 重新渲染陪伴页 */
-            var h = location.hash;
-            location.hash = "#home|L";
-            location.hash = h;
-          }
-          return;
-        }
-      }
-      var card = e.target && e.target.closest ? (e.target.closest(".comp-card") || e.target.closest(".comp-app")) : null;
-      if (!card) return;
-      var appId = card.getAttribute("data-app");
-      function zipToast(msg) {
-        var t = document.getElementById("toast");
-        if (!t) return;
-        t.textContent = msg; t.classList.add("on");
-        clearTimeout(t._tm); t._tm = setTimeout(function () { t.classList.remove("on"); }, 1800);
-      }
-      if (appId === "time-mailbox" && window.MineMail) {
-        e.stopPropagation();
-        window.__grantDetail("mail");
-        MineMail.open();
-      } else if (appId === "night-whispers" && window.MineTreeHole) {
-        e.stopPropagation();
-        window.__grantDetail("treehole");
-        MineTreeHole.open();
-      } else if (appId === "mailbox" && window.MineMail) {
-        e.stopPropagation();
-        window.__grantDetail("mail");
-        MineMail.open();
-      } else if (appId === "treehole" && window.MineTreeHole) {
-        e.stopPropagation();
-        window.__grantDetail("treehole");
-        MineTreeHole.open();
-      } else if (appId === "radio" && window.MineRadio) {
-        e.stopPropagation();
-        MineRadio.open();
-      } else if (appId === "food" && window.MineFoodie) {
-        e.stopPropagation();
-        MineFoodie.open();
-      } else if (card.classList.contains("soon")) {
-        e.stopPropagation();
-        var n = card.querySelector(".ca-n");
-        zipToast((n ? n.textContent : "该功能") + " · 待开放");
-      }
-    }, true);
-  } catch (e) {}
-  /* 模块初始化（对齐原 app.js init 的关键调用；各自容错，一个失败不中断后续） */
-  [["MineBackground","init"],["MineProfile","init"],["MineCards","init"],["MineMail","init"],
-   ["MineTreeHole","init"],["MinePhone","init"],["MineTheme","init"],["MineLook","init"]].forEach(function (p) {
-    try { if (window[p[0]] && window[p[0]][p[1]]) window[p[0]][p[1]](); } catch (e) { console.error("[V2] init fail", p[0], e); }
-  });
-  try { if (window.MineNotify) MineNotify.refreshBadges(); } catch (e) {}
-  /* 无条件缓存 zip 陪伴页 HTML（供 radio/觅食内切视图返回时恢复）：渲染完成即捕获 */
-  try {
-    var cc0 = document.getElementById("page-companion");
-    if (cc0) {
-      var fillZipCache = function () {
-        try {
-          if (cc0.querySelector(".comp-app") && !window.__zipCompanionHTML) {
-            window.__zipCompanionHTML = cc0.innerHTML;
-          }
-        } catch (e) {}
-      };
-      if (window.MutationObserver) {
-        new MutationObserver(fillZipCache).observe(cc0, { childList: true, subtree: true });
-      }
-      setTimeout(fillZipCache, 200);
-      setTimeout(fillZipCache, 800);
-    }
-  } catch (e) {}
-})();
-</script>
-<script>
-/* 独立兜底：缓存 zip 陪伴页 HTML（供 radio/觅食内切视图返回时恢复 zip 陪伴 UI） */
-(function () {
-  function grab() {
-    try {
-      var cc = document.getElementById("page-companion");
-      if (cc && cc.querySelector(".comp-app") && !window.__zipCompanionHTML) {
-        window.__zipCompanionHTML = cc.innerHTML;
-      }
-    } catch (e) {}
-  }
-  try {
-    if (window.MutationObserver) {
-      new MutationObserver(grab).observe(document.getElementById("page-companion"), { childList: true, subtree: true });
-    }
-  } catch (e) {}
-  setTimeout(grab, 300);
-  setTimeout(grab, 900);
-  window.addEventListener("hashchange", grab);
-})();
-</script>
+
+
+
 </body>
 </html>

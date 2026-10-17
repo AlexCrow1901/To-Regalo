@@ -310,6 +310,9 @@ window.MineSettings = (function () {
       "两路占比 / 置信度阈值 / 批量 / 限流 / 实时发送 / AI 终审接口");
     html += funcRow("card-lexicon", "book", "词库管理",
       "字词开关 / 增删 / 搜索 / A-Z 排序查看");
+    // 云同步配置入口
+    html += '<div class="group-head">云同步</div>';
+    html += funcRow("sync-config", "refresh", "云同步配置", syncStatusDesc());
     // 应用图标自定义
     html += '<div class="group-head">应用图标</div>';
     html += iconCard();
@@ -369,6 +372,16 @@ window.MineSettings = (function () {
       '</div>' +
       '<button class="chat-bg-btn icon-only" id="set-' + id + '" aria-label="' + title + '">' + iconSvg("eye", 16) + '</button>' +
       '</div>';
+  }
+  /* 云同步配置入口状态描述（动态显示是否已配置） */
+  function syncStatusDesc() {
+    try {
+      var st = (window.MineSync && MineSync.getState) ? MineSync.getState() : null;
+      if (st && st.gistId && st.token) return "已配置 Gist · 跨设备同步 · 点击修改";
+      return "GitHub Gist 跨设备同步 · 点击配置";
+    } catch (e) {
+      return "GitHub Gist 跨设备同步 · 点击配置";
+    }
   }
   /* 应用图标卡片（排版与开关行一致：小预览 + 一行文字 + 右侧按钮） */
   function iconCard() {
@@ -729,6 +742,16 @@ window.MineSettings = (function () {
     var checkUpdateBtn = pageEl.querySelector("#set-check-update");
     if (checkUpdateBtn) {
       checkUpdateBtn.addEventListener("click", checkForUpdate);
+    }
+    /* 云同步配置入口 */
+    var syncBtn = pageEl.querySelector("#set-sync-config");
+    if (syncBtn) {
+      syncBtn.addEventListener("click", function () {
+        if (window.MineApp && MineApp.page) {
+          if (MineApp.switchPage) MineApp.switchPage("detail", "sync-config");
+          MineApp.page("sync-config");
+        }
+      });
     }
     function renderTestResult(st) {
       if (!resultEl) return;
