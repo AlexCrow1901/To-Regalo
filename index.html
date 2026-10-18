@@ -1017,7 +1017,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2025"></script>
+<script src="cards.js?v2026"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1104,7 +1104,7 @@ body {
      因此 mount 延迟执行（zip applyHash 先渲染静态，mount 再覆盖为真实模块渲染）。 */
   function safeMount() { try { setTimeout(mount, 0); } catch (e) {} }
   window.addEventListener("hashchange", safeMount);
-  /* 状态栏时钟：显示真实系统时间（每分钟刷新） */
+  /* 状态栏时钟：显示真实系统时间（DOM 就绪后立即更新，之后每 10 秒刷新） */
   (function clock(){
     function up(){
       var el = document.getElementById("status-time");
@@ -1112,8 +1112,12 @@ body {
       var d = new Date(), h = d.getHours(), m = d.getMinutes();
       el.textContent = (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
     }
-    up();
-    setInterval(up, 10000);
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", function(){ up(); setInterval(up, 10000); });
+    } else {
+      up();
+      setInterval(up, 10000);
+    }
   })();
   if (document.readyState === "loading") {
     window.addEventListener("DOMContentLoaded", safeMount);
