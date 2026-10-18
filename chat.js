@@ -2992,7 +2992,68 @@ window.MineChat = (function () {
       msgs.push(msg);
       conversations[convKey] = msgs;
       save();
+      /* 对方消息到达 → 未读+1（zip 正在查看该会话时传 opts.noUnread 跳过） */
+      if (!(opts && opts.noUnread)) {
+        incrementUnread(convKey);
+        if (window.MineNotify) MineNotify.refreshBadges();
+      }
       return true;
+    },
+    /* 未读角标：zip 蓝本聊天列表读取/清零（打开会话时清零） */
+    getUnread: function (convKey) {
+      return getUnread(convKey);
+    },
+    clearUnread: function (convKey) {
+      clearUnread(convKey);
+      if (window.MineNotify) MineNotify.refreshBadges();
+      return true;
+    },
+    /* 抉择功能（zip 蓝本 with-me）：发送抉择消息，对方/群成员延迟后回复选项。
+       replyNames：单聊传 [联系人名]，群聊传 [成员名,...]（覆盖原网站联系人数据缺失时"未知"） */
+    sendChoice: function (convKey, question, options, replyNames) {
+      if (!convKey || !question) return false;
+      var filled = (options || []).filter(function (o) { return o && String(o).trim().length > 0; });
+      if (filled.length < 2) return false;
+      var savedCtx = ctx;
+      var parts = String(convKey).split(":");
+      ctx = { convKey: convKey, type: parts[0], id: parts[1] };
+      try {
+        var choiceMsg = "【抉择】" + question + "\n";
+        var oi = 0;
+        (options || []).forEach(function (o) {
+          if (o && String(o).trim()) { choiceMsg += String.fromCharCode(65 + oi) + ". " + o + "\n"; oi++; }
+        });
+        choiceMsg = choiceMsg.trimEnd();
+        var msgs = conversations[convKey] || [];
+        msgs.push({ id: uid(), from: "me", text: choiceMsg, time: Date.now(), read: false, isChoice: true });
+        conversations[convKey] = msgs;
+        save();
+        var names = (replyNames && replyNames.length) ? replyNames.slice() : ["对方"];
+        var key2 = convKey;
+        names.forEach(function (nm) {
+          var delay = 15000 + Math.random() * 30000; /* zip 可验收时长；原网站为 10s~5min */
+          setTimeout(function () {
+            load();
+            var ms2 = conversations[key2];
+            if (!ms2) return;
+            var pickedIdx = Math.floor(Math.random() * filled.length);
+            var picked = filled[pickedIdx];
+            var pickedLetter = String.fromCharCode(65 + pickedIdx);
+            for (var i = ms2.length - 1; i >= 0; i--) {
+              if (ms2[i].isChoice && ms2[i].from === "me") {
+                if (!ms2[i].choiceAnswers) ms2[i].choiceAnswers = [];
+                ms2[i].choiceAnswers.push({ letter: pickedLetter, name: nm });
+                break;
+              }
+            }
+            ms2.push({ id: uid(), from: "c" + Date.now(), text: "我选择 " + pickedLetter + "：" + picked,
+              time: Date.now(), isChoiceReply: true, senderName: nm });
+            save();
+            if (!isViewingConv(key2)) { incrementUnread(key2); if (window.MineNotify) MineNotify.refreshBadges(); }
+          }, delay);
+        });
+        return true;
+      } finally { ctx = savedCtx; }
     }
   };
 

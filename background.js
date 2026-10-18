@@ -185,8 +185,21 @@ window.MineBackground = (function () {
   /* ==================== 应用背景层 ==================== */
   function applyGlobalBg() {
     var bg = el.image;
-    if (!bg) return;
     var url = state.custom.global;
+    if (!bg) {
+      /* zip 蓝本环境：无 .bg-image 容器 → 直接应用到手机容器（四边铺满） */
+      var ph = document.querySelector('.phone[data-pi="L"]');
+      if (ph) {
+        if (url) {
+          ph.style.backgroundImage = "url('" + url + "')";
+          ph.style.backgroundSize = "cover";
+          ph.style.backgroundPosition = "center";
+        } else {
+          ph.style.backgroundImage = "";
+        }
+      }
+      return;
+    }
     if (url) {
       bg.style.backgroundImage = "url('" + url + "')";
       bg.classList.add("is-active", "is-img");

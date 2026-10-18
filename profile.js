@@ -61,20 +61,8 @@ window.MineProfile = (function () {
 
     var html = '<div class="scroll me-scroll">';
 
-    // 头部：头像 + 昵称（仅展示，编辑入口在"个性化"）
-    var avatarInner = (meProfile.avatar
-      ? '<img src="' + escapeHtml(meProfile.avatar) + '">'
-      : '<span class="avatar-gen-text">' + escapeHtml(firstChar(meProfile.name)) + '</span>');
-
-    html += '<div class="profile-hero">' +
-      '<div class="avatar big-avatar profile-avatar" id="me-avatar" style="position:relative;">' +
-        avatarInner +
-      '</div>' +
-      '<span class="profile-name" id="me-name-display">' + escapeHtml(meProfile.name || "Mine") + '</span>' +
-      '<span class="profile-status">在"我的"中修改昵称与头像</span>' +
-      '</div>';
-
-    /* 蓝本对齐：字卡统计（系统字卡 / 我的字卡 / 全部字卡），数字来自真实字卡数据 */
+    /* 蓝本对齐：字卡统计（系统字卡 / 我的字卡 / 全部字卡），数字来自真实字卡数据；
+       卡片化展示，点击直达对应字卡管理入口 */
     var sysCount = 0, myCount = 0;
     try {
       if (window.MineCards) {
@@ -83,9 +71,9 @@ window.MineProfile = (function () {
       }
     } catch (e) {}
     html += '<div class="me-stats">' +
-      '<div class="me-stat"><b>' + sysCount + '</b><span>系统字卡</span></div>' +
-      '<div class="me-stat"><b>' + myCount + '</b><span>我的字卡</span></div>' +
-      '<div class="me-stat"><b>' + (sysCount + myCount) + '</b><span>全部字卡</span></div>' +
+      '<div class="me-stat" role="button" tabindex="0" data-act="open-sys-cards"><b>' + sysCount + '</b><span>系统字卡</span></div>' +
+      '<div class="me-stat" role="button" tabindex="0" data-act="open-cards"><b>' + myCount + '</b><span>我的字卡</span></div>' +
+      '<div class="me-stat" role="button" tabindex="0" data-act="open-search-cards"><b>' + (sysCount + myCount) + '</b><span>全部字卡</span></div>' +
       '</div>';
 
     html += '<div class="list-sep"></div>';
@@ -221,6 +209,20 @@ window.MineProfile = (function () {
         if (window.MineCards) window.MineCards.openManager();
       });
     }
+
+    // 字卡统计卡片（系统字卡 / 我的字卡 / 全部字卡）→ 对应字卡管理入口
+    pageEl.querySelectorAll(".me-stat").forEach(function (st) {
+      var act = st.getAttribute("data-act");
+      var openStat = function () {
+        if (act === "open-cards") { if (window.MineCards) MineCards.openManager(); }
+        else if (act === "open-sys-cards") { if (window.MineCards && MineCards.openManager) MineCards.openManager("sys"); }
+        else if (act === "open-search-cards") { if (window.MineCards && MineCards.openSearch) MineCards.openSearch(); }
+      };
+      st.addEventListener("click", openStat);
+      st.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openStat(); }
+      });
+    });
 
     // 概率修改入口 → 展开 / 收起页内分栏（字卡概率 / 电话概率）
     var probBtn = pageEl.querySelector('[data-act="open-probability"]');

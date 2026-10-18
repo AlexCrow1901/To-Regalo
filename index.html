@@ -446,6 +446,36 @@ body {
 .msg-bubble .b-actions button{flex:1; padding:7px 0; border-radius:10px; border:none; font-size:12px; cursor:pointer}
 .msg-bubble .b-ok{background:#c9a96e; color:#fff}
 .msg-bubble .b-no{background:rgba(128,128,128,.25); color:inherit}
+/* 抉择消息（聊天内）：标题 + ABCD 选项 + 对方已选标注 */
+.zc-msg-title{font-weight:700; margin-bottom:4px}
+.zc-msg-opt{padding:6px 10px; margin:3px 0; border-radius:10px; background:rgba(201,169,110,.14); color:inherit; font-size:13px}
+.zc-msg-picked{display:inline-block; margin:6px 4px 0 0; padding:2px 8px; border-radius:8px; background:rgba(201,169,110,.18); color:#c9a96e; font-size:11px}
+.msg-bubble.zc-reply{background:#fff; color:#1a1a1a}
+.phone:not(.light) .msg-bubble.zc-reply{background:#262626; color:#f0f0f0}
+/* 图片消息 */
+.msg-img{max-width:220px; max-height:260px; border-radius:12px; display:block}
+/* 抉择弹窗（zip 版） */
+.zip-choice-overlay{position:fixed; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center; background:rgba(10,12,14,.4); backdrop-filter:blur(5px); padding:24px}
+.zip-choice{width:100%; max-width:340px; max-height:80vh; display:flex; flex-direction:column; background:rgba(30,32,36,.96); color:#f0f0f0; border:1px solid rgba(255,255,255,.12); border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,.5); overflow:hidden}
+.phone.light .zip-choice{background:#fff; color:#1a1a1a; border:1px solid rgba(0,0,0,.1)}
+.zip-choice-head{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid rgba(128,128,128,.18); font-weight:600}
+.zip-choice-x{width:28px; height:28px; border:none; background:transparent; color:inherit; font-size:18px; cursor:pointer; border-radius:50%}
+.zip-choice-q{width:100%; box-sizing:border-box; padding:12px 18px; border:none; background:transparent; color:inherit; font-size:13px; font-family:inherit; resize:none; outline:none; border-bottom:1px solid rgba(128,128,128,.18)}
+.zip-choice-q::placeholder{color:rgba(128,128,128,.6)}
+.zip-choice-opts{padding:12px 18px; display:flex; flex-direction:column; gap:8px; overflow-y:auto}
+.zip-choice-opt-row{display:flex; align-items:center; gap:10px}
+.zc-l{flex:none; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; border:1px solid rgba(128,128,128,.4); border-radius:50%}
+.zc-in{flex:1; height:36px; padding:0 12px; border-radius:10px; border:1px solid rgba(128,128,128,.25); background:rgba(128,128,128,.12); color:inherit; font-size:13px; outline:none}
+.phone.light .zc-in{background:rgba(0,0,0,.05)}
+.zip-choice-foot{display:flex; border-top:1px solid rgba(128,128,128,.18)}
+.zc-add{flex:none; padding:12px 14px; border:none; background:transparent; color:inherit; font-size:12px; cursor:pointer; opacity:.7}
+.zc-send{flex:1; padding:12px; border:none; border-left:1px solid rgba(128,128,128,.18); background:transparent; color:#c9a96e; font-size:14px; font-weight:600; cursor:pointer}
+/* 拨号弹层（zip 版） */
+.zip-call-overlay{position:fixed; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center; background:rgba(10,12,14,.6); backdrop-filter:blur(8px)}
+.zip-call{text-align:center; color:#f0f0f0; display:flex; flex-direction:column; align-items:center; gap:14px}
+.zc-call-avatar{width:84px; height:84px; border-radius:50%; background:#c9a96e; color:#fff; font-size:34px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 6px rgba(201,169,110,.25)}
+.zc-call-name{font-size:15px; opacity:.9}
+.zc-call-hang{width:58px; height:58px; border-radius:50%; border:none; background:#e05252; color:#fff; font-size:12px; cursor:pointer; box-shadow:0 4px 16px rgba(224,82,82,.4)}
 .chat-inputbar{flex:none; display:flex; align-items:center; gap:10px; padding:10px 14px 20px; border-top:1px solid rgba(128,128,128,.14)}
 .input-box{flex:1; height:40px; background:rgba(128,128,128,.16); border-radius:20px; padding:0 18px; font-size:13px; color:inherit; border:none; outline:none; box-sizing:border-box}
 .phone.light .input-box{background:rgba(0,0,0,.06)}
@@ -967,7 +997,7 @@ body {
 <script src="keepalive.js?v2000"></script>
 <script src="settings.js?v2000"></script>
 <script src="icons.js?v2000"></script>
-<script src="background.js?v2000"></script>
+<script src="background.js?v2001"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
 <script src="cards.js?v2000"></script>
@@ -977,10 +1007,10 @@ body {
 <script src="mine-sync.js?v2000"></script>
 <script src="lexicon-card-generator.js?v2000"></script>
 <script src="lexicon-admin.js?v2000"></script>
-<script src="chat.js?v2004"></script>
+<script src="chat.js?v2007"></script>
 <script src="phone.js?v2000"></script>
 <script src="companion.js?v2000"></script>
-<script src="profile.js?v2000"></script>
+<script src="profile.js?v2001"></script>
 <script src="mail.js?v2000"></script>
 <script src="treehole.js?v2000"></script>
 <script src="radio.js?v2000"></script>
@@ -1705,6 +1735,8 @@ body {
       var app = d.getAttribute("data-app");
       d.classList.toggle("on", app === pg || (pg === "home" && app === "home"));
     });
+    /* 切到聊天页时重渲染列表：未读角标实时（打开会话清零后返回立即消失） */
+    if (pg === "chat" && typeof renderPage === "function") renderPage(phone, "chat");
     try { var want = "#" + pg + "|" + pi; if (location.hash !== want) location.hash = want; } catch(e){}
   }
 
@@ -1852,15 +1884,12 @@ body {
   function chatPage(){
     var h = '<div class="scroll" style="padding:2px 16px">';
     CONTACTS.forEach(function(c){
-      var unread = c.id === "c1" ? '<span style="background:#c9a96e;color:#fff;font-size:10px;border-radius:9px;padding:1px 6px">2</span>' : "";
+      /* 真实未读角标（原网站 MineChat 会话未读数；打开会话即清零） */
+      var unread = (window.MineChat && MineChat.getUnread) ? MineChat.getUnread("contact:"+c.id) : 0;
+      var badge = unread > 0 ? '<span style="background:#c9a96e;color:#fff;font-size:10px;border-radius:9px;padding:1px 6px">'+(unread>99?"99+":unread)+'</span>' : "";
       h += '<div class="func-row" data-open="contact" data-id="'+c.id+'">' + avatarHTML(c) +
         '<div class="func-text"><span class="func-title">'+esc(c.name)+'</span><span class="func-sub">'+(c.id==="c1"?"今天超级累…":c.id==="c2"?"刚醒，你呢":"昨天 22:15 未接")+'</span></div>' +
-        '<span style="font-size:10px;opacity:.5">'+(c.id==="c1"?"21:04":c.id==="c2"?"09:12":"昨天")+'</span>' + unread + '</div>';
-    });
-    GROUPS.forEach(function(g){
-      h += '<div class="func-row" data-open="group" data-id="'+g.id+'">' + groupAvatarHTML(g) +
-        '<div class="func-text"><span class="func-title">'+esc(g.name)+'</span><span class="func-sub">小鹿：哈哈哈哈</span></div>' +
-        '<span style="font-size:10px;opacity:.5">昨天</span></div>';
+        '<span style="font-size:10px;opacity:.5">'+(c.id==="c1"?"21:04":c.id==="c2"?"09:12":"昨天")+'</span>' + badge + '</div>';
     });
     h += '</div>';
     return h;
@@ -3274,6 +3303,11 @@ body {
       var h = location.hash || "", pi = phone.getAttribute("data-pi");
       if (h.indexOf("|" + pi) >= 0 && window.history.length > 1) window.history.back();
       else showPage(pi, "home");
+      /* 返回后若落到聊天页，重渲染列表让未读角标即时刷新 */
+      setTimeout(function(){
+        if (document.querySelector('.page[data-page="chat"]').classList.contains("on"))
+          renderPage(phone, "chat");
+      }, 60);
     });
     if (pg === "chat") {
       page.querySelectorAll("[data-open]").forEach(function(row){
@@ -3296,8 +3330,11 @@ body {
       });
       page.querySelectorAll(".wm-action").forEach(function(w){
         w.addEventListener("click", function(){
-          var n = w.querySelector("span") ? w.querySelector("span").textContent : "";
-          toastMsg(n ? "with me · " + n + "（示例功能）" : "with me（示例）");
+          var act = w.getAttribute("data-wm") || "";
+          if (act === "feather") openZipChoice(page);
+          else if (act === "image") openZipImage(page);
+          else if (act === "phone") openZipCall(page);
+          else toastMsg("with me");
         });
       });
       var more = page.querySelector('[data-act="more"]');
@@ -3593,6 +3630,8 @@ body {
     /* 真实聊天：记录会话键并渲染真实消息（原网站 MineChat 数据） */
     page._convKey = (ctx.group ? "group:" : "contact:") + ctx.id;
     page._isGroup = !!ctx.group;
+    /* 打开会话即清零该会话未读角标（返回聊天列表时角标消失） */
+    if (window.MineChat && MineChat.clearUnread) MineChat.clearUnread(page._convKey);
     renderConv(page);
     bindSend(page);
   }
@@ -3626,6 +3665,7 @@ body {
     var row = document.createElement("div");
     row.className = "msg-row" + (m.from === "me" ? " me" : "");
     var who = m.from === "me" ? "我" : esc((m.senderName || "?").charAt(0));
+    var isImg = typeof m.text === "string" && m.text.indexOf("data:image/") === 0;
     if (m.isDeleteRequest) {
       /* 对方征求意见删除字卡 */
       row.innerHTML = '<div class="msg-avatar">' + who + '</div>' +
@@ -3639,6 +3679,23 @@ body {
       /* 撤回消息：默认显示（撤回），点击展开/收回原文 */
       row.innerHTML = '<div class="msg-avatar">' + who + '</div>' +
         '<div class="msg-bubble is-recalled"><span class="recalled-tag">（撤回）</span><span class="recalled-text">' + esc(m.rawText || m.text) + '</span></div>';
+    } else if (m.isChoice) {
+      /* 抉择消息：标题 + ABCD 选项逐行 + 对方已选标注 */
+      var lines = String(m.text || "").split("\n");
+      var zcTitle = esc((lines[0] || "").replace(/^【抉择】/, ""));
+      var zcOpts = lines.slice(1).filter(function (l) { return l && l.trim(); })
+        .map(function (l) { return '<div class="zc-msg-opt">' + esc(l.trim()) + '</div>'; }).join("");
+      var zcAnswers = (m.choiceAnswers || []).map(function (a) {
+        return '<span class="zc-msg-picked">' + esc(a.name || "对方") + ' 选择了 ' + esc(a.letter) + '</span>';
+      }).join("");
+      row.innerHTML = '<div class="msg-avatar">' + who + '</div>' +
+        '<div class="msg-bubble"><div class="zc-msg-title">' + zcTitle + '</div>' + zcOpts + zcAnswers + '</div>';
+    } else if (m.isChoiceReply) {
+      /* 对方抉择回复 */
+      row.innerHTML = '<div class="msg-avatar">' + who + '</div><div class="msg-bubble zc-reply">' + esc(m.text) + '</div>';
+    } else if (isImg) {
+      /* 图片消息 */
+      row.innerHTML = '<div class="msg-avatar">' + who + '</div><div class="msg-bubble"><img class="msg-img" src="' + m.text + '" alt="图片"></div>';
     } else {
       row.innerHTML = '<div class="msg-avatar">' + who + '</div><div class="msg-bubble">' + esc(m.text) + '</div>';
     }
@@ -3671,6 +3728,94 @@ body {
         toastMsg("已保留该字卡");
       });
     });
+  }
+  /* with me 真实功能：抉择 / 图片 / 电话（对齐原网站聊天功能） */
+  function openZipChoice(page){
+    var ov = document.createElement("div");
+    ov.className = "zip-choice-overlay";
+    ov.innerHTML =
+      '<div class="zip-choice">' +
+        '<div class="zip-choice-head"><span>抉择</span><button class="zip-choice-x">×</button></div>' +
+        '<textarea class="zip-choice-q" placeholder="写下你想让对方抉择的问题…" maxlength="200" rows="2"></textarea>' +
+        '<div class="zip-choice-opts">' +
+          '<div class="zip-choice-opt-row"><span class="zc-l">A</span><input class="zc-in" placeholder="选项 A" maxlength="100"></div>' +
+          '<div class="zip-choice-opt-row"><span class="zc-l">B</span><input class="zc-in" placeholder="选项 B" maxlength="100"></div>' +
+        '</div>' +
+        '<div class="zip-choice-foot"><button class="zc-add">＋ 添加选项</button><button class="zc-send">保存并提交</button></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    var close = function(){ ov.remove(); };
+    ov.querySelector(".zip-choice-x").addEventListener("click", close);
+    ov.addEventListener("click", function(e){ if (e.target === ov) close(); });
+    ov.querySelector(".zc-add").addEventListener("click", function(){
+      var wrap = ov.querySelector(".zip-choice-opts");
+      var rows = wrap.querySelectorAll(".zip-choice-opt-row");
+      if (rows.length >= 8) return;
+      var letter = String.fromCharCode(65 + rows.length);
+      wrap.insertAdjacentHTML("beforeend", '<div class="zip-choice-opt-row"><span class="zc-l">' + letter + '</span><input class="zc-in" placeholder="选项 ' + letter + '" maxlength="100"></div>');
+      var inputs = wrap.querySelectorAll(".zc-in");
+      if (inputs[inputs.length - 1]) inputs[inputs.length - 1].focus();
+    });
+    ov.querySelector(".zc-send").addEventListener("click", function(){
+      var q = (ov.querySelector(".zip-choice-q").value || "").trim();
+      var opts = [].slice.call(ov.querySelectorAll(".zc-in")).map(function(i){ return (i.value || "").trim(); });
+      var filled = opts.filter(function(o){ return o.length > 0; });
+      if (!q || filled.length < 2) { toastMsg("请填写问题与至少两个选项"); return; }
+      var names = [];
+      if (page._isGroup) {
+        var g = findGroup(page._convKey.split(":")[1]);
+        if (g) names = g.members.slice();
+      } else {
+        var c = findContact(page._convKey.split(":")[1]);
+        if (c) names = [c.name];
+      }
+      if (window.MineChat && MineChat.sendChoice) MineChat.sendChoice(page._convKey, q, opts, names);
+      ov.remove();
+      renderConv(page);
+      toastMsg("抉择已提交，等待对方选择…");
+    });
+  }
+  function openZipImage(page){
+    var inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "image/*";
+    inp.style.display = "none";
+    document.body.appendChild(inp);
+    inp.onchange = function(){
+      var f = inp.files && inp.files[0];
+      inp.remove();
+      if (!f) return;
+      var send = function(dataURL){
+        if (window.MineChat && MineChat.sendMsg) MineChat.sendMsg(page._convKey, dataURL);
+        renderConv(page);
+        scheduleZipReply(page);
+      };
+      if (window.MineUtils && MineUtils.compressImage) {
+        MineUtils.compressImage(f, 1080, 0.82, send);
+      } else {
+        var r = new FileReader();
+        r.onload = function(){ send(r.result); };
+        r.readAsDataURL(f);
+      }
+    };
+    inp.click();
+  }
+  function openZipCall(page){
+    var name = page._isGroup ? "群通话" : ((findContact(page._convKey.split(":")[1]) || {}).name || "联系人");
+    var ov = document.createElement("div");
+    ov.className = "zip-call-overlay";
+    ov.innerHTML =
+      '<div class="zip-call">' +
+        '<div class="zc-call-avatar">' + esc(name.charAt(0)) + '</div>' +
+        '<div class="zc-call-name">正在呼叫 ' + esc(name) + '…</div>' +
+        '<button class="zc-call-hang">挂断</button>' +
+      '</div>';
+    document.body.appendChild(ov);
+    var end = function(){ if (ov.isConnected) ov.remove(); };
+    ov.querySelector(".zc-call-hang").addEventListener("click", end);
+    setTimeout(function(){
+      if (ov.isConnected) ov.querySelector(".zc-call-name").textContent = "通话中…";
+    }, 2200);
+    setTimeout(end, 7000);
   }
   /* 发送栏绑定（每个会话页一次）：真实写入会话并触发对方/群成员回复 */
   function bindSend(page){
@@ -3712,6 +3857,9 @@ body {
     if (!pool.length || !window.MineChat || !MineChat.pushFrom) return;
     var delay = 900 + Math.random() * 2400;
     setTimeout(function(){
+      /* 回复到达时若已离开该会话（不在看），正常计入未读角标；仍在该会话则不重复计 */
+      var stillViewing = page.classList.contains("on") &&
+        document.querySelector(".page.on[data-page='chat-detail']") === page;
       var n = page._isGroup ? Math.min(1 + Math.floor(Math.random() * 2), 2) : 1;
       var used = [];
       for (var i = 0; i < n && used.length < pool.length; i++) {
@@ -3721,9 +3869,10 @@ body {
         /* 与联系人主页同设定：文字回复小概率为撤回态（点击可展开原文）；
            另有小概率以"征求意见删除字卡"形式出现（同意删除/留着可用） */
         var roll = Math.random();
-        var opts = null;
-        if (roll < 0.08) opts = { deleteRequest: true, deleteCardText: pick.text };
-        else if (roll < 0.20) opts = { recalled: true };
+        var opts = {};
+        if (stillViewing) opts.noUnread = true;
+        if (roll < 0.08) opts.deleteRequest = true, opts.deleteCardText = pick.text;
+        else if (roll < 0.20) opts.recalled = true;
         MineChat.pushFrom(page._convKey, pick.from, pick.name, pick.text, opts);
       }
       renderConv(page);
@@ -3883,10 +4032,12 @@ body {
 .comp-quote{display:none}
 .comp-section-label{display:none}
 .comp-card.wide{grid-column:auto}
-.me-stats{display:flex; margin:10px 2px 4px; border-radius:16px; overflow:hidden; border:1px solid rgba(201,169,110,.25); background:rgba(201,169,110,.06)}
-.me-stat{flex:1; text-align:center; padding:10px 4px}
-.me-stat b{display:block; font-size:19px; font-weight:700; color:#c9a96e; line-height:1.2}
-.me-stat span{display:block; font-size:10.5px; opacity:.6; margin-top:2px; letter-spacing:.5px}
+.me-stats{display:flex; gap:10px; margin:12px 2px 8px; padding:0 8px}
+.me-stat{flex:1; text-align:center; padding:14px 6px 12px; border-radius:16px; border:1px solid rgba(201,169,110,.30); background:linear-gradient(180deg,rgba(201,169,110,.14),rgba(201,169,110,.04)); cursor:pointer; transition:transform .15s, border-color .15s; box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.me-stat:active{transform:scale(.95)}
+.me-stat b{display:block; font-size:24px; font-weight:800; color:#c9a96e; line-height:1.1; font-family:Georgia,"Times New Roman",serif; letter-spacing:.5px}
+.me-stat span{display:block; font-size:10.5px; opacity:.68; margin-top:4px; letter-spacing:.5px}
+.phone.light .me-stat{background:linear-gradient(180deg,rgba(201,169,110,.16),rgba(201,169,110,.05))}
 .phone.light .me-stat b{color:#a3874d}
 /* ===== 移动端全屏适配：手机屏幕上网页四边正好占满（桌面预览保持手机框卡片） ===== */
 @media (max-width: 520px) {
