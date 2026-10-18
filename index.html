@@ -1017,7 +1017,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2021"></script>
+<script src="cards.js?v2022"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -3348,6 +3348,9 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     });
   }
   function cardViewHTML(view){
+    var aiCfg = (window.MineAI && MineAI.getConfig) ? MineAI.getConfig() : {};
+    var aiKeyMask = (aiCfg.aiApiKey && String(aiCfg.aiApiKey).length > 4) ? "sk-****" + String(aiCfg.aiApiKey).slice(-4) : (aiCfg.aiApiKey ? "sk-****" : "");
+    var aiSt = (window.MineAI && MineAI.getLastStatus) ? MineAI.getLastStatus() : { checked: false, ok: false, latency: 0, error: "" };
 
     function cvRow(title, sub, ctl){
       return '<div class="func-row"><div class="func-text" style="flex:1"><span class="func-title">'+esc(title)+'</span><span class="func-sub">'+esc(sub)+'</span></div>'+ctl+'</div>';
@@ -3452,14 +3455,14 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         cvRow("每小时组卡上限","联系人每小时后台自动组字卡条数上限（0~N 随机）", rangeCtl("rg-backlog-max",20,"条",5,50)) +
         cvRow("申请超时","上限调整申请未处理的自动生效时间", rangeCtl("rg-req-timeout",15,"分",5,60)) +
         '<div class="group-head">AI 润色（把组出的碎片句改写成自然口语）</div>' +
-        '<div class="func-row"><div class="func-text" style="flex:1"><span class="func-title">启用 AI 润色</span><span class="func-sub">开启后：组字卡/拼音串先经 AI 按联系人设的人设改写为自然聊天句，再进入审批 / 实时发送</span></div><div class="toggle cv-sw on"></div></div>' +
+        '<div class="func-row"><div class="func-text" style="flex:1"><span class="func-title">启用 AI 润色</span><span class="func-sub">开启后：组字卡/拼音串先经 AI 按联系人设的人设改写为自然聊天句，再进入审批 / 实时发送</span></div><div class="toggle cv-sw' + (aiCfg.aiEnabled !== false && aiCfg.aiApiKey ? " on" : "") + '"></div></div>' +
         '<div class="hint" style="font-size:10px;opacity:.6;line-height:1.6;padding:4px 2px">未启用 / 无 Key / 调用失败时自动降级为本地原句，聊天不中断。润色结果：后台组卡进审批时对照显示原始组卡；实时聊天免人工审批直接发出，经联系人二次复核（默认 1% 概率撤回态，可在概率设置修改）。</div>' +
-        cvRow("AI 服务商","OpenAI 兼容格式，可自行切换；选自定义时在下方填接口地址", selCtl("rg-ai-provider",["deepseek","openai","qwen","kimi","custom"],"deepseek")) +
-        cvRow("接口地址","留空用服务商默认地址；自定义时填完整 base URL", '<input class="cv-txt" value="https://api.deepseek.com" style="flex:none;width:130px;padding:7px 9px;border-radius:9px;border:none;background:rgba(128,128,128,.14);color:inherit;font-size:11px;outline:none">') +
-        cvRow("模型名","如 deepseek-chat / gpt-4o-mini / qwen-plus / moonshot-v1-8k", '<input class="cv-txt" value="deepseek-chat" style="flex:none;width:130px;padding:7px 9px;border-radius:9px;border:none;background:rgba(128,128,128,.14);color:inherit;font-size:11px;outline:none">') +
-        cvRow("API Key","存储在本机浏览器（请注意保管，勿外泄）", '<input class="cv-txt" type="password" value="sk-****************" style="flex:none;width:130px;padding:7px 9px;border-radius:9px;border:none;background:rgba(128,128,128,.14);color:inherit;font-size:11px;outline:none">') +
+        cvRow("AI 服务商","OpenAI 兼容格式，可自行切换；选自定义时在下方填接口地址", selCtl("rg-ai-provider",["deepseek","openai","qwen","kimi","custom"],aiCfg.aiProvider||"deepseek")) +
+        cvRow("接口地址","留空用服务商默认地址；自定义时填完整 base URL", '<input class="cv-txt" id="rg-ai-base" value="' + esc(aiCfg.aiBaseUrl || "") + '" placeholder="https://api.deepseek.com" style="flex:none;width:150px;padding:7px 9px;border-radius:9px;border:none;background:rgba(128,128,128,.14);color:inherit;font-size:11px;outline:none">') +
+        cvRow("模型名","如 deepseek-chat / gpt-4o-mini / qwen-plus / moonshot-v1-8k", '<input class="cv-txt" id="rg-ai-model" value="' + esc(aiCfg.aiModel || "") + '" placeholder="deepseek-chat" style="flex:none;width:130px;padding:7px 9px;border-radius:9px;border:none;background:rgba(128,128,128,.14);color:inherit;font-size:11px;outline:none">') +
+        cvRow("API Key","存储在本机浏览器（请注意保管，勿外泄）", '<input class="cv-txt" id="rg-ai-key" type="password" value="' + esc(aiKeyMask) + '" placeholder="' + (aiCfg.aiApiKey ? "已配置，留空或保持掩码不修改" : "输入 API Key 以启用 AI 润色") + '" style="flex:none;width:140px;padding:7px 9px;border-radius:9px;border:none;background:rgba(128,128,128,.14);color:inherit;font-size:11px;outline:none">') +
         '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;margin:6px 2px;border-radius:12px;background:rgba(128,128,128,.08)">' +
-          '<div style="display:flex;align-items:center;gap:8px"><span class="cv-dot" style="width:10px;height:10px;border-radius:50%;background:#bbb;display:inline-block"></span><span class="cv-status" style="font-size:12px;opacity:.7">未检测</span></div>' +
+          '<div style="display:flex;align-items:center;gap:8px"><span class="cv-dot" style="width:10px;height:10px;border-radius:50%;background:' + (aiSt.ok ? "#50c08a" : aiSt.checked ? "#e05b4e" : "#bbb") + ';display:inline-block"></span><span class="cv-status" style="font-size:12px;opacity:.7">' + esc(aiSt.ok ? ("连接正常 · " + aiSt.latency + "ms") : aiSt.checked ? ("连接失败 · " + (aiSt.error || "")) : "未检测") + '</span></div>' +
           '<button class="card-btn cv-test" style="flex:none">测试连接</button></div>' +
         '<div style="padding:10px 2px"><button class="cv-save" style="width:100%;padding:11px;border-radius:12px;border:none;background:#c9a96e;color:#fff;font-size:13px;cursor:pointer">保存运行规则</button></div>' +
         '<div class="hint" style="font-size:10px;opacity:.55;padding:4px 2px">运行规则为可配置参数，此处随时可调，即时生效。</div>';
@@ -3910,7 +3913,8 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     }
   }
   function bindCardInner(page){
-    page.querySelectorAll(".card-btn.ok, .cv-save").forEach(function(b){ b.addEventListener("click", function(){ toastMsg("已通过 / 已保存（示例）"); }); });
+    page.querySelectorAll(".card-btn.ok").forEach(function(b){ b.addEventListener("click", function(){ toastMsg("已通过（示例）"); }); });
+    page.querySelectorAll(".cv-save").forEach(function(b){ b.addEventListener("click", function(){ saveAiRules(page); }); });
     page.querySelectorAll(".card-btn.no,.card-btn.del").forEach(function(b){ b.addEventListener("click", function(){ toastMsg("已拒绝 / 已删除（示例）"); }); });
     /* 分组展开/收起 */
     page.querySelectorAll(".cv-grp-head").forEach(function(h){
@@ -3931,14 +3935,20 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       });
     });
     /* 开关 */
-    page.querySelectorAll(".cv-sw").forEach(function(s){ s.addEventListener("click", function(){ s.classList.toggle("on"); toastMsg("已切换 AI 润色开关"); }); });
-    /* 测试连接 */
+    page.querySelectorAll(".cv-sw").forEach(function(s){ s.addEventListener("click", function(){ s.classList.toggle("on"); }); });
+    /* 测试连接（真实：调 MineAI.testConnection） */
     var test = page.querySelector(".cv-test");
     if (test) test.addEventListener("click", function(){
       var dot = page.querySelector(".cv-dot"), st = page.querySelector(".cv-status");
-      if (dot) dot.style.background = "#50c08a";
-      if (st) st.textContent = "连接正常 · 96ms（示例）";
-      toastMsg("AI 连接测试通过（示例）");
+      if (dot) dot.style.background = "#d9a514";
+      if (st) st.textContent = "测试中…";
+      if (window.MineAI && MineAI.testConnection) {
+        MineAI.testConnection().then(function(){
+          var s = MineAI.getLastStatus ? MineAI.getLastStatus() : {};
+          if (dot) dot.style.background = (s.ok ? "#50c08a" : "#e05b4e");
+          if (st) st.textContent = s.ok ? ("连接正常 · " + s.latency + "ms") : ("连接失败 · " + (s.error || "未知"));
+        });
+      } else { toastMsg("AI 模块未加载"); }
     });
     /* 训练 */
     page.querySelectorAll(".cv-train").forEach(function(b){ b.addEventListener("click", function(){ toastMsg("已训练 32 条样本（正 21 / 负 11）"); }); });
@@ -3954,6 +3964,27 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     });
     /* 词库（完整版） */
     if (page.querySelector(".lx-per")) lexBind(page);
+  }
+  /* 保存运行规则（AI 润色配置真实写入 MineAI） */
+  function saveAiRules(page){
+    if (!window.MineAI) { toastMsg("AI 模块未加载"); return; }
+    var prov = page.querySelector("#rg-ai-provider");
+    var base = page.querySelector("#rg-ai-base");
+    var model = page.querySelector("#rg-ai-model");
+    var key = page.querySelector("#rg-ai-key");
+    var sw = page.querySelector(".cv-sw");
+    var cur = MineAI.getConfig ? (MineAI.getConfig() || {}) : {};
+    var keyVal = key ? String(key.value || "").trim() : "";
+    /* 掩码未修改时保留原 Key */
+    if (keyVal && keyVal.indexOf("sk-****") === 0) keyVal = cur.aiApiKey || "";
+    MineAI.setConfig({
+      aiProvider: prov ? (prov.value || cur.aiProvider || "deepseek") : (cur.aiProvider || "deepseek"),
+      aiBaseUrl: base ? String(base.value || "").trim() : (cur.aiBaseUrl || ""),
+      aiModel: model ? String(model.value || "").trim() : (cur.aiModel || ""),
+      aiApiKey: keyVal,
+      aiEnabled: sw ? sw.classList.contains("on") : (cur.aiEnabled !== false)
+    });
+    toastMsg("AI 配置已保存，即时生效");
   }
   function openDetail(phone, view, ctx){
     showPage(phone.getAttribute("data-pi"), "chat-detail");
