@@ -1017,7 +1017,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2020"></script>
+<script src="cards.js?v2021"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1307,23 +1307,23 @@ body:not(.theme-neumorphism) .phone.light .dock{background:#0d0d0d !important;bo
 <style id="pv-cards-style">
 /* ===== 字卡管理器 · 便捷版 v2（预览：与已验证交互预览一致） ===== */
 #cards-sheet-body .pv-searchbox, #cards-search-body .pv-searchbox{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:11px;padding:11px 12px;margin-bottom:8px;}
-#cards-sheet-body .pv-searchbox, #cards-search-body .pv-searchbox svg{flex:none;color:#9aa0a8;}
-#cards-sheet-body .pv-searchbox, #cards-search-body .pv-searchbox input{flex:1;background:none;border:none;outline:none;color:inherit;font-size:16px;min-height:26px;}
-#cards-sheet-body .pv-searchbox, #cards-search-body .pv-searchbox input::placeholder{color:#9aa0a8;}
+#cards-sheet-body .pv-searchbox svg, #cards-search-body .pv-searchbox svg{flex:none;color:#9aa0a8;}
+#cards-sheet-body .pv-searchbox input, #cards-search-body .pv-searchbox input{flex:1;background:none;border:none;outline:none;color:inherit;font-size:16px;min-height:26px;}
+#cards-sheet-body .pv-searchbox input::placeholder, #cards-search-body .pv-searchbox input::placeholder{color:#9aa0a8;}
 #cards-sheet-body .pv-addrow, #cards-search-body .pv-addrow{display:flex;gap:7px;margin-bottom:10px;}
-#cards-sheet-body .pv-addrow, #cards-search-body .pv-addrow input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:11px;padding:11px 13px;color:inherit;font-size:16px;outline:none;min-width:0;}
-#cards-sheet-body .pv-addrow, #cards-search-body .pv-addrow input::placeholder{color:#9aa0a8;font-size:13px;}
-#cards-sheet-body .pv-addrow, #cards-search-body .pv-addrow input:focus{border-color:rgba(255,255,255,.34);}
+#cards-sheet-body .pv-addrow input, #cards-search-body .pv-addrow input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:11px;padding:11px 13px;color:inherit;font-size:16px;outline:none;min-width:0;}
+#cards-sheet-body .pv-addrow input::placeholder, #cards-search-body .pv-addrow input::placeholder{color:#9aa0a8;font-size:13px;}
+#cards-sheet-body .pv-addrow input:focus, #cards-search-body .pv-addrow input:focus{border-color:rgba(255,255,255,.34);}
 #cards-sheet-body .pv-addbtn, #cards-search-body .pv-addbtn{width:64px;border:none;border-radius:11px;background:#a97c3d;color:#fff;font-size:13px;font-weight:600;cursor:pointer;min-height:46px;}
 #cards-sheet-body .pv-sysrow, #cards-search-body .pv-sysrow{display:flex;align-items:center;justify-content:space-between;background:rgba(201,169,110,.14);border:1px solid rgba(176,137,69,.35);border-radius:11px;padding:8px 11px;margin-bottom:10px;}
 #cards-sheet-body .pv-lbl, #cards-search-body .pv-lbl{font-size:12.5px;color:#c9a96e;}
 #cards-sheet-body .pv-switch, #cards-search-body .pv-switch{position:relative;width:42px;height:24px;border-radius:99px;background:rgba(128,128,128,.3);cursor:pointer;transition:background .18s;flex:none;}
-#cards-sheet-body .pv-switch, #cards-search-body .pv-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s;}
-#cards-sheet-body .pv-switch, #cards-search-body .pv-switch.on{background:#c9a96e;}
-#cards-sheet-body .pv-switch, #cards-search-body .pv-switch.on::after{transform:translateX(18px);}
+#cards-sheet-body .pv-switch::after, #cards-search-body .pv-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s;}
+#cards-sheet-body .pv-switch.on, #cards-search-body .pv-switch.on{background:#c9a96e;}
+#cards-sheet-body .pv-switch.on::after, #cards-search-body .pv-switch.on::after{transform:translateX(18px);}
 #cards-sheet-body .pv-filters, #cards-search-body .pv-filters{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
 #cards-sheet-body .pv-fchip, #cards-search-body .pv-fchip{font-size:12px;padding:9px 13px;border-radius:99px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);color:#9aa0a8;cursor:pointer;min-height:40px;}
-#cards-sheet-body .pv-fchip, #cards-search-body .pv-fchip.on{background:rgba(201,169,110,.14);border-color:rgba(176,137,69,.55);color:#c9a96e;}
+#cards-sheet-body .pv-fchip.on, #cards-search-body .pv-fchip.on{background:rgba(201,169,110,.14);border-color:rgba(176,137,69,.55);color:#c9a96e;}
 #cards-sheet-body .pv-list, #cards-search-body .pv-list{min-height:44px;}
 #cards-sheet-body .pv-head, #cards-search-body .pv-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;}
 #cards-sheet-body .pv-head-title, #cards-search-body .pv-head-title{font-size:15px;font-weight:700;color:#fff;}
@@ -1334,12 +1334,12 @@ body.theme-neumorphism #cards-sheet-body .pv-head-title, body.theme-neumorphism 
 body.theme-neumorphism #cards-sheet-body .pv-head-tab, body.theme-neumorphism #cards-search-body .pv-head-tab{background:rgba(20,24,34,.05);color:#5c616b;}
 body.theme-neumorphism #cards-sheet-body .pv-head-tab.on, body.theme-neumorphism #cards-search-body .pv-head-tab.on{background:rgba(169,124,61,.12);color:#a97c3d;}
 #cards-sheet-body .pv-crow, #cards-search-body .pv-crow{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(201,169,110,.45);margin-bottom:7px;min-height:48px;}
-#cards-sheet-body .pv-crow, #cards-search-body .pv-crow.sys{background:rgba(201,169,110,.14);border-color:rgba(176,137,69,.4);}
-#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-txt{flex:1;font-size:14px;line-height:1.45;word-break:break-all;white-space:normal;}
-#cards-sheet-body .pv-crow, #cards-search-body .pv-crow.sys .pv-txt{color:#c9a96e;}
+#cards-sheet-body .pv-crow.sys, #cards-search-body .pv-crow.sys{background:rgba(201,169,110,.14);border-color:rgba(176,137,69,.4);}
+#cards-sheet-body .pv-crow .pv-txt, #cards-search-body .pv-crow .pv-txt{flex:1;font-size:14px;line-height:1.45;word-break:break-all;white-space:normal;}
+#cards-sheet-body .pv-crow.sys .pv-txt, #cards-search-body .pv-crow.sys .pv-txt{color:#c9a96e;}
 #cards-sheet-body .pv-mark, #cards-search-body .pv-mark{font-size:10px;color:#6d7078;flex:none;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,.08);}
-#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-del{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#6d7078;cursor:pointer;border-radius:9px;flex:none;font-size:16px;}
-#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-del:hover{color:#e07a7a;background:rgba(224,122,122,.14);}
+#cards-sheet-body .pv-crow .pv-del, #cards-search-body .pv-crow .pv-del{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#6d7078;cursor:pointer;border-radius:9px;flex:none;font-size:16px;}
+#cards-sheet-body .pv-crow .pv-del:hover, #cards-search-body .pv-crow .pv-del:hover{color:#e07a7a;background:rgba(224,122,122,.14);}
 #cards-sheet-body .pv-empty, #cards-search-body .pv-empty{border:1px dashed rgba(176,137,69,.35);border-radius:11px;padding:16px 10px;text-align:center;font-size:12px;color:rgba(176,137,69,.7);}
 #cards-sheet-body .pv-currow, #cards-search-body .pv-currow{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:8px 11px;margin-bottom:10px;}
 #cards-sheet-body .pv-cname, #cards-search-body .pv-cname{font-size:12.5px;}
@@ -1369,11 +1369,11 @@ body.theme-neumorphism #cards-sheet-body .pv-currow, body.theme-neumorphism #car
 body.theme-neumorphism #cards-sheet-body .pv-back, body.theme-neumorphism #cards-search-body .pv-back{color:#a97c3d;}
 body.theme-neumorphism .sheet{background:#fff;}
 
-#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-edit{width:30px;height:32px;display:flex;align-items:center;justify-content:center;color:#9aa0a8;cursor:pointer;border-radius:9px;flex:none;}
-#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-edit:hover{color:#4a90d9;background:rgba(74,144,217,.14);}
-#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-edit.is-primary{color:#c9a96e;}
+#cards-sheet-body .pv-crow .pv-edit, #cards-search-body .pv-crow .pv-edit{width:30px;height:32px;display:flex;align-items:center;justify-content:center;color:#9aa0a8;cursor:pointer;border-radius:9px;flex:none;}
+#cards-sheet-body .pv-crow .pv-edit:hover, #cards-search-body .pv-crow .pv-edit:hover{color:#4a90d9;background:rgba(74,144,217,.14);}
+#cards-sheet-body .pv-crow .pv-edit.is-primary, #cards-search-body .pv-crow .pv-edit.is-primary{color:#c9a96e;}
 #cards-sheet-body .card-search-target, #cards-search-body .card-search-target{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16);border-radius:11px;color:inherit;font-size:13px;padding:11px 10px;outline:none;flex:none;min-width:0;}
-#cards-sheet-body .pv-addrow, #cards-search-body .pv-addrow .card-search-target{width:112px;}
+#cards-sheet-body .pv-addrow .card-search-target, #cards-search-body .pv-addrow .card-search-target{width:112px;}
 
 </style>
 
