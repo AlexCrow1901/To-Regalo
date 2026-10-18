@@ -522,7 +522,7 @@ window.MineCards = (function () {
       '<div class="pv-addrow">' +
         '<select class="card-search-target" id="pv-card-target" aria-label="添加目标">' + targetSelectHtml() + '</select>' +
         '<input type="text" class="card-input" id="card-input-text" ' +
-          'placeholder="输入字卡，空格分隔批量添加，回车确认" maxlength="500">' +
+          'placeholder="输入字卡内容，空格分隔批量添加，回车确认" maxlength="500">' +
         '<button class="pv-addbtn" data-add-scope="public" data-add-type="text">添加</button>' +
       '</div>' +
       '<div class="pv-sysrow"><span class="pv-lbl">系统预设字卡</span>' +
@@ -652,8 +652,18 @@ window.MineCards = (function () {
   var sysPoolMore = {};       /* 联系人组「显示更多」展开状态 */
   function renderSysPoolTab() {
     var spKw = (window.__spSearch || "").toLowerCase();
+    var on = getSysAllOn();
     var html = '<div class="pv-searchbox">' + I.svg("search", 15) +
         '<input type="text" id="sp-card-search" placeholder="搜索字卡内容" value="' + escapeHtml(window.__spSearch || "") + '"></div>' +
+      '<div class="pv-addrow">' +
+        '<select class="card-search-target" id="pv-card-target" aria-label="添加目标">' + targetSelectHtml() + '</select>' +
+        '<input type="text" class="card-input" id="card-input-text" ' +
+          'placeholder="输入字卡内容，空格分隔批量添加，回车确认" maxlength="500">' +
+        '<button class="pv-addbtn" data-add-scope="public" data-add-type="text">添加</button>' +
+      '</div>' +
+      '<div class="pv-sysrow"><span class="pv-lbl">系统预设字卡</span>' +
+        '<div class="pv-switch' + (on ? " on" : "") + '" id="pv-syssw"></div></div>' +
+      '<div class="pv-filters" id="pv-filters">' + pvFiltersHtml() + '</div>' +
       '<div class="card-hint">系统字卡：你审批通过的字卡（来自字卡池），联系人组卡审批通过后自动进入此处 · 按联系人分组，点击组名展开/折叠 · 删除后同时移出聊天使用</div>';
     var pool = (window.MineCardGenerator && window.MineCardGenerator.getPool) ? window.MineCardGenerator.getPool() : [];
     if (!pool || pool.length === 0) {
@@ -1022,6 +1032,20 @@ window.MineCards = (function () {
         window.__spSearch = spInput.value;
         if (spTimer) clearTimeout(spTimer);
         spTimer = setTimeout(function () { render(); }, 120);
+      });
+    }
+    /* 系统字卡 tab：系统滑块开关 + 类型过滤（与全部字卡统一样式；render() 整页重建后重新绑定） */
+    if (currentTab === "syspool") {
+      var sysSw = body.querySelector("#pv-syssw");
+      if (sysSw) sysSw.addEventListener("click", function () {
+        setSysAllOn(!getSysAllOn());
+        render();
+      });
+      body.querySelectorAll("#pv-filters [data-pv-filter]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          pvFilter = btn.getAttribute("data-pv-filter");
+          render();
+        });
       });
     }
 
