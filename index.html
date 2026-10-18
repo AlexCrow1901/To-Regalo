@@ -1017,7 +1017,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2022"></script>
+<script src="cards.js?v2023"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -3943,10 +3943,10 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       if (dot) dot.style.background = "#d9a514";
       if (st) st.textContent = "测试中…";
       if (window.MineAI && MineAI.testConnection) {
-        MineAI.testConnection().then(function(){
-          var s = MineAI.getLastStatus ? MineAI.getLastStatus() : {};
-          if (dot) dot.style.background = (s.ok ? "#50c08a" : "#e05b4e");
-          if (st) st.textContent = s.ok ? ("连接正常 · " + s.latency + "ms") : ("连接失败 · " + (s.error || "未知"));
+        MineAI.testConnection().then(function(r){
+          var ok = !!(r && r.ok);
+          if (dot) dot.style.background = (ok ? "#50c08a" : "#e05b4e");
+          if (st) st.textContent = ok ? ("连接正常 · " + (r.latency || 0) + "ms") : ("连接失败 · " + ((r && r.error) || "未知"));
         });
       } else { toastMsg("AI 模块未加载"); }
     });

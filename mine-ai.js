@@ -369,7 +369,9 @@ window.MineAI = (function () {
   function testConnection() {
     var ep = resolveEndpoint();
     if (!ep.url || !ep.key || !ep.model) {
-      return Promise.resolve({ ok: false, error: "未配置完整（缺少地址/Key/模型）" });
+      var msg0 = "未配置完整（缺少地址/Key/模型）";
+      setLastStatus({ checked: true, ok: false, latency: 0, error: msg0, time: Date.now() });
+      return Promise.resolve({ ok: false, error: msg0 });
     }
     var t0 = Date.now();
     var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
@@ -386,12 +388,16 @@ window.MineAI = (function () {
     }).then(function (r) {
       clearTimeout(timer);
       var latency = Date.now() - t0;
-      if (r.ok) return { ok: true, status: r.status, latency: latency };
+      if (r.ok) {
+        setLastStatus({ checked: true, ok: true, latency: latency, error: "", time: Date.now() });
+        return { ok: true, status: r.status, latency: latency };
+      }
       return r.text().then(function (body) {
         var msg = "HTTP " + r.status;
         if (r.status === 401) msg = "Key无效或已过期（401）";
         else if (r.status === 404) msg = "接口地址错误（404）";
         else if (r.status === 429) msg = "请求过多被限流（429）";
+        setLastStatus({ checked: true, ok: false, latency: latency, error: msg, time: Date.now() });
         return { ok: false, status: r.status, latency: latency, error: msg, detail: body.slice(0, 200) };
       });
     }).catch(function (e) {
@@ -400,6 +406,7 @@ window.MineAI = (function () {
       var msg = "网络请求失败";
       if (e && e.name === "AbortError") msg = "请求超时（10秒）";
       else if (e && e.message) msg = e.message;
+      setLastStatus({ checked: true, ok: false, latency: latency, error: msg, time: Date.now() });
       return { ok: false, latency: latency, error: msg };
     });
   }
