@@ -1380,6 +1380,32 @@ body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-b
 
 </style>
 
+
+<style id="pv-v2-align">
+/* ===== 对齐已验证的便捷版参考（tab 金色选中态 / 单独联系人行 / 系统分组头） ===== */
+#cards-sheet-body .card-tabs, #cards-search-body .card-tabs{display:flex;gap:6px;padding:0 2px 10px;}
+#cards-sheet-body .card-tab, #cards-search-body .card-tab{flex:1;text-align:center;font-size:12.5px;padding:8px 0;border-radius:10px;color:#9aa0a8;background:rgba(255,255,255,.04);border:1px solid transparent;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+#cards-sheet-body .card-tab.is-active, #cards-search-body .card-tab.is-active{background:#c9a96e !important;color:#fff !important;font-weight:600;border-color:transparent;}
+#cards-sheet-body .card-target-list, #cards-search-body .card-target-list{display:flex;flex-direction:column;}
+#cards-sheet-body .target-row, #cards-search-body .target-row{display:flex;align-items:center;gap:10px;padding:11px 10px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);margin-bottom:8px;min-height:52px;width:100%;text-align:left;color:inherit;}
+#cards-sheet-body .target-row:hover, #cards-search-body .target-row:hover{background:rgba(255,255,255,.08);}
+#cards-sheet-body .target-avatar, #cards-search-body .target-avatar{width:34px;height:34px;border-radius:50%;background:#c9a96e;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex:none;overflow:hidden;}
+#cards-sheet-body .target-avatar img, #cards-search-body .target-avatar img{width:100%;height:100%;object-fit:cover;}
+#cards-sheet-body .target-name, #cards-search-body .target-name{flex:1;font-size:13.5px;font-weight:600;}
+#cards-sheet-body .target-sub, #cards-search-body .target-sub{font-size:11.5px;color:#6d7078;}
+#cards-sheet-body .target-row .chevron, #cards-search-body .target-row .chevron{color:#6d7078;flex:none;display:flex;}
+#cards-sheet-body .sp-group-head, #cards-search-body .sp-group-head{display:flex;align-items:center;justify-content:space-between;padding:11px 6px;border-bottom:1px solid rgba(255,255,255,.1);cursor:pointer;min-height:44px;font-size:13px;color:inherit;background:none;border-left:none;border-right:none;border-top:none;width:100%;text-align:left;}
+/* 白天 */
+body.theme-neumorphism #cards-sheet-body .card-tab, body.theme-neumorphism #cards-search-body .card-tab{background:rgba(20,24,34,.045);color:#5c616b;}
+body.theme-neumorphism #cards-sheet-body .card-tab.is-active, body.theme-neumorphism #cards-search-body .card-tab.is-active{background:#a97c3d !important;color:#fff !important;}
+body.theme-neumorphism #cards-sheet-body .target-row, body.theme-neumorphism #cards-search-body .target-row{background:rgba(20,24,34,.045);border-color:rgba(20,24,34,.12);color:#1c1f26;}
+body.theme-neumorphism #cards-sheet-body .target-row:hover, body.theme-neumorphism #cards-search-body .target-row:hover{background:rgba(20,24,34,.09);}
+body.theme-neumorphism #cards-sheet-body .target-avatar, body.theme-neumorphism #cards-search-body .target-avatar{background:#a97c3d;}
+body.theme-neumorphism #cards-sheet-body .target-sub, body.theme-neumorphism #cards-search-body .target-sub{color:#9aa0a8;}
+body.theme-neumorphism #cards-sheet-body .target-row .chevron, body.theme-neumorphism #cards-search-body .target-row .chevron{color:#9aa0a8;}
+body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism #cards-search-body .sp-group-head{border-bottom-color:rgba(20,24,34,.12);color:#1c1f26;}
+
+</style>
 </head>
 <body>
   <div class="phones">
