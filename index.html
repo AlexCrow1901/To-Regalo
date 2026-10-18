@@ -1023,7 +1023,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2028"></script>
+<script src="cards.js?v2029"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -3388,57 +3388,6 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
   function reqItems(){ return cardStore("mine.cards.req.v1", [
     {id:"r1", name:"夏以昼", dir:"增加", to:"180", note:"想组更多字卡 · 幅度 ±10 条 · 剩余 12 分钟（超时自动生效）"}
   ]); }
-  function cardApproveHTML(ca, cb, cc){
-    var ai = aiItems(), req = reqItems(), pend = pendItems().filter(function(p){ return !p.state || p.state === "pending"; });
-    var out = '<div class="group-head">上限调整申请（' + req.length + '）</div>' +
-      '<div class="lr-box">';
-    req.forEach(function(r){
-      out += '<div class="card-row" style="border-left:2px solid #c9a96e"><div class="card-txt">' + esc(r.name) + ' 申请<b style="color:#50a06a">' + (r.dir === "增加" ? "增加" : "减少") + '</b>每小时组字卡上限至 <b>' + esc(r.to) + '</b> 条<span class="card-raw">' + esc(r.note) + '</span></div>' +
-        '<button class="card-btn ok" data-req="' + r.id + '">同意</button>' +
-        '<button class="card-btn no" data-req="' + r.id + '">拒绝</button></div>';
-    });
-    out += '</div>' +
-      grpHead("AI 自动生成字卡（" + ai.length + "）","","auto") +
-      '<div class="cv-grp-body auto-box"><div class="hint" style="font-size:10px;opacity:.6;line-height:1.6;padding:2px 2px 8px">联系人后台组卡经 AI 润色后自动加入字卡库 · 你只需删除不满意的 · 每张卡都标注了原始组卡内容</div>';
-    var byOwner = {};
-    ai.forEach(function(a){ (byOwner[a.owner] = byOwner[a.owner] || []).push(a); });
-    var owners = Object.keys(byOwner);
-    if (owners.length === 0) {
-      out += '<div class="hint" style="font-size:10px;opacity:.6;padding:4px 2px">暂无 AI 生成字卡</div>';
-    }
-    owners.forEach(function(o, i){
-      out += '<div class="group-head" style="font-size:12px">' + esc(o) + ' 有 ' + byOwner[o].length + ' 张 AI 生成字卡 <span style="float:right;opacity:.6">' + (i === 0 ? "收起 ▲" : "展开 ▾") + '</span></div>';
-      byOwner[o].forEach(function(a){
-        out += grpCard(esc(a.txt), esc(a.raw), '<button class="card-btn del" data-ai="' + a.id + '">删除</button>');
-      });
-    });
-    out += '</div><div class="list-sep"></div>' +
-      grpHead("待人工审批（" + pend.length + "）","","cg") +
-      '<div class="cv-grp-body cg-box"><div class="hint" style="font-size:10px;opacity:.6;line-height:1.6;padding:2px 2px 8px">AI 未启用时，后台组卡进入人工审批队列：通过后进入对应联系人字卡池，拒绝则丢弃</div>';
-    if (pend.length > 0) {
-      out += '<div style="display:flex;gap:6px;padding:6px 0"><button class="card-btn ok" data-batch="pass">全部通过</button><button class="card-btn no" data-batch="reject">全部拒绝</button></div>';
-    }
-    if (pend.length === 0) {
-      out += '<div class="hint" style="font-size:11px;opacity:.6;padding:8px 2px">暂无待审批字卡，全部已处理</div>';
-    }
-    pend.forEach(function(p){
-      out += '<div class="card-row" style="flex-wrap:wrap"><div class="card-txt" style="width:100%">' + esc(p.txt) + '</div><span>';
-      p.tags.forEach(function(t){ out += tag(t[0], t[1]); });
-      out += '</span>';
-      p.lines.forEach(function(l){ out += '<span class="card-raw" style="width:100%">' + esc(l) + '</span>'; });
-      out += '<button class="card-btn" style="background:#fef6e7;color:#b3571f" data-edit="' + p.id + '">修改</button>' +
-        '<button class="card-btn ok" data-pass="' + p.id + '">通过</button>' +
-        '<button class="card-btn no" data-reject="' + p.id + '">拒绝</button></div>';
-    });
-    out += '</div><div class="list-sep"></div>' +
-      grpHead("手动生成（测试用）","","gen") +
-      '<div class="cv-grp-body gen-box"><div class="hint" style="font-size:10px;opacity:.6;line-height:1.6;padding:2px 2px 8px">选择联系人手动触发一批组字卡，用于调试/体验；日常字卡由联系人主动组卡产生。</div>' +
-        '<div style="display:flex;gap:6px;padding:4px 0"><select class="cv-sel" style="flex:1;padding:8px 10px;border-radius:10px;border:none;background:rgba(128,128,128,.14);color:inherit;font-size:12px"><option>通用（不入会话）</option><option>' + esc(ca.name) + '</option><option>' + esc(cb.name) + '</option><option>' + esc(cc.name) + '</option></select>' +
-        '<select class="cv-sel" style="width:76px;padding:8px 10px;border-radius:10px;border:none;background:rgba(128,128,128,.14);color:inherit;font-size:12px"><option>1 个</option><option selected>3 个</option><option>5 个</option><option>10 个</option></select>' +
-        '<button class="card-btn ok" style="flex:none" data-gen-batch>生成一批</button></div>' +
-        '<div class="hint" style="font-size:10px;opacity:.6;padding:4px 2px">已生成 3 个：待审批 3 · 丢弃 0（后台组卡全部人工审批，无自动通过）</div></div>';
-    return out;
-  }
   function cardViewHTML(view){
     var aiCfg = (window.MineAI && MineAI.getConfig) ? MineAI.getConfig() : {};
     var aiKeyMask = (aiCfg.aiApiKey && String(aiCfg.aiApiKey).length > 4) ? "sk-****" + String(aiCfg.aiApiKey).slice(-4) : (aiCfg.aiApiKey ? "sk-****" : "");
@@ -3462,6 +3411,57 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       return '<div class="card-row" style="flex-wrap:wrap;gap:6px"><div class="card-txt" style="flex:1;min-width:0">'+txt+(meta?'<span class="card-raw">'+meta+'</span>':"")+'</div>'+(btns||'')+'</div>';
     }
     var c1 = CONTACTS[0], c2 = CONTACTS[1] || {name:"小鹿", handle:"lu", color:"#e8b4c8"}, c3 = CONTACTS[2] || {name:"陆之遥", handle:"luzy", color:"#a8c8e8"};
+    function cardApproveHTML(ca, cb, cc){
+      var ai = aiItems(), req = reqItems(), pend = pendItems().filter(function(p){ return !p.state || p.state === "pending"; });
+      var out = '<div class="group-head">上限调整申请（' + req.length + '）</div>' +
+        '<div class="lr-box">';
+      req.forEach(function(r){
+        out += '<div class="card-row" style="border-left:2px solid #c9a96e"><div class="card-txt">' + esc(r.name) + ' 申请<b style="color:#50a06a">' + (r.dir === "增加" ? "增加" : "减少") + '</b>每小时组字卡上限至 <b>' + esc(r.to) + '</b> 条<span class="card-raw">' + esc(r.note) + '</span></div>' +
+          '<button class="card-btn ok" data-req="' + r.id + '">同意</button>' +
+          '<button class="card-btn no" data-req="' + r.id + '">拒绝</button></div>';
+      });
+      out += '</div>' +
+        grpHead("AI 自动生成字卡（" + ai.length + "）","","auto") +
+        '<div class="cv-grp-body auto-box"><div class="hint" style="font-size:10px;opacity:.6;line-height:1.6;padding:2px 2px 8px">联系人后台组卡经 AI 润色后自动加入字卡库 · 你只需删除不满意的 · 每张卡都标注了原始组卡内容</div>';
+      var byOwner = {};
+      ai.forEach(function(a){ (byOwner[a.owner] = byOwner[a.owner] || []).push(a); });
+      var owners = Object.keys(byOwner);
+      if (owners.length === 0) {
+        out += '<div class="hint" style="font-size:10px;opacity:.6;padding:4px 2px">暂无 AI 生成字卡</div>';
+      }
+      owners.forEach(function(o, i){
+        out += '<div class="group-head" style="font-size:12px">' + esc(o) + ' 有 ' + byOwner[o].length + ' 张 AI 生成字卡 <span style="float:right;opacity:.6">' + (i === 0 ? "收起 ▲" : "展开 ▾") + '</span></div>';
+        byOwner[o].forEach(function(a){
+          out += grpCard(esc(a.txt), esc(a.raw), '<button class="card-btn del" data-ai="' + a.id + '">删除</button>');
+        });
+      });
+      out += '</div><div class="list-sep"></div>' +
+        grpHead("待人工审批（" + pend.length + "）","","cg") +
+        '<div class="cv-grp-body cg-box"><div class="hint" style="font-size:10px;opacity:.6;line-height:1.6;padding:2px 2px 8px">AI 未启用时，后台组卡进入人工审批队列：通过后进入对应联系人字卡池，拒绝则丢弃</div>';
+      if (pend.length > 0) {
+        out += '<div style="display:flex;gap:6px;padding:6px 0"><button class="card-btn ok" data-batch="pass">全部通过</button><button class="card-btn no" data-batch="reject">全部拒绝</button></div>';
+      }
+      if (pend.length === 0) {
+        out += '<div class="hint" style="font-size:11px;opacity:.6;padding:8px 2px">暂无待审批字卡，全部已处理</div>';
+      }
+      pend.forEach(function(p){
+        out += '<div class="card-row" style="flex-wrap:wrap"><div class="card-txt" style="width:100%">' + esc(p.txt) + '</div><span>';
+        p.tags.forEach(function(t){ out += tag(t[0], t[1]); });
+        out += '</span>';
+        p.lines.forEach(function(l){ out += '<span class="card-raw" style="width:100%">' + esc(l) + '</span>'; });
+        out += '<button class="card-btn" style="background:#fef6e7;color:#b3571f" data-edit="' + p.id + '">修改</button>' +
+          '<button class="card-btn ok" data-pass="' + p.id + '">通过</button>' +
+          '<button class="card-btn no" data-reject="' + p.id + '">拒绝</button></div>';
+      });
+      out += '</div><div class="list-sep"></div>' +
+        grpHead("手动生成（测试用）","","gen") +
+        '<div class="cv-grp-body gen-box"><div class="hint" style="font-size:10px;opacity:.6;line-height:1.6;padding:2px 2px 8px">选择联系人手动触发一批组字卡，用于调试/体验；日常字卡由联系人主动组卡产生。</div>' +
+          '<div style="display:flex;gap:6px;padding:4px 0"><select class="cv-sel" style="flex:1;padding:8px 10px;border-radius:10px;border:none;background:rgba(128,128,128,.14);color:inherit;font-size:12px"><option>通用（不入会话）</option><option>' + esc(ca.name) + '</option><option>' + esc(cb.name) + '</option><option>' + esc(cc.name) + '</option></select>' +
+          '<select class="cv-sel" style="width:76px;padding:8px 10px;border-radius:10px;border:none;background:rgba(128,128,128,.14);color:inherit;font-size:12px"><option>1 个</option><option selected>3 个</option><option>5 个</option><option>10 个</option></select>' +
+          '<button class="card-btn ok" style="flex:none" data-gen-batch>生成一批</button></div>' +
+          '<div class="hint" style="font-size:10px;opacity:.6;padding:4px 2px">已生成 3 个：待审批 3 · 丢弃 0（后台组卡全部人工审批，无自动通过）</div></div>';
+      return out;
+    }
     if (view === "approve")
       return cardApproveHTML(c1, c2, c3);
     if (view === "pool")
