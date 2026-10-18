@@ -700,8 +700,21 @@ body {
 .card-tab.on{background:#c9a96e; color:#fff}
 .card-row{display:flex; align-items:center; gap:9px; padding:9px 2px; border-bottom:1px solid rgba(128,128,128,.1)}
 .card-row:last-child{border-bottom:none}
+.cards-group{background:rgba(128,128,128,.06); border-radius:16px; padding:2px 12px 10px; margin:10px 0}
+.cards-group .group-head{margin-top:8px}
+.cards-input{flex:1; border:none; outline:none; background:rgba(128,128,128,.14); border-radius:12px; padding:8px 12px; font-size:12px; color:inherit; box-sizing:border-box}
+.cards-input:focus{background:rgba(201,169,110,.14); box-shadow:0 0 0 1px rgba(201,169,110,.4)}
 .card-txt{flex:1; font-size:13px; line-height:1.5}
 .card-raw{font-size:10px; opacity:.5; margin-top:2px; line-height:1.4; display:block}
+/* MineCards 字卡管理器：卡片化对齐系统 UI */
+#cards-sheet-body .card-list, #cards-search-body .card-list{background:rgba(128,128,128,.06); border-radius:14px; padding:2px 12px; margin:8px 0}
+#cards-sheet-body .card-list .card-row, #cards-search-body .card-list .card-row{padding:10px 0}
+#cards-sheet-body .card-list .card-row:first-child, #cards-search-body .card-list .card-row:first-child{border-top:none}
+#cards-sheet-body .sys-master-row{background:rgba(201,169,110,.1); border-radius:14px; padding:10px 12px; margin:8px 0; display:flex; align-items:center; justify-content:space-between; gap:8px}
+#cards-sheet-body .sys-master-label{font-size:12.5px; color:#c9a96e}
+#cards-sheet-body .card-hint{margin:4px 2px}
+#cards-sheet-body .card-tabs{margin-bottom:6px}
+#cards-sheet-body .card-tab{padding:7px 14px}
 .card-btn{font-size:11px; padding:5px 12px; border-radius:10px; border:none; cursor:pointer; flex:none}
 .card-btn.ok{background:rgba(80,192,138,.2); color:#50c08a}
 .card-btn.no{background:rgba(200,80,80,.18); color:#e07a7a}
@@ -997,7 +1010,7 @@ body {
 <script src="keepalive.js?v2000"></script>
 <script src="settings.js?v2000"></script>
 <script src="icons.js?v2000"></script>
-<script src="background.js?v2001"></script>
+<script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
 <script src="cards.js?v2000"></script>
@@ -1010,7 +1023,7 @@ body {
 <script src="chat.js?v2007"></script>
 <script src="phone.js?v2000"></script>
 <script src="companion.js?v2000"></script>
-<script src="profile.js?v2001"></script>
+<script src="profile.js?v2002"></script>
 <script src="mail.js?v2000"></script>
 <script src="treehole.js?v2000"></script>
 <script src="radio.js?v2000"></script>
@@ -1799,7 +1812,7 @@ body {
         '</div>' +
         '<button class="btn-mini ghost" style="width:100%">清除气泡皮肤</button>';
     } else if (kind === "theme") {
-      h += '<h3>系统主题</h3><div class="row"><span style="width:34px;height:34px;border-radius:10px;background:#f2f2ee;border:1px solid rgba(0,0,0,.15);flex:none"></span>默认</div><div class="row"><span style="width:34px;height:34px;border-radius:10px;background:#0a0a0a;border:1px solid rgba(255,255,255,.2);flex:none"></span>黑夜</div><div class="row">🖼️ 上传图片作为全局主题背景</div>';
+      h += '<h3>系统主题</h3><div class="row"><span style="width:34px;height:34px;border-radius:10px;background:#f2f2ee;border:1px solid rgba(0,0,0,.15);flex:none"></span>默认</div><div class="row"><span style="width:34px;height:34px;border-radius:10px;background:#0a0a0a;border:1px solid rgba(255,255,255,.2);flex:none"></span>黑夜</div><div class="row" data-bg="upload">🖼️ 上传图片作为全局主题背景</div>';
     } else if (kind === "quotes") {
       h += '<h3>今日寄语管理</h3><div style="font-size:11px;opacity:.6;margin-bottom:6px">每日寄语从以下自定义寄语中随机展示 · 格式：文案 或 文案|作者</div>' +
         '<div class="card-row"><div class="card-txt">"雾散了又聚，而你始终在灯火阑珊处。"<span class="card-raw">—— 艾琳·格雷</span></div><button class="card-btn del">删除</button></div>' +
@@ -1820,10 +1833,31 @@ body {
     overlay.classList.add("on");
     sheet.classList.add("on");
     overlay.onclick = function(){ overlay.classList.remove("on"); sheet.classList.remove("on"); };
-    sheet.querySelectorAll(".row").forEach(function(el){ el.addEventListener("click", function(){ toastMsg("已应用（示例）"); }); });
+    sheet.querySelectorAll(".row").forEach(function(el){ if (!el.getAttribute("data-bg")) el.addEventListener("click", function(){ toastMsg("已应用（示例）"); }); });
     sheet.querySelectorAll(".card-btn").forEach(function(el){ el.addEventListener("click", function(){ toastMsg("已应用（示例）"); }); });
     sheet.querySelectorAll(".cp-swatch").forEach(function(s){});
     /* ===== 背景弹层：白天/黑夜 真实模式切换 + 自定义背景上传 ===== */
+    /* ===== 图片上传（bg/theme/bubble 通用）：选择本地图片并立即应用 ===== */
+    sheet.querySelectorAll("[data-bg=upload]").forEach(function(z){
+      z.addEventListener("click", function(){
+        var inp = document.createElement("input");
+        inp.type = "file"; inp.accept = "image/*";
+        inp.addEventListener("change", function(){
+          var f = inp.files && inp.files[0];
+          if (!f) return;
+          var url = URL.createObjectURL(f);
+          if (kind === "bubble") {
+            toastMsg("已上传气泡皮肤图片（预览中，可随时清除）");
+            var prev = sheet.querySelectorAll(".row div span");
+            prev.forEach(function(s){ if (s.style && s.style.background) s.style.background = "url(" + url + ") center/cover"; });
+          } else {
+            applyPhoneBg(pi, url);
+            toastMsg(kind === "theme" ? "已应用为全局主题背景（可随时清除）" : "已应用自定义背景，氛围随图片变化（可随时更换）");
+          }
+        });
+        inp.click();
+      });
+    });
     if (kind === "bg") {
       var phEl = document.querySelector('.phone[data-pi="' + pi + '"]');
       var curMode = phEl ? phEl.getAttribute("data-mode") : "dark";
@@ -1836,19 +1870,6 @@ body {
           setPhoneMode(pi, m);
           sheet.querySelectorAll(".mode-btn").forEach(function(x){ x.classList.toggle("is-active", x === b); });
           toastMsg(m === "day" ? "已切换为白天模式" : "已切换为黑夜模式");
-        });
-      });
-      sheet.querySelectorAll("[data-bg=upload]").forEach(function(z){
-        z.addEventListener("click", function(){
-          var inp = document.createElement("input");
-          inp.type = "file"; inp.accept = "image/*";
-          inp.addEventListener("change", function(){
-            var f = inp.files && inp.files[0];
-            if (!f) return;
-            applyPhoneBg(pi, URL.createObjectURL(f));
-            toastMsg("已应用自定义背景，氛围随图片变化（可随时更换）");
-          });
-          inp.click();
         });
       });
       sheet.querySelectorAll(".scope-btn").forEach(function(s){
@@ -2103,20 +2124,6 @@ body {
         (v?'<div class="fs">'+v+'</div>':"") + '<div class="ar">›</div></div>';
     }
     return '<div class="scroll">' +
-      '<div class="profile-card">' +
-        '<div class="pf-avatar">C</div>' +
-        '<div class="profile-info">' +
-          '<div class="name">CosmicLove</div>' +
-          '<div class="id">To Regalo · 01</div>' +
-          '<div class="sig">雾散了又聚，而你始终在灯火阑珊处。</div>' +
-        '</div>' +
-        '<div class="profile-edit" data-act="me">'+SVG.edit+'</div>' +
-      '</div>' +
-      '<div class="stats">' +
-        '<div class="stat"><div class="num">32</div><div class="lab">系统字卡</div></div>' +
-        '<div class="stat"><div class="num">18</div><div class="lab">我的字卡</div></div>' +
-        '<div class="stat"><div class="num">50</div><div class="lab">全部字卡</div></div>' +
-      '</div>' +
       '<div class="sec-title">我的</div>' +
       '<div class="func-list">' +
         F(SVG.edit,"我的资料","昵称与头像","","me") +
@@ -3217,12 +3224,11 @@ body {
   function cardsLibHTML(view){
     function typeRow(name, count, items){
       var rows = items.map(function(it){ return '<div class="card-row"><div class="card-txt">'+esc(it)+'</div><button class="card-btn del">删除</button></div>'; }).join("");
-      return '<div class="group-head">'+name+' <span class="count">'+count+'</span>' +
-        '<span style="float:right;font-size:10px;color:#c9a96e;cursor:pointer">导出</span><span style="float:right;font-size:10px;color:#c9a96e;cursor:pointer;margin-right:10px">导入</span></div>' +
-        '<div style="display:flex;gap:6px;padding:4px 0"><input style="flex:1;border:none;outline:none;background:rgba(128,128,128,.14);border-radius:12px;padding:8px 12px;font-size:12px;color:inherit;box-sizing:border-box" placeholder="添加'+name+'…（空格分隔批量添加）"><button class="card-btn ok">添加</button></div>' + rows;
+      return '<div class="cards-group"><div class="group-head">'+name+' <span class="count">'+count+'</span></div>' +
+        '<div style="display:flex;gap:6px;padding:6px 0"><input class="cards-input" placeholder="添加'+name+'…（空格分隔批量添加）"><button class="card-btn ok">添加</button></div>' + rows + '</div>';
     }
     if (view === "mine")
-      return '<div class="card-row"><div class="card-txt">系统预设字卡 <span style="opacity:.5;font-size:10px">（总开关）</span></div><div class="toggle on" style="flex:none"></div></div>' +
+      return '<div class="cards-group"><div class="card-row"><div class="card-txt">系统预设字卡 <span style="opacity:.5;font-size:10px">（总开关）</span></div><div class="toggle on" style="flex:none"></div></div></div>' +
         typeRow("字符字卡",8,["今天月亮好圆","想你了呢","下次一起去吧","好吧那下次再说"]) +
         typeRow("emoji 字卡",5,["😊❤️","🌙✨","🍜","晚安～"]) +
         typeRow("图片字卡",3,["月光照片","窗外风景"]) +
@@ -3237,16 +3243,16 @@ body {
     if (view === "sys")
       return CONTACTS.map(function(c, i){
         var rows = i === 0 ? ["现在去看电影吗？","今天也超级开心呀"] : i === 1 ? ["你猜我刚才看到什么了"] : ["下次一起去吧"];
-        return '<div class="group-head">'+esc(c.name)+' <span class="count">'+rows.length+'</span></div>' +
-          rows.map(function(it){ return '<div class="card-row"><div class="card-txt">'+esc(it)+'<span class="card-raw">添加于 10-0'+(i+2)+'</span></div><button class="card-btn del">删除</button></div>'; }).join("");
+        return '<div class="cards-group"><div class="group-head">'+esc(c.name)+' <span class="count">'+rows.length+'</span></div>' +
+          rows.map(function(it){ return '<div class="card-row"><div class="card-txt">'+esc(it)+'<span class="card-raw">添加于 10-0'+(i+2)+'</span></div><button class="card-btn del">删除</button></div>'; }).join("") + '</div>';
       }).join("");
     if (view === "search")
-      return '<div style="display:flex;gap:6px;padding:8px 0"><input style="flex:1;border:none;outline:none;background:rgba(128,128,128,.14);border-radius:12px;padding:8px 12px;font-size:12px;color:inherit;box-sizing:border-box" placeholder="搜索关键词…"><button class="card-btn ok">搜索</button></div>' +
+      return '<div class="cards-group"><div style="display:flex;gap:6px;padding:8px 0"><input class="cards-input" placeholder="搜索关键词…"><button class="card-btn ok">搜索</button></div>' +
         '<div class="cat-chips"><span class="cat-chip on">公用</span><span class="cat-chip">系统</span><span class="cat-chip">单独·夏以昼</span><span class="cat-chip">自动回复</span></div>' +
         '<div class="card-row"><div class="card-txt">月亮<span class="card-raw">公用字卡 · 字符</span></div><button class="card-btn ok">修改</button><button class="card-btn del">删除</button></div>' +
-        '<div class="card-row"><div class="card-txt">想你<span class="card-raw">系统字卡 · 夏以昼</span></div><button class="card-btn ok">修改</button><button class="card-btn del">删除</button></div>' +
-        '<div style="display:flex;gap:6px;padding:8px 0"><input style="flex:1;border:none;outline:none;background:rgba(128,128,128,.14);border-radius:12px;padding:8px 12px;font-size:12px;color:inherit;box-sizing:border-box" placeholder="新字卡（空格分隔批量添加）"><button class="card-btn ok">添加</button></div>' +
-        '<div class="hint" style="font-size:10px;opacity:.55;line-height:1.7;padding:4px 2px">收集全部字卡：公用 / 系统 / 单独（按联系人）/ 自动回复（按联系人），搜索可跨全部目标。</div>';
+        '<div class="card-row"><div class="card-txt">想你<span class="card-raw">系统字卡 · 夏以昼</span></div><button class="card-btn ok">修改</button><button class="card-btn del">删除</button></div></div>' +
+        '<div class="cards-group"><div style="display:flex;gap:6px;padding:8px 0"><input class="cards-input" placeholder="新字卡（空格分隔批量添加）"><button class="card-btn ok">添加</button></div>' +
+        '<div class="hint" style="font-size:10px;opacity:.55;line-height:1.7;padding:4px 2px">收集全部字卡：公用 / 系统 / 单独（按联系人）/ 自动回复（按联系人），搜索可跨全部目标。</div></div>';
     return "";
   }
   function cardsLibPage(){
@@ -3261,6 +3267,34 @@ body {
     ce.querySelectorAll(".card-tab").forEach(function(t){ t.classList.toggle("on", t.getAttribute("data-cview") === view); });
     var body = ce.querySelector("#cards-body");
     if (body) body.innerHTML = cardsLibHTML(view);
+    bindCardsPage(phone, ce);
+  }
+  /* 字卡库页交互绑定：tab 切换 / 开关 / 增删按钮 / 分类标签（cardsGo 渲染后必须调用，否则按钮无响应） */
+  function bindCardsPage(phone, page){
+    page.querySelectorAll(".card-tab").forEach(function(tab){
+      tab.addEventListener("click", function(){
+        page.querySelectorAll(".card-tab").forEach(function(t){ t.classList.remove("on"); });
+        tab.classList.add("on");
+        var body = page.querySelector("#cards-body");
+        if (body) { body.innerHTML = cardsLibHTML(tab.getAttribute("data-cview")); bindCardsPage(phone, page); }
+      });
+    });
+    page.querySelectorAll(".toggle").forEach(function(s){ s.addEventListener("click", function(){ s.classList.toggle("on"); }); });
+    page.querySelectorAll(".card-btn").forEach(function(b){
+      b.addEventListener("click", function(){
+        var row = b.closest(".card-row");
+        var txt = row ? ((row.querySelector(".card-txt") || {}).textContent || "") : "";
+        if (b.classList.contains("del")) { if (row) row.remove(); toastMsg("已删除「" + txt.trim().slice(0, 12) + "」"); }
+        else if (b.classList.contains("ok")) toastMsg("已保存（示例）");
+        else toastMsg("（示例）");
+      });
+    });
+    page.querySelectorAll(".cat-chip").forEach(function(c){
+      c.addEventListener("click", function(){
+        page.querySelectorAll(".cat-chip").forEach(function(x){ x.classList.remove("on"); });
+        c.classList.add("on");
+      });
+    });
   }
   function cmPage(){
     return '<div class="scroll">' +
@@ -3529,22 +3563,7 @@ body {
       bindCardInner(page);
     }
     if (pg === "cards") {
-      page.querySelectorAll(".card-tab").forEach(function(tab){
-        tab.addEventListener("click", function(){
-          page.querySelectorAll(".card-tab").forEach(function(t){ t.classList.remove("on"); });
-          tab.classList.add("on");
-          var body = page.querySelector("#cards-body");
-          if (body) body.innerHTML = cardsLibHTML(tab.getAttribute("data-cview"));
-        });
-      });
-      page.querySelectorAll(".toggle").forEach(function(s){ s.addEventListener("click", function(){ s.classList.toggle("on"); }); });
-      page.querySelectorAll(".card-btn").forEach(function(b){ b.addEventListener("click", function(){ toastMsg(b.classList.contains("del") ? "已删除（示例）" : "（示例）"); }); });
-      page.querySelectorAll(".cat-chip").forEach(function(c){
-        c.addEventListener("click", function(){
-          page.querySelectorAll(".cat-chip").forEach(function(x){ x.classList.remove("on"); });
-          c.classList.add("on");
-        });
-      });
+      bindCardsPage(phone, page);
     }
     if (pg === "cm") {
       page.querySelectorAll(".cat-chip").forEach(function(c){
@@ -3970,7 +3989,12 @@ body {
     var h = location.hash.replace("#", "");
     if (!h) return;
     var parts = h.split("|");
-    showPage(parts[1] || "L", parts[0]);
+    var pg = parts[0];
+    /* 详情页 hash 直达时回退到对应主页（避免刷新/重开时直接停留在群聊设置、联系人主页、聊天详情，
+       让用户"点聊天/通讯录"时总是先看到列表） */
+    if (pg === "chat-detail") pg = "chat";
+    else if (pg === "contact" || pg === "group") pg = "contacts";
+    showPage(parts[1] || "L", pg);
   }
   window.addEventListener("hashchange", applyHash);
   applyHash();

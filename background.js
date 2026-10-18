@@ -610,7 +610,7 @@ window.MineBackground = (function () {
         if (this.files && this.files[0]) {
           var file = this.files[0];
           upload(file, function (dataURL) {
-            if (!dataURL) { return; }
+            if (!dataURL) { showToast("图片处理失败，请换一张图片重试"); return; }
             /* 记住待应用图片，弹出作用域选择 */
             pendingImage = dataURL;
             showScopePicker();

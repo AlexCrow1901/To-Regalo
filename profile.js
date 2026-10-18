@@ -61,23 +61,6 @@ window.MineProfile = (function () {
 
     var html = '<div class="scroll me-scroll">';
 
-    /* 蓝本对齐：字卡统计（系统字卡 / 我的字卡 / 全部字卡），数字来自真实字卡数据；
-       卡片化展示，点击直达对应字卡管理入口 */
-    var sysCount = 0, myCount = 0;
-    try {
-      if (window.MineCards) {
-        sysCount = (MineCards.getSysCards() || []).length;
-        myCount = (MineCards.getPublicCards() || []).length + (MineCards.getPerCards() || []).length;
-      }
-    } catch (e) {}
-    html += '<div class="me-stats">' +
-      '<div class="me-stat" role="button" tabindex="0" data-act="open-sys-cards"><b>' + sysCount + '</b><span>系统字卡</span></div>' +
-      '<div class="me-stat" role="button" tabindex="0" data-act="open-cards"><b>' + myCount + '</b><span>我的字卡</span></div>' +
-      '<div class="me-stat" role="button" tabindex="0" data-act="open-search-cards"><b>' + (sysCount + myCount) + '</b><span>全部字卡</span></div>' +
-      '</div>';
-
-    html += '<div class="list-sep"></div>';
-
     // 我的：昵称 + 头像合并为"我的资料"
     html += '<div class="group-head">我的</div>';
     html += '<div class="func-row" role="button" tabindex="0" data-act="open-me">' +
