@@ -363,6 +363,12 @@ window.MineTheme = (function () {
 
   /* ====== 初始化 ====== */
   function init() {
+    /* body 尚未就绪时（脚本在 <body> 渲染前执行）延迟到 DOMContentLoaded 再初始化，
+       否则 switchTheme 里 document.body 为 null，白天主题类加不上 → 页面显示夜间样式 */
+    if (typeof document !== "undefined" && !document.body) {
+      document.addEventListener("DOMContentLoaded", init, { once: true });
+      return;
+    }
     /* 注入新拟态首页 HTML */
     injectNeuHomeHTML();
 
