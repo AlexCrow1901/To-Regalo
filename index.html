@@ -1017,7 +1017,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2023"></script>
+<script src="cards.js?v2024"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -3614,8 +3614,14 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     var back = page.querySelector('[data-act="back"]');
     if (back) back.addEventListener("click", function(){
       var h = location.hash || "", pi = phone.getAttribute("data-pi");
-      if (h.indexOf("|" + pi) >= 0 && window.history.length > 1) window.history.back();
-      else showPage(pi, "home");
+      /* 有历史可退则优先回来源页；退不动（直达/刷新场景）则 260ms 后强制回主页 */
+      if (h.indexOf("|" + pi) >= 0 && window.history.length > 1) {
+        var before = location.href;
+        window.history.back();
+        setTimeout(function(){
+          if (location.href === before) showPage(pi, "home");
+        }, 260);
+      } else showPage(pi, "home");
       /* 返回后若落到聊天页，重渲染列表让未读角标即时刷新 */
       setTimeout(function(){
         if (document.querySelector('.page[data-page="chat"]').classList.contains("on"))
@@ -4283,8 +4289,14 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     var back = page.querySelector('[data-act="back"]');
     if (back) back.addEventListener("click", function(){
       var h = location.hash || "", pi = phone.getAttribute("data-pi");
-      if (h.indexOf("|" + pi) >= 0 && window.history.length > 1) window.history.back();
-      else showPage(pi, "contacts");
+      /* 有历史可退则优先回来源页；退不动（直达/刷新场景）则 260ms 后强制回通讯录 */
+      if (h.indexOf("|" + pi) >= 0 && window.history.length > 1) {
+        var before = location.href;
+        window.history.back();
+        setTimeout(function(){
+          if (location.href === before) showPage(pi, "contacts");
+        }, 260);
+      } else showPage(pi, "contacts");
     });
     var gc = page.querySelector('[data-act="group-chat"]');
     if (gc) gc.addEventListener("click", function(){ openDetail(phone, "chat-detail", { name:g.name, id:g.id, group:true }); });

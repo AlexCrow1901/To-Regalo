@@ -59,7 +59,11 @@ window.MineContacts = (function () {
     try {
       var raw = localStorage.getItem(STORE_KEY);
       if (raw) {
-        state = JSON.parse(raw);
+        var parsed = JSON.parse(raw);
+        /* 数据校验：只有结构合法的对象（含 contacts 数组）才采用；"[]" / "null" / 损坏数据回退默认种子 */
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && Array.isArray(parsed.contacts)) {
+          state = parsed;
+        }
         // 兼容旧数据：确保每个联系人都有 cards / statuses 字段
         var U = window.MineUtils;
         state.contacts.forEach(function (c) {
@@ -3061,7 +3065,7 @@ window.MineContacts = (function () {
 
   // 每分钟检查一次是否到切换时间
   setInterval(function () {
-    if (state.contacts.length > 0) {
+    if (state && state.contacts && state.contacts.length > 0) {
       maybeShuffleAll();
     }
   }, 60000);
