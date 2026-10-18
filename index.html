@@ -654,6 +654,10 @@ body {
 .phone:not(.light) .cp-btn.edit{border-color:#3D4A5E; color:#EEF2F7}
 .cp-btn.chat{background:#DBE6F2; color:#1A2B3C; border:none}
 .phone:not(.light) .cp-btn.chat{background:#3D4A5E; color:#EEF2F7}
+.cp-btn.danger{background:#e07a7a; color:#fff; border:none}
+.phone:not(.light) .cp-btn.danger{background:#a84444; color:#fff}
+.btn-block-danger{width:100%; padding:12px; border:none; border-radius:11px; background:#e07a7a; color:#fff; font-size:14px; font-weight:600; cursor:pointer}
+.phone:not(.light) .btn-block-danger{background:#a84444}
 /* 徽章颜色面板（页内，点击徽章展开/收起） */
 .cp{position:absolute; left:74px; top:52px; z-index:50; width:212px; background:#16181c; border:1px solid #2f3336; border-radius:14px; padding:10px; display:none; box-shadow:0 14px 34px rgba(0,0,0,.5)}
 .phone.light .cp{background:#fff; border-color:#eff3f4; box-shadow:0 14px 34px rgba(0,0,0,.18)}
@@ -1013,7 +1017,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2014"></script>
+<script src="cards.js?v2015"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1323,7 +1327,7 @@ body:not(.theme-neumorphism) .phone.light .dock{background:#0d0d0d !important;bo
 #cards-sheet-body .pv-list, #cards-search-body .pv-list{min-height:44px;}
 #cards-sheet-body .pv-crow, #cards-search-body .pv-crow{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(201,169,110,.45);margin-bottom:7px;min-height:48px;}
 #cards-sheet-body .pv-crow, #cards-search-body .pv-crow.sys{background:rgba(201,169,110,.14);border-color:rgba(176,137,69,.4);}
-#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-txt{flex:1;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-txt{flex:1;font-size:14px;line-height:1.45;word-break:break-all;white-space:normal;}
 #cards-sheet-body .pv-crow, #cards-search-body .pv-crow.sys .pv-txt{color:#c9a96e;}
 #cards-sheet-body .pv-mark, #cards-search-body .pv-mark{font-size:10px;color:#6d7078;flex:none;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,.08);}
 #cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-del{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#6d7078;cursor:pointer;border-radius:9px;flex:none;font-size:16px;}
@@ -1894,6 +1898,34 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     { id:"g1", name:"今天也要开心", members:["夏以昼","小鹿"] },
     { id:"g2", name:"周末去哪玩", members:["夏以昼","陆之遥","小鹿"] }
   ];
+  /* 联系人/群聊持久化：新增/删除联系人、解散群聊、头像自定义等变更后调用 saveContactsData() 保存；
+     加载时若本地有保存则整体替换（保证删除的联系人/群聊不会因刷新"复活"） */
+  function saveContactsData(){
+    try {
+      localStorage.setItem("mine.contacts.v1", JSON.stringify(CONTACTS.map(function(c){
+        return { id:c.id, name:c.name, handle:c.handle||"", avatar:c.avatar||null, statusText:c.statusText||"在线", cards:c.cards||[] };
+      })));
+      localStorage.setItem("mine.groups.v1", JSON.stringify(GROUPS.map(function(g){
+        return { id:g.id, name:g.name, avatar:g.avatar||null, members:g.members||[] };
+      })));
+    } catch(e){}
+  }
+  (function(){
+    try {
+      var savedC = JSON.parse(localStorage.getItem("mine.contacts.v1") || "null");
+      if (savedC && Array.isArray(savedC)) {
+        CONTACTS = savedC.map(function(sc){
+          return { id:sc.id, name:sc.name||sc.id, handle:sc.handle||"", avatar:sc.avatar||null, statusText:sc.statusText||"在线", cards:sc.cards||[] };
+        });
+      }
+      var savedG = JSON.parse(localStorage.getItem("mine.groups.v1") || "null");
+      if (savedG && Array.isArray(savedG)) {
+        GROUPS = savedG.map(function(sg){
+          return { id:sg.id, name:sg.name||"群聊", avatar:sg.avatar||null, members:sg.members||[] };
+        });
+      }
+    } catch(e){}
+  })();
   var COMP_APPS = [
     { t:"daily", n:"每日陪伴", d:"晨间问候", soon:true },
     { t:"radio", n:"心情电台", d:"依心绪而生", soon:false },
@@ -2181,6 +2213,7 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
   function contactsPage(){
     var h = '<div class="scroll">' +
       '<div class="func-row" data-act="create-group"><div class="func-ic">＋</div><div class="func-text"><span class="func-title">发起群聊</span><span class="func-sub">选择联系人创建群聊</span></div><span class="chev">›</span></div>' +
+      '<div class="func-row" data-act="add-contact"><div class="func-ic">＋</div><div class="func-text"><span class="func-title">添加联系人</span><span class="func-sub">新增联系人并设置头像</span></div><span class="chev">›</span></div>' +
       '<div class="group-head">群聊 <span class="count">'+GROUPS.length+'</span></div>';
     GROUPS.forEach(function(g){
       h += '<div class="func-row" data-open="group" data-id="'+g.id+'">' + groupAvatarHTML(g) +
@@ -2212,13 +2245,15 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     return '<div class="scroll" style="padding:0 16px">' +
       '<div class="cp-banner"></div>' +
       '<div class="cp-head">' +
-        '<div class="cp-avatar" id="cp-avatar">夏</div>' +
+        '<div class="cp-avatar" id="cp-avatar" style="cursor:pointer;">夏<span class="cam-badge">📷</span></div>' +
+        '<input type="file" accept="image/*" id="cp-avatar-file" class="file-hidden" style="display:none">' +
         '<div class="cp-row1"><span class="cp-name" id="cp-name">夏以昼</span>' +
           '<span class="cp-badge" id="cp-badge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span></div>' +
         '<div class="cp-handle" id="cp-handle">@xiayizhou</div>' +
         '<div class="cp-bio">喜欢熬夜看星星，讨厌被放鸽子。说话爱卖关子，句尾常带"好吧/呢/呀"。</div>' +
         '<div class="cp-stats"><span><b>128</b> 关注</span><span><b>256</b> 粉丝</span><span><b>342</b> 帖子</span></div>' +
-        '<div class="cp-actions"><div class="cp-btn edit" data-act="edit-persona">编辑人设</div><div class="cp-btn chat" data-act="chat">聊天</div></div>' +
+        '<div class="cp-actions"><div class="cp-btn edit" data-act="edit-persona">编辑人设</div><div class="cp-btn chat" data-act="chat">聊天</div>' +
+          '<div class="cp-btn danger" data-act="delete-contact">删除联系人</div></div>' +
         '<div class="cp" id="cp-panel">' +
           '<div class="cp-title">徽章颜色</div>' +
           '<div class="cp-row">' +
@@ -2254,8 +2289,15 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
   }
   function groupPage(g){
     g = g || findGroup("g1") || { name:"群聊", members: CONTACTS.map(function(c){ return c.name; }) };
+    var gav = g.avatar
+      ? '<div class="g-avatar" id="gp-avatar" style="cursor:pointer;width:60px;height:60px;border-radius:14px;overflow:hidden;position:relative;"><img src="'+esc(g.avatar)+'" style="width:100%;height:100%;object-fit:cover;"><span class="cam-badge">📷</span></div>'
+      : '<div class="g-avatar" id="gp-avatar" style="cursor:pointer;width:60px;height:60px;border-radius:14px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;background:rgba(201,169,110,.25);">' + groupAvatarHTML(g) + '<span class="cam-badge">📷</span></div>';
     var h = '<div class="scroll">' +
       '<div class="func-row" data-act="group-chat"><div class="func-ic">💬</div><div class="func-text"><span class="func-title">进入群聊聊天</span><span class="func-sub">打开与 '+esc(g.name)+' 的群聊会话</span></div><span class="chev">›</span></div>' +
+      '<div class="group-head">群聊信息</div>' +
+      '<div class="gp-info" style="display:flex;align-items:center;gap:12px;padding:12px 4px;">' + gav +
+        '<div><div style="font-size:15px;font-weight:600;">'+esc(g.name)+'</div><div style="font-size:11px;opacity:.6;margin-top:2px;">'+g.members.length+' 位成员</div></div></div>' +
+      '<input type="file" accept="image/*" id="gp-avatar-file" class="file-hidden" style="display:none">' +
       '<div class="group-head">群自动回复字卡 <span class="count">6</span></div>' +
       '<div class="card-row"><div class="card-txt">哈哈哈哈<span class="card-raw">原组卡：哈哈 哈哈</span></div><button class="card-btn del">删除</button></div>' +
       '<div class="card-row"><div class="card-txt">今天也超级开心呀<span class="card-raw">原组卡：今天 开心</span></div><button class="card-btn del">删除</button></div>' +
@@ -2265,6 +2307,7 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       CONTACTS.forEach(function(x){ if (x.name === name) c = x; });
       h += '<div class="func-row">'+avatarHTML(c || {name:name})+'<div class="func-text"><span class="func-title">'+esc(name)+'</span><span class="func-sub">'+(c?esc(c.statusText||"在线"):"群成员")+'</span></div></div>';
     });
+    h += '<div style="padding:16px 4px;"><button class="btn-block-danger" data-act="disband-group">解散群聊</button></div>';
     h += '</div>';
     return h;
   }
@@ -3612,6 +3655,9 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       /* 发起群聊：多选联系人 + 群名 → 创建（对齐原网站 contacts.js 群聊创建交互） */
       var cg = page.querySelector('[data-act="create-group"]');
       if (cg) cg.addEventListener("click", function(){ openCreateGroup(phone); });
+      /* 添加联系人：名字 + 头像（可选）→ 加入通讯录并持久化 */
+      var ac = page.querySelector('[data-act="add-contact"]');
+      if (ac) ac.addEventListener("click", function(){ openAddContact(phone); });
       page.querySelectorAll("[data-open]").forEach(function(row){
         row.addEventListener("click", function(){
           var t = row.getAttribute("data-open");
@@ -3670,7 +3716,57 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         });
       }
       var chatBtn = page.querySelector('[data-act="chat"]');
-      if (chatBtn) chatBtn.addEventListener("click", function(){ openDetail(phone, "chat-detail", { name:"夏以昼", id:"c1" }); });
+      if (chatBtn) chatBtn.addEventListener("click", function(){
+        /* 聊天按钮绑定当前联系人（不再固定 c1） */
+        var nm = (page.querySelector("#cp-name") || {}).textContent || "";
+        var cur = null;
+        CONTACTS.forEach(function(x){ if (x.name === nm) cur = x; });
+        if (cur) openDetail(phone, "chat-detail", { name: cur.name, id: cur.id });
+        else openDetail(phone, "chat-detail", { name:"夏以昼", id:"c1" });
+      });
+      /* 联系人主页：删除联系人 + 头像自定义 */
+      var delBtn = page.querySelector('[data-act="delete-contact"]');
+      if (delBtn) delBtn.addEventListener("click", function(){
+        var nm = (page.querySelector("#cp-name") || {}).textContent || "";
+        var cur = null;
+        CONTACTS.forEach(function(x){ if (x.name === nm) cur = x; });
+        if (!cur) { toastMsg("未找到该联系人"); return; }
+        if (!confirm("确定删除联系人「" + cur.name + "」？删除后其会话与字卡将不再使用")) return;
+        for (var di = 0; di < CONTACTS.length; di++) if (CONTACTS[di].id === cur.id) CONTACTS.splice(di, 1);
+        saveContactsData();
+        showPage(phone.getAttribute("data-pi"), "contacts");
+        renderPage(phone, "contacts");
+        toastMsg("已删除联系人「" + nm + "」");
+      });
+      var avWrap = page.querySelector("#cp-avatar");
+      var avFile = page.querySelector("#cp-avatar-file");
+      if (avWrap && avFile) {
+        avWrap.addEventListener("click", function(){ avFile.click(); });
+        avFile.addEventListener("change", function(){
+          if (this.files && this.files[0]) {
+            var f = this.files[0];
+            var rd = new FileReader();
+            rd.onload = function(){
+              var img = new Image();
+              img.onload = function(){
+                var cv = document.createElement("canvas");
+                var s = Math.min(img.width, img.height, 400);
+                cv.width = s; cv.height = s;
+                cv.getContext("2d").drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, s, s);
+                var dataURL = cv.toDataURL("image/jpeg", 0.85);
+                var nm = (page.querySelector("#cp-name") || {}).textContent || "";
+                CONTACTS.forEach(function(x){ if (x.name === nm) x.avatar = dataURL; });
+                saveContactsData();
+                avWrap.innerHTML = '<img src="' + dataURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"><span class="cam-badge">📷</span>';
+                toastMsg("头像已更新");
+              };
+              img.src = rd.result;
+            };
+            rd.readAsDataURL(f);
+          }
+          this.value = "";
+        });
+      }
       var edit = page.querySelector('[data-act="edit-persona"]');
       if (edit) edit.addEventListener("click", function(){
         showPage(phone.getAttribute("data-pi"), "card");
@@ -4153,6 +4249,45 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     });
     var gc = page.querySelector('[data-act="group-chat"]');
     if (gc) gc.addEventListener("click", function(){ openDetail(phone, "chat-detail", { name:g.name, id:g.id, group:true }); });
+    /* 解散群聊：确认后从 GROUPS 移除并持久化，返回通讯录 */
+    var dis = page.querySelector('[data-act="disband-group"]');
+    if (dis) dis.addEventListener("click", function(){
+      if (!confirm("确定解散群聊「" + g.name + "」？解散后不可恢复")) return;
+      for (var di = 0; di < GROUPS.length; di++) if (GROUPS[di].id === g.id) GROUPS.splice(di, 1);
+      saveContactsData();
+      showPage(phone.getAttribute("data-pi"), "contacts");
+      renderPage(phone, "contacts");
+      toastMsg("已解散群聊「" + g.name + "」");
+    });
+    /* 群头像自定义：点击头像选择图片 → 更新并持久化 */
+    var gav = page.querySelector("#gp-avatar");
+    var gfile = page.querySelector("#gp-avatar-file");
+    if (gav && gfile) {
+      gav.addEventListener("click", function(){ gfile.click(); });
+      gfile.addEventListener("change", function(){
+        if (this.files && this.files[0]) {
+          var f = this.files[0];
+          var rd = new FileReader();
+          rd.onload = function(){
+            var img = new Image();
+            img.onload = function(){
+              var cv = document.createElement("canvas");
+              var s = Math.min(img.width, img.height, 400);
+              cv.width = s; cv.height = s;
+              cv.getContext("2d").drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, s, s);
+              var dataURL = cv.toDataURL("image/jpeg", 0.85);
+              g.avatar = dataURL;
+              saveContactsData();
+              gav.innerHTML = '<img src="' + dataURL + '" style="width:100%;height:100%;object-fit:cover;"><span class="cam-badge">📷</span>';
+              toastMsg("群头像已更新");
+            };
+            img.src = rd.result;
+          };
+          rd.readAsDataURL(f);
+        }
+        this.value = "";
+      });
+    }
   }
   /* 发起群聊：多选联系人 + 群名 → 创建并刷新通讯录（对齐原网站群聊创建交互） */
   function openCreateGroup(phone){
@@ -4189,9 +4324,70 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       var name = (nameInp.value || "").trim() || ("新群聊" + (GROUPS.length + 1));
       var members = ids.map(function(id){ return findContact(id).name; });
       GROUPS.push({ id: "g" + (GROUPS.length + 1), name: name, members: members });
+      saveContactsData();
       closeFn();
       renderPage(phone, "contacts");
       toastMsg("已创建群聊「" + name + "」");
+    });
+  }
+  /* 添加联系人：名字（必填）+ 头像（可选）→ 加入通讯录并持久化（对齐原网站 contacts.js 新增联系人交互） */
+  function openAddContact(phone){
+    var overlay = document.getElementById("sheetOverlay");
+    var sheet = document.getElementById("sheet");
+    if (!overlay || !sheet) return;
+    sheet.classList.toggle("light", phone.getAttribute("data-pi") === "L");
+    var h = '<div class="sheet-handle"></div><h3>添加联系人</h3>' +
+      '<div style="font-size:11px;opacity:.6;margin-bottom:8px">输入联系人名称，可点击左侧头像选择图片</div>' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">' +
+        '<div class="ac-avatar" id="ac-avatar" style="width:56px;height:56px;border-radius:50%;background:rgba(201,169,110,.25);display:flex;align-items:center;justify-content:center;font-size:22px;color:#c9a96e;cursor:pointer;overflow:hidden;">＋</div>' +
+        '<input type="file" accept="image/*" id="ac-avatar-file" class="file-hidden" style="display:none">' +
+        '<input class="ac-name" id="ac-name" placeholder="联系人名称（必填）" maxlength="12" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:11px;font-size:16px;outline:none;">' +
+      '</div>' +
+      '<button class="cg-create" id="ac-create">添加联系人</button>';
+    sheet.innerHTML = h;
+    overlay.classList.add("on");
+    sheet.classList.add("on");
+    var closeFn = function(){ overlay.classList.remove("on"); sheet.classList.remove("on"); };
+    overlay.onclick = closeFn;
+    var avatarData = null;
+    var avEl = sheet.querySelector("#ac-avatar");
+    var fileEl = sheet.querySelector("#ac-avatar-file");
+    if (avEl && fileEl) {
+      avEl.addEventListener("click", function(){ fileEl.click(); });
+      fileEl.addEventListener("change", function(){
+        if (this.files && this.files[0]) {
+          var f = this.files[0];
+          var rd = new FileReader();
+          rd.onload = function(){
+            var img = new Image();
+            img.onload = function(){
+              var cv = document.createElement("canvas");
+              var s = Math.min(img.width, img.height, 400);
+              cv.width = s; cv.height = s;
+              cv.getContext("2d").drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, s, s);
+              avatarData = cv.toDataURL("image/jpeg", 0.85);
+              avEl.innerHTML = '<img src="' + avatarData + '" style="width:100%;height:100%;object-fit:cover;">';
+            };
+            img.src = rd.result;
+          };
+          rd.readAsDataURL(f);
+        }
+        this.value = "";
+      });
+    }
+    var createBtn = sheet.querySelector("#ac-create");
+    createBtn.addEventListener("click", function(){
+      var nm = (sheet.querySelector("#ac-name").value || "").trim();
+      if (!nm) { toastMsg("请输入联系人名称"); return; }
+      /* 重名检查（按名称匹配） */
+      var dup = CONTACTS.some(function(c){ return c.name === nm; });
+      if (dup) { toastMsg("联系人「" + nm + "」已存在"); return; }
+      var id = "c" + (CONTACTS.length + 1) + "_" + Date.now();
+      CONTACTS.push({ id: id, name: nm, handle: "", avatar: avatarData, statusText: "在线", cards: [] });
+      saveContactsData();
+      closeFn();
+      renderPage(phone, "contacts");
+      toastMsg("已添加联系人「" + nm + "」");
     });
   }
 

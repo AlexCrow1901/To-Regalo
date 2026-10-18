@@ -514,12 +514,13 @@ window.MineCards = (function () {
     }
   }
 
-  /* ---- 我的字卡 tab：便捷版 v2（搜索 + 添加按钮 + 系统滑块开关 + 类型过滤 + 一行一张） ---- */
+  /* ---- 我的字卡 tab：便捷版 v2（搜索 + 目标下拉 + 添加按钮 + 系统滑块开关 + 类型过滤 + 一行一张） ---- */
   function renderMineTab() {
     var on = getSysAllOn();
     return '<div class="pv-searchbox">' + I.svg("search", 15) +
-        '<input type="text" id="pv-card-search" placeholder="搜索字卡…" value="' + escapeHtml(pvSearch) + '"></div>' +
+        '<input type="text" id="pv-card-search" placeholder="搜索字卡内容" value="' + escapeHtml(pvSearch) + '"></div>' +
       '<div class="pv-addrow">' +
+        '<select class="card-search-target" id="pv-card-target" aria-label="添加目标">' + targetSelectHtml() + '</select>' +
         '<input type="text" class="card-input" id="card-input-text" ' +
           'placeholder="输入字卡，空格分隔批量添加，回车确认" maxlength="500">' +
         '<button class="pv-addbtn" data-add-scope="public" data-add-type="text">添加</button>' +
@@ -528,6 +529,20 @@ window.MineCards = (function () {
         '<div class="pv-switch' + (on ? " on" : "") + '" id="pv-syssw"></div></div>' +
       '<div class="pv-filters" id="pv-filters">' + pvFiltersHtml() + '</div>' +
       '<div class="pv-list" id="pv-card-list">' + pvListHtml("mine") + '</div>';
+  }
+  /* 目标选择下拉选项（与全部字卡一致：公用/系统/单独·联系人/自动回复·联系人） */
+  function targetSelectHtml() {
+    var opts = '<option value="public">公用字卡</option>' +
+      '<option value="sys">系统字卡</option>';
+    listContacts().forEach(function (t) {
+      var nm = escapeHtml(t.name || t.nickname || t.id);
+      opts += '<option value="per:' + escapeHtml(t.id) + '">单独 · ' + nm + '</option>';
+    });
+    listContacts().forEach(function (t) {
+      var nm = escapeHtml(t.name || t.nickname || t.id);
+      opts += '<option value="auto:' + escapeHtml(t.id) + '">自动回复 · ' + nm + '</option>';
+    });
+    return opts;
   }
 
   /* ---- 便捷版：字卡类型归类 ---- */
@@ -636,7 +651,10 @@ window.MineCards = (function () {
   var sysPoolCollapse = {};   /* 联系人组折叠状态：默认折叠，点击组头展开 */
   var sysPoolMore = {};       /* 联系人组「显示更多」展开状态 */
   function renderSysPoolTab() {
-    var html = '<div class="card-hint">系统字卡：你审批通过的字卡（来自字卡池），联系人组卡审批通过后自动进入此处 · 按联系人分组，点击组名展开/折叠 · 删除后同时移出聊天使用</div>';
+    var spKw = (window.__spSearch || "").toLowerCase();
+    var html = '<div class="pv-searchbox">' + I.svg("search", 15) +
+        '<input type="text" id="sp-card-search" placeholder="搜索字卡内容" value="' + escapeHtml(window.__spSearch || "") + '"></div>' +
+      '<div class="card-hint">系统字卡：你审批通过的字卡（来自字卡池），联系人组卡审批通过后自动进入此处 · 按联系人分组，点击组名展开/折叠 · 删除后同时移出聊天使用</div>';
     var pool = (window.MineCardGenerator && window.MineCardGenerator.getPool) ? window.MineCardGenerator.getPool() : [];
     if (!pool || pool.length === 0) {
       return html + '<div class="cm-empty">暂无审批通过的字卡</div>';
@@ -647,26 +665,33 @@ window.MineCards = (function () {
       (byCid[k] = byCid[k] || []).push(it);
     });
     var POOL_MORE = 100;   /* 每组最多渲染 100 条，防大量审批通过卡导致卡顿 */
+    var anyShown = false;
     Object.keys(byCid).forEach(function (k) {
       var name = k === "global" ? "通用" : contactName(k);
-      var open = sysPoolCollapse[k] === true;
+      var group = byCid[k];
+      /* 搜索时过滤组内字卡；命中为空则整组隐藏 */
+      if (spKw) group = group.filter(function (it) { return String(it.text || "").toLowerCase().indexOf(spKw) >= 0; });
+      if (!group.length) return;
+      anyShown = true;
+      var open = sysPoolCollapse[k] === true || !!spKw;   /* 搜索时自动展开 */
       html += '<div class="group-head sp-group-head" data-sp-group="' + escapeHtml(k) + '" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">' +
-        '<span>' + escapeHtml(name) + ' · ' + byCid[k].length + ' 张</span>' +
+        '<span>' + escapeHtml(name) + ' · ' + group.length + ' 张</span>' +
         '<span style="font-size:12px;color:#888;">' + (open ? '收起 ▲' : '展开 ▼') + '</span></div>';
       if (open) {
         var poolExpanded = sysPoolMore[k] === true;
-        var poolShown = poolExpanded ? byCid[k] : byCid[k].slice(0, POOL_MORE);
+        var poolShown = poolExpanded ? group : group.slice(0, POOL_MORE);
         html += '<div class="pv-list">' + poolShown.map(function (it) {
           return '<div class="pv-crow sys">' +
             '<span class="pv-txt">' + escapeHtml(it.text) + '</span>' +
             '<span class="pv-mark">审批</span>' +
             '<span class="pv-del" data-del-pool-id="' + escapeHtml(it.id) + '" aria-label="删除">×</span></div>';
         }).join("") + '</div>';
-        if (byCid[k].length > poolShown.length) {
-          html += '<button class="card-more-btn" data-sp-more="' + escapeHtml(k) + '" style="width:100%;padding:9px;border:none;background:none;color:#4a90d9;font-size:12px;cursor:pointer;">显示更多（还有 ' + (byCid[k].length - poolShown.length) + ' 张）</button>';
+        if (group.length > poolShown.length) {
+          html += '<button class="card-more-btn" data-sp-more="' + escapeHtml(k) + '" style="width:100%;padding:9px;border:none;background:none;color:#4a90d9;font-size:12px;cursor:pointer;">显示更多（还有 ' + (group.length - poolShown.length) + ' 张）</button>';
         }
       }
     });
+    if (!anyShown) return html + '<div class="pv-empty">' + (spKw ? "未找到匹配的字卡" : "暂无字卡") + '</div>';
     return html;
   }
 
@@ -989,6 +1014,17 @@ window.MineCards = (function () {
       });
     });
 
+    /* 系统字卡 tab 搜索：防抖过滤（只重建列表，不丢焦点） */
+    var spInput = body.querySelector("#sp-card-search");
+    if (spInput) {
+      var spTimer = null;
+      spInput.addEventListener("input", function () {
+        window.__spSearch = spInput.value;
+        if (spTimer) clearTimeout(spTimer);
+        spTimer = setTimeout(function () { render(); }, 120);
+      });
+    }
+
     /* 系统字卡（审批通过池）删除：同步移除生成器记录 + 对应字卡池 */
     body.querySelectorAll("[data-del-pool-id]").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -1029,7 +1065,18 @@ window.MineCards = (function () {
       var input;
       if (scope === "auto") input = body.querySelector("#card-input-auto");
       else input = body.querySelector(type === "text" ? "#card-input-text" : "#card-input-emoji");
-      btn.addEventListener("click", function () { doAddFromInput(btn, input); });
+      btn.addEventListener("click", function () {
+        /* 我的字卡 tab：添加目标下拉存在时按下拉值动态确定 scope/cid（与全部字卡一致） */
+        var targetSel = body.querySelector("#pv-card-target");
+        if (targetSel) {
+          var v = targetSel.value;
+          if (v === "public") { btn.setAttribute("data-add-scope", "public"); btn.removeAttribute("data-add-cid"); }
+          else if (v === "sys") { btn.setAttribute("data-add-scope", "sys"); btn.removeAttribute("data-add-cid"); }
+          else if (v.indexOf("auto:") === 0) { btn.setAttribute("data-add-scope", "auto"); btn.setAttribute("data-add-cid", v.slice(5)); }
+          else if (v.indexOf("per:") === 0) { btn.setAttribute("data-add-scope", "per"); btn.setAttribute("data-add-cid", v.slice(4)); }
+        }
+        doAddFromInput(btn, input);
+      });
       /* 回车确认：与通讯录联系人主页「输入字卡，空格分隔批量添加 · 回车确认」一致 */
       if (input) {
         input.addEventListener("keydown", function (e) {
