@@ -3085,6 +3085,30 @@ window.MineContacts = (function () {
     loadData: function () { load(); },
     // 保存数据到 localStorage，供其他模块调用
     save: save,
+    // 按名称合并/新增联系人（供编辑人设等外部模块同步 replyDelay / proactiveMin / proactiveMax / proactiveOn 到聊天引擎数据源）
+    upsertContact: function (c) {
+      if (!c || !c.name) return null;
+      var found = null;
+      for (var i = 0; i < state.contacts.length; i++) {
+        if (state.contacts[i].name === c.name) { found = state.contacts[i]; break; }
+      }
+      if (found) {
+        found.replyDelay = c.replyDelay; found.proactiveMin = c.proactiveMin;
+        found.proactiveMax = c.proactiveMax; found.proactiveOn = c.proactiveOn;
+        if (c.avatar) found.avatar = c.avatar;
+        if (c.cards) found.cards = c.cards;
+      } else {
+        state.contacts.push({
+          id: c.id || ("c" + Date.now() + "_" + state.contacts.length),
+          name: c.name, status: c.status || "在线", avatar: c.avatar || null,
+          cards: c.cards || [], autoCards: [], momentCards: [], statuses: [],
+          replyDelay: c.replyDelay, proactiveMin: c.proactiveMin, proactiveMax: c.proactiveMax, proactiveOn: c.proactiveOn
+        });
+      }
+      save();
+      if (window.MineChat && MineChat.refreshProactive) MineChat.refreshProactive(c.id || c.name);
+      return found || state.contacts[state.contacts.length - 1];
+    },
     getState: function () { return JSON.parse(JSON.stringify(state)); },
     // 暴露给聊天模块使用
     findContact: findContact,
