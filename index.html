@@ -1017,7 +1017,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2024"></script>
+<script src="cards.js?v2025"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1104,6 +1104,17 @@ body {
      因此 mount 延迟执行（zip applyHash 先渲染静态，mount 再覆盖为真实模块渲染）。 */
   function safeMount() { try { setTimeout(mount, 0); } catch (e) {} }
   window.addEventListener("hashchange", safeMount);
+  /* 状态栏时钟：显示真实系统时间（每分钟刷新） */
+  (function clock(){
+    function up(){
+      var el = document.getElementById("status-time");
+      if (!el) return;
+      var d = new Date(), h = d.getHours(), m = d.getMinutes();
+      el.textContent = (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+    }
+    up();
+    setInterval(up, 10000);
+  })();
   if (document.readyState === "loading") {
     window.addEventListener("DOMContentLoaded", safeMount);
   } else {
@@ -1455,9 +1466,8 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     <div>
       <div class="phone light" data-mode="light" data-pi="L">
         <div class="status-bar">
-          <span>19:27</span>
+          <span id="status-time">--:--</span>
           <div class="edit-dot" title="编辑模式"></div>
-          <span>85%</span>
         </div>
 
         <div class="home-scroll">
@@ -4046,6 +4056,16 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     body.scrollTop = body.scrollHeight;
     bindMsgButtons(page);
   }
+  function zipFmtTime(ts){
+    var d = new Date(ts || Date.now());
+    var h = d.getHours(), m = d.getMinutes();
+    return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+  }
+  function zipFmtDate(ts){
+    var d = new Date(ts || Date.now()), now = new Date();
+    if (d.toDateString() === now.toDateString()) return "今天";
+    return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日";
+  }
   function zipMsgRow(page, m){
     var row = document.createElement("div");
     row.className = "msg-row" + (m.from === "me" ? " me" : "");
@@ -4084,12 +4104,25 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     } else {
       row.innerHTML = '<div class="msg-avatar">' + who + '</div><div class="msg-bubble">' + esc(m.text) + '</div>';
     }
+    /* 消息气泡下方时间标注：点击在 时间 ↔ 日期 间切换（对齐原网站） */
+    row.insertAdjacentHTML("beforeend",
+      '<div class="msg-time"><span class="time-text" data-time="' + zipFmtTime(m.time) + '" data-date="' + zipFmtDate(m.time) + '">' + zipFmtTime(m.time) + '</span></div>');
     return row;
   }
   /* 动态消息按钮（撤回 toggle + 删除字卡同意/留着）——每次渲染后绑定新元素 */
   function bindMsgButtons(page){
     var body = page.querySelector(".chat-body");
     if (!body) return;
+    /* 点击消息时间 → 时间/日期切换（对齐原网站） */
+    body.querySelectorAll(".time-text").forEach(function(t){
+      if (t._bound) return;
+      t._bound = true;
+      t.addEventListener("click", function(){
+        var isDate = t.getAttribute("data-show") === "date";
+        t.textContent = isDate ? t.getAttribute("data-time") : t.getAttribute("data-date");
+        t.setAttribute("data-show", isDate ? "time" : "date");
+      });
+    });
     body.querySelectorAll(".msg-bubble.is-recalled").forEach(function(b){
       if (b._bound) return;
       b._bound = true;
