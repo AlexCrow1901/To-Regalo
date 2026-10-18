@@ -4208,19 +4208,22 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     });
     ALL_PAGES.forEach(function(pg){ renderPage(phone, pg); });
   });
-  function applyHash(){
+  function applyHash(normalize){
     var h = location.hash.replace("#", "");
     if (!h) return;
     var parts = h.split("|");
     var pg = parts[0];
-    /* 详情页 hash 直达时回退到对应主页（避免刷新/重开时直接停留在群聊设置、联系人主页、聊天详情，
-       让用户"点聊天/通讯录"时总是先看到列表） */
-    if (pg === "chat-detail") pg = "chat";
-    else if (pg === "contact" || pg === "group") pg = "contacts";
+    /* 仅在页面加载/刷新（初始 applyHash(true)）时把详情页 hash 归一为列表页，
+       避免刷新后直接停留在群聊设置、联系人主页、聊天详情；
+       hashchange（用户点击联系人/群聊等主动打开详情）不再归一，否则对话页会被弹回列表 */
+    if (normalize) {
+      if (pg === "chat-detail") pg = "chat";
+      else if (pg === "contact" || pg === "group") pg = "contacts";
+    }
     showPage(parts[1] || "L", pg);
   }
-  window.addEventListener("hashchange", applyHash);
-  applyHash();
+  window.addEventListener("hashchange", function () { applyHash(false); });
+  applyHash(true);
 })();
 </script>
 <div class="sheet-overlay" id="sheetOverlay"></div>
