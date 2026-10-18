@@ -22,21 +22,8 @@ window.MineContacts = (function () {
     groups: []
   };
 
-  // 首次使用的雾都风种子数据（含初始字卡 + 状态池）
-  var SEED = [
-    { name: "艾琳·格雷",     status: "雾中独行",
-      statuses: ["雾中独行", "在窗边读信", "雨打湿了裙摆", "等雾散去", "聆听钟声"],
-      cards: ["雾太浓了，看不清前路。", "你听见钟声了吗？", "今天的雨比昨天更冷。", "我在窗边等你很久了。"] },
-    { name: "亚瑟·彭德尔顿", status: "在雨中读信",
-      statuses: ["在雨中读信", "整理旧书", "炉边沉思", "雾都夜行", "磨墨写信"],
-      cards: ["信已寄出，不知能否送达。", "雾都的夜总是这么长。", "你还好吗？", "路灯又灭了一盏。"] },
-    { name: "维罗妮卡",       status: "炉火将熄",
-      statuses: ["炉火将熄", "缝补旧衣", "望雾出神", "低声哼唱", "独坐灯下"],
-      cards: ["炉火快灭了。", "给我讲个故事吧。", "雾里有声音。", "我不想一个人。"] },
-    { name: "西奥多",         status: "钟声穿过雾街",
-      statuses: ["钟声穿过雾街", "漫步桥上", "数着路灯", "雾中独行", "等待黎明"],
-      cards: ["钟声又响了。", "时间在雾里停滞。", "你来了。", "走吧，趁雾还没散。"] }
-  ];
+  // 不再内置种子联系人：通讯录默认为空，测试时临时新增、测试完删除
+  var SEED = [];
 
   /* ---------------- 持久化 ---------------- */
   function save() {
@@ -464,14 +451,15 @@ window.MineContacts = (function () {
 
     html += '<div class="list-sep"></div>';
 
-    // 回复设置区
+    // 编辑人设区（主动发消息 + 回复时间）
     var delaySec = c.replyDelay !== undefined ? c.replyDelay : 1.5;
     var delayLabel = formatDelayLabel(delaySec);
-    html += '<div class="group-head">回复设置</div>';
+    html += '<div class="group-head">编辑人设</div>';
+    html += '<div class="reply-hint" style="padding:0 0 6px">设置对方主动发消息的时间区间与回复耗时 · 保存后即时生效</div>';
     html += '<div class="reply-settings">' +
       '<div class="reply-setting-row">' +
         '<div class="reply-setting-info">' +
-          '<span class="func-title">回复延迟</span>' +
+          '<span class="func-title">回复时间</span>' +
           '<span class="func-sub" id="reply-delay-label">' + delayLabel + '</span>' +
         '</div>' +
         '<div class="slider-wrap">' +
@@ -479,7 +467,7 @@ window.MineContacts = (function () {
           'min="0" max="600" step="1" value="' + (delaySec * 1) + '">' +
         '</div>' +
       '</div>' +
-      '<div class="reply-hint">1% 概率触发自动回复 · 回复时间在 0 ~ 设定值内随机 · 拖动调节 0 秒 ~ 10 分钟</div>';
+      '<div class="reply-hint">回复时间在 0 ~ 设定值内随机 · 拖动调节 0 秒 ~ 10 分钟</div>';
 
     // 主动消息设置（对方主动发消息的时间区间，1 分钟 ~ 12 小时，始终开启）
     var proMin = (c.proactiveMin !== undefined) ? c.proactiveMin : 1;
