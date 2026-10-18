@@ -1013,7 +1013,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2000"></script>
+<script src="cards.js?v2014"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1210,7 +1210,177 @@ body {
   setTimeout(grab, 900);
   window.addEventListener("hashchange", grab);
 })();
-</script></head>
+</script><style id="preview-override">
+/* ===== 全站样式预览：暗金背景→纯色 · 纯白/纯黑底 · 按钮纯色 ===== */
+/* 黑夜（fog/默认）= 纯黑底；白天（neumorphism）= 纯白底 */
+body, body .phone{background:#000 !important;}
+body.theme-neumorphism, body.theme-neumorphism .phone{background:#fff !important;}
+body.theme-neumorphism .dock{background:#fff !important;}
+body.theme-neumorphism .lib-grip{background:#fff !important;}
+body.theme-neumorphism .lib-panel{background:#fff !important;}
+body.theme-neumorphism .w-quote{background:#fff !important;}
+/* 暗金半透明背景 → 纯色（黑夜深暗金 / 白天浅金） */
+.group-head .count,
+.func-ic,
+.avatar,
+.msg-bubble.ai-tag::after,
+.zc-msg-picked,
+.th-group-count,
+.th-verify-icon,
+.th-read-letter,
+.th-recipient.on,
+.mail-count,
+.comp-app .soon-t,
+.foodie-acts button,
+.empty-state .e-ic,
+.pill.gold,
+.cg-mem .ag,
+#cards-sheet-body .sys-master-row{background:#4a3f2a !important;}
+body.theme-neumorphism .group-head .count,
+body.theme-neumorphism .func-ic,
+body.theme-neumorphism .avatar,
+body.theme-neumorphism .msg-bubble.ai-tag::after,
+body.theme-neumorphism .zc-msg-picked,
+body.theme-neumorphism .th-group-count,
+body.theme-neumorphism .th-verify-icon,
+body.theme-neumorphism .th-read-letter,
+body.theme-neumorphism .th-recipient.on,
+body.theme-neumorphism .mail-count,
+body.theme-neumorphism .comp-app .soon-t,
+body.theme-neumorphism .foodie-acts button,
+body.theme-neumorphism .empty-state .e-ic,
+body.theme-neumorphism .pill.gold,
+body.theme-neumorphism .cg-mem .ag,
+body.theme-neumorphism #cards-sheet-body .sys-master-row{background:#f2ead8 !important;}
+/* 含金渐变装饰 → 纯色 */
+.moments-cover{background:#4a3f2a !important;}
+body.theme-neumorphism .moments-cover{background:#f2ead8 !important;}
+.cp-banner{background:#4a3f2a !important;}
+body.theme-neumorphism .cp-banner{background:#f2ead8 !important;}
+.cp-avatar{background:#4a3f2a !important;}
+body.theme-neumorphism .cp-avatar{background:#f2ead8 !important;}
+/* 白天按钮深金 */
+body.theme-neumorphism .switch.on,
+body.theme-neumorphism .toggle.on,
+body.theme-neumorphism .cat-chip.on,
+body.theme-neumorphism .card-tab.on,
+body.theme-neumorphism .cg-create,
+body.theme-neumorphism .th-compose-fab,
+body.theme-neumorphism .mail-badge,
+body.theme-neumorphism .b-ok,
+body.theme-neumorphism .zc-call-avatar{background:#a97c3d !important;}
+/* 黑胶唱片（.w-vinyl .disc / .rp-vinyl）保留原样 */
+</style>
+<style id="pv-cards-style">
+/* ===== 字卡管理器 · 便捷版 v2（预览：与已验证交互预览一致） ===== */
+#cards-sheet-body .pv-searchbox, #cards-search-body .pv-searchbox{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.04);border:1px solid rgba(176,137,69,.45);border-radius:11px;padding:8px 10px;margin-bottom:8px;}
+#cards-sheet-body .pv-searchbox, #cards-search-body .pv-searchbox svg{flex:none;color:#6d7078;}
+#cards-sheet-body .pv-searchbox, #cards-search-body .pv-searchbox input{flex:1;background:none;border:none;outline:none;color:inherit;font-size:16px;min-height:24px;}
+#cards-sheet-body .pv-searchbox, #cards-search-body .pv-searchbox input::placeholder{color:#6d7078;}
+#cards-sheet-body .pv-addrow, #cards-search-body .pv-addrow{display:flex;gap:7px;margin-bottom:10px;}
+#cards-sheet-body .pv-addrow, #cards-search-body .pv-addrow input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:9px 11px;color:inherit;font-size:16px;outline:none;min-width:0;}
+#cards-sheet-body .pv-addrow, #cards-search-body .pv-addrow input::placeholder{color:#6d7078;font-size:13px;}
+#cards-sheet-body .pv-addrow, #cards-search-body .pv-addrow input:focus{border-color:rgba(176,137,69,.6);}
+#cards-sheet-body .pv-addbtn, #cards-search-body .pv-addbtn{width:58px;border:none;border-radius:11px;background:#c9a96e;color:#fff;font-size:13px;font-weight:600;cursor:pointer;min-height:44px;}
+#cards-sheet-body .pv-sysrow, #cards-search-body .pv-sysrow{display:flex;align-items:center;justify-content:space-between;background:rgba(201,169,110,.14);border:1px solid rgba(176,137,69,.35);border-radius:11px;padding:8px 11px;margin-bottom:10px;}
+#cards-sheet-body .pv-lbl, #cards-search-body .pv-lbl{font-size:12.5px;color:#c9a96e;}
+#cards-sheet-body .pv-switch, #cards-search-body .pv-switch{position:relative;width:42px;height:24px;border-radius:99px;background:rgba(128,128,128,.3);cursor:pointer;transition:background .18s;flex:none;}
+#cards-sheet-body .pv-switch, #cards-search-body .pv-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s;}
+#cards-sheet-body .pv-switch, #cards-search-body .pv-switch.on{background:#c9a96e;}
+#cards-sheet-body .pv-switch, #cards-search-body .pv-switch.on::after{transform:translateX(18px);}
+#cards-sheet-body .pv-filters, #cards-search-body .pv-filters{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+#cards-sheet-body .pv-fchip, #cards-search-body .pv-fchip{font-size:11.5px;padding:6px 11px;border-radius:99px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#9aa0a8;cursor:pointer;min-height:32px;}
+#cards-sheet-body .pv-fchip, #cards-search-body .pv-fchip.on{background:rgba(201,169,110,.14);border-color:rgba(176,137,69,.55);color:#c9a96e;}
+#cards-sheet-body .pv-list, #cards-search-body .pv-list{min-height:44px;}
+#cards-sheet-body .pv-crow, #cards-search-body .pv-crow{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(201,169,110,.45);margin-bottom:7px;min-height:48px;}
+#cards-sheet-body .pv-crow, #cards-search-body .pv-crow.sys{background:rgba(201,169,110,.14);border-color:rgba(176,137,69,.4);}
+#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-txt{flex:1;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#cards-sheet-body .pv-crow, #cards-search-body .pv-crow.sys .pv-txt{color:#c9a96e;}
+#cards-sheet-body .pv-mark, #cards-search-body .pv-mark{font-size:10px;color:#6d7078;flex:none;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,.08);}
+#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-del{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#6d7078;cursor:pointer;border-radius:9px;flex:none;font-size:16px;}
+#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-del:hover{color:#e07a7a;background:rgba(224,122,122,.14);}
+#cards-sheet-body .pv-empty, #cards-search-body .pv-empty{border:1px dashed rgba(176,137,69,.35);border-radius:11px;padding:16px 10px;text-align:center;font-size:12px;color:rgba(176,137,69,.7);}
+#cards-sheet-body .pv-currow, #cards-search-body .pv-currow{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:8px 11px;margin-bottom:10px;}
+#cards-sheet-body .pv-cname, #cards-search-body .pv-cname{font-size:12.5px;}
+#cards-sheet-body .pv-back, #cards-search-body .pv-back{border:none;background:none;color:#c9a96e;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px;min-height:32px;}
+/* ===== 白天主题（body.theme-neumorphism） ===== */
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-searchbox{background:rgba(20,24,34,.045);border-color:rgba(176,137,69,.45);}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-searchbox svg{color:#9aa0a8;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-searchbox input{color:#1c1f26;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-searchbox input::placeholder{color:#9aa0a8;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-addrow input{background:rgba(20,24,34,.045);border-color:rgba(20,24,34,.12);color:#1c1f26;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-addrow input::placeholder{color:#9aa0a8;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-addbtn{background:#a97c3d;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-sysrow{background:rgba(169,124,61,.12);border-color:rgba(169,124,61,.35);}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-lbl{color:#a97c3d;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-switch.on{background:#a97c3d;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-fchip{background:rgba(20,24,34,.045);border-color:rgba(20,24,34,.12);color:#5c616b;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-fchip.on{background:rgba(169,124,61,.12);border-color:rgba(169,124,61,.55);color:#a97c3d;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-crow{background:rgba(20,24,34,.045);border-color:rgba(169,124,61,.5);}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-crow.sys{background:rgba(169,124,61,.12);border-color:rgba(169,124,61,.4);}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-crow .pv-txt{color:#1c1f26;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-crow.sys .pv-txt{color:#a97c3d;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-mark{color:#9aa0a8;background:rgba(20,24,34,.08);}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-crow .pv-del{color:#9aa0a8;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-crow .pv-del:hover{color:#c34d4d;background:rgba(195,77,77,.12);}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-empty{border-color:rgba(169,124,61,.35);color:rgba(169,124,61,.7);}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-currow{background:rgba(20,24,34,.045);border-color:rgba(20,24,34,.12);}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-back{color:#a97c3d;}
+body.theme-neumorphism .sheet{background:#fff;}
+
+#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-edit{width:30px;height:32px;display:flex;align-items:center;justify-content:center;color:#9aa0a8;cursor:pointer;border-radius:9px;flex:none;}
+#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-edit:hover{color:#4a90d9;background:rgba(74,144,217,.14);}
+#cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-edit.is-primary{color:#c9a96e;}
+#cards-sheet-body .card-search-target, #cards-search-body .card-search-target{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:inherit;font-size:12.5px;padding:7px 8px;outline:none;flex:none;min-width:0;}
+#cards-sheet-body .pv-addrow, #cards-search-body .pv-addrow .card-search-target{width:104px;}
+
+</style>
+
+
+
+<style id="pv-day-fix">
+/* ===== 白天模式可读性修复：浅金底/白底上的文字加深 ===== */
+body.theme-neumorphism .func-ic,
+body.theme-neumorphism .func-ic svg,
+body.theme-neumorphism .func-ic *{color:#6b5526 !important;}
+body.theme-neumorphism .sheet{color:#1c1f26 !important;}
+body.theme-neumorphism .sheet .card-hint,
+body.theme-neumorphism .sheet .card-tab:not(.on),
+body.theme-neumorphism .sheet .group-head,
+body.theme-neumorphism .sheet .target-name,
+body.theme-neumorphism .sheet .target-sub,
+body.theme-neumorphism .sheet .option-label,
+body.theme-neumorphism .sheet .field-label,
+body.theme-neumorphism .sheet .tip-text,
+body.theme-neumorphism .sheet .cm-empty,
+body.theme-neumorphism .sheet .card-current-row,
+body.theme-neumorphism .sheet .currow,
+body.theme-neumorphism .sheet .sys-master-label,
+body.theme-neumorphism .sheet .pv-cname,
+body.theme-neumorphism .sheet .th-bubble,
+body.theme-neumorphism .sheet .tree-msg,
+body.theme-neumorphism .sheet .card-input,
+body.theme-neumorphism .sheet .pv-searchbox input{color:#1c1f26 !important;}
+body.theme-neumorphism .sheet input,
+body.theme-neumorphism .sheet textarea{color:#1c1f26 !important;}
+body.theme-neumorphism .sheet input::placeholder,
+body.theme-neumorphism .sheet textarea::placeholder{color:#8a8f99 !important;}
+/* 白天浅金横幅/头像内文字加深 */
+body.theme-neumorphism .moments-cover,
+body.theme-neumorphism .moments-cover *,
+body.theme-neumorphism .cp-banner,
+body.theme-neumorphism .cp-banner *,
+body.theme-neumorphism .cp-avatar,
+body.theme-neumorphism .cp-avatar *{color:#6b5526 !important;}
+
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-crow .pv-edit{color:#9aa0a8;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-crow .pv-edit:hover{color:#2b6cb0;background:rgba(43,108,176,.12);}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .pv-crow .pv-edit.is-primary{color:#a97c3d;}
+body.theme-neumorphism #cards-sheet-body, body.theme-neumorphism #cards-search-body .card-search-target{background:rgba(20,24,34,.045);border-color:rgba(20,24,34,.12);color:#1c1f26;}
+
+</style>
+
+</head>
 <body>
   <div class="phones">
 
@@ -4079,8 +4249,5 @@ body {
 </style>
 
 <!-- ===== 全部原模块（顺序对齐原 index.html；storage 最先） ===== -->
-
-
-
 </body>
 </html>
