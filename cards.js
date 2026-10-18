@@ -480,11 +480,14 @@ window.MineCards = (function () {
     var body = document.getElementById("cards-sheet-body");
     if (!body) return;
 
-    var tabs =
-      '<div class="card-tabs">' +
-        '<button class="card-tab' + (currentTab === "mine" ? " is-active" : "") + '" data-tab="mine">我的字卡</button>' +
-        '<button class="card-tab' + (currentTab === "per" ? " is-active" : "") + '" data-tab="per">单独字卡</button>' +
-        '<button class="card-tab' + (currentTab === "syspool" ? " is-active" : "") + '" data-tab="syspool">系统字卡</button>' +
+    var head =
+      '<div class="pv-head">' +
+        '<span class="pv-head-title">' + (currentTab === "mine" ? "我的字卡" : currentTab === "per" ? "单独字卡" : "系统字卡") + '</span>' +
+        '<span class="pv-head-switch">' +
+          '<button class="pv-head-tab' + (currentTab === "mine" ? " on" : "") + '" data-tab="mine">我的</button>' +
+          '<button class="pv-head-tab' + (currentTab === "per" ? " on" : "") + '" data-tab="per">单独</button>' +
+          '<button class="pv-head-tab' + (currentTab === "syspool" ? " on" : "") + '" data-tab="syspool">系统</button>' +
+        '</span>' +
       '</div>';
 
     var content = "";
@@ -506,10 +509,10 @@ window.MineCards = (function () {
     /* 弹层内交互重渲染（删除/添加/tab 切换）保持滚动位置，避免跳回顶部
        防御：MineScroll 异常时回退为直接渲染，保证交互不失效（防"点击没反应"） */
     try {
-      window.MineScroll.render(body, tabs + content, true, function () { bindEvents(body); });
+      window.MineScroll.render(body, head + content, true, function () { bindEvents(body); });
     } catch (e) {
       console.error("[MineCards] render failed:", e);
-      body.innerHTML = tabs + content;
+      body.innerHTML = head + content;
       try { bindEvents(body); } catch (e2) { console.error("[MineCards] bindEvents failed:", e2); }
     }
   }

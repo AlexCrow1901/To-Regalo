@@ -1017,7 +1017,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2016"></script>
+<script src="cards.js?v2017"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1325,6 +1325,14 @@ body:not(.theme-neumorphism) .phone.light .dock{background:#0d0d0d !important;bo
 #cards-sheet-body .pv-fchip, #cards-search-body .pv-fchip{font-size:11.5px;padding:6px 11px;border-radius:99px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#9aa0a8;cursor:pointer;min-height:32px;}
 #cards-sheet-body .pv-fchip, #cards-search-body .pv-fchip.on{background:rgba(201,169,110,.14);border-color:rgba(176,137,69,.55);color:#c9a96e;}
 #cards-sheet-body .pv-list, #cards-search-body .pv-list{min-height:44px;}
+#cards-sheet-body .pv-head, #cards-search-body .pv-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;}
+#cards-sheet-body .pv-head-title, #cards-search-body .pv-head-title{font-size:15px;font-weight:700;color:#fff;}
+#cards-sheet-body .pv-head-switch, #cards-search-body .pv-head-switch{display:flex;gap:3px;}
+#cards-sheet-body .pv-head-tab, #cards-search-body .pv-head-tab{border:none;background:rgba(255,255,255,.06);color:#9aa0a8;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;min-height:28px;}
+#cards-sheet-body .pv-head-tab.on, #cards-search-body .pv-head-tab.on{background:rgba(201,169,110,.16);color:#c9a96e;font-weight:600;}
+body.theme-neumorphism #cards-sheet-body .pv-head-title, body.theme-neumorphism #cards-search-body .pv-head-title{color:#1c1f26;}
+body.theme-neumorphism #cards-sheet-body .pv-head-tab, body.theme-neumorphism #cards-search-body .pv-head-tab{background:rgba(20,24,34,.05);color:#5c616b;}
+body.theme-neumorphism #cards-sheet-body .pv-head-tab.on, body.theme-neumorphism #cards-search-body .pv-head-tab.on{background:rgba(169,124,61,.12);color:#a97c3d;}
 #cards-sheet-body .pv-crow, #cards-search-body .pv-crow{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(201,169,110,.45);margin-bottom:7px;min-height:48px;}
 #cards-sheet-body .pv-crow, #cards-search-body .pv-crow.sys{background:rgba(201,169,110,.14);border-color:rgba(176,137,69,.4);}
 #cards-sheet-body .pv-crow, #cards-search-body .pv-crow .pv-txt{flex:1;font-size:14px;line-height:1.45;word-break:break-all;white-space:normal;}
