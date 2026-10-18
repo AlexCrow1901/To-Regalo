@@ -415,6 +415,12 @@ body {
 .switch::after{content:""; position:absolute; top:2px; left:2px; width:19px; height:19px; border-radius:50%; background:#fff; transition:.25s}
 .switch.on::after{left:19px}
 .avatar{width:44px; height:44px; border-radius:50%; background:rgba(201,169,110,.25); display:flex; align-items:center; justify-content:center; font-size:16px; flex:none; overflow:hidden; color:#c9a96e}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}
+.group-avatar{overflow:hidden;flex:none;background:rgba(201,169,110,.18);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#c9a96e}
+.group-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.ga-grid{width:100%;height:100%;display:flex;flex-wrap:wrap}
+.ga-cell{width:50%;height:50%;display:flex;align-items:center;justify-content:center;font-size:10px;overflow:hidden;color:#c9a96e}
+.ga-cell img{width:100%;height:100%;object-fit:cover;display:block}
 .avatar.sm{width:34px; height:34px; font-size:13px}
 .avatar.lg{width:62px; height:62px; font-size:22px}
 .avatar-group{display:flex; flex-wrap:wrap; width:44px; height:44px; border-radius:50%; overflow:hidden; background:rgba(201,169,110,.18); flex:none; align-items:center; justify-content:center}
@@ -1017,7 +1023,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2026"></script>
+<script src="cards.js?v2027"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
