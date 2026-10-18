@@ -1269,6 +1269,33 @@ body.theme-neumorphism .th-compose-fab,
 body.theme-neumorphism .mail-badge,
 body.theme-neumorphism .b-ok,
 body.theme-neumorphism .zc-call-avatar{background:#a97c3d !important;}
+
+/* ===== 夜间修复：phone.light（旧白天类残留）→ 强制夜间浅色文字，防"深字黑底看不清" ===== */
+body:not(.theme-neumorphism) .phone.light,
+body:not(.theme-neumorphism) .phone.light *{color:#e8e6e1 !important;}
+/* 保留黑胶唱片金色与品牌金色图标 */
+body:not(.theme-neumorphism) .phone.light .w-vinyl .disc span,
+body:not(.theme-neumorphism) .phone.light .rp-vinyl,
+body:not(.theme-neumorphism) .phone.light .func-ic,
+body:not(.theme-neumorphism) .phone.light .func-icon{color:#c9a96e !important;}
+/* 次要文字稍暗（副标题/说明/时间） */
+body:not(.theme-neumorphism) .phone.light .status-bar,
+body:not(.theme-neumorphism) .phone.light .w-vinyl .info .a,
+body:not(.theme-neumorphism) .phone.light .w-vinyl .info .ctl,
+body:not(.theme-neumorphism) .phone.light .w-quote .ql,
+body:not(.theme-neumorphism) .phone.light .w-quote .qa,
+body:not(.theme-neumorphism) .phone.light .func-sub,
+body:not(.theme-neumorphism) .phone.light .lib-search::placeholder{color:#9aa0a8 !important;}
+/* 近白卡片/按钮背景改深（防浅字近白底或深字浅底） */
+body:not(.theme-neumorphism) .phone.light .w-quote,
+body:not(.theme-neumorphism) .phone.light .w-del,
+body:not(.theme-neumorphism) .phone.light .lib-close{background:rgba(255,255,255,.04) !important;}
+body:not(.theme-neumorphism) .phone.light .lib-grip,
+body:not(.theme-neumorphism) .phone.light .lib-panel{background:#17171b !important;}
+body:not(.theme-neumorphism) .phone.light .lib-search{background:rgba(255,255,255,.06) !important;border:1px solid rgba(255,255,255,.12) !important;}
+body:not(.theme-neumorphism) .phone.light .w-vinyl .info .bar{background:#2a2a2a !important;}
+body:not(.theme-neumorphism) .phone.light .w-vinyl .info .bar i{background:#ddd !important;}
+body:not(.theme-neumorphism) .phone.light .w-quote .qt{color:#f2f2f2 !important;}
 /* 黑胶唱片（.w-vinyl .disc / .rp-vinyl）保留原样 */
 </style>
 <style id="pv-cards-style">
