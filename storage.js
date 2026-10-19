@@ -193,6 +193,35 @@
       var all = [];
       for (var key in cache) all.push({ key: key, value: cache[key] });
       dbPutAll(db, all);
+      /* 预设演示数据清洗：从 IndexedDB 恢复的旧备份中可能含旧版内置的演示联系人/聊天
+         （艾琳·格雷/亚瑟·彭德尔顿/维罗妮卡/西奥多），在此统一清除，保证"系统更新不再出现预设数据"；
+         用户自建联系人/聊天不受影响。清洗结果经 store.setItem 回写 IndexedDB，一次清洗永久生效。 */
+      try {
+        var DEMO = ["艾琳·格雷", "亚瑟·彭德尔顿", "维罗妮卡", "西奥多"];
+        ["mine.contacts.v1", "mine.contacts.mc.v1"].forEach(function (k) {
+          var raw = store.getItem(k);
+          if (!raw) return;
+          var d = JSON.parse(raw);
+          var arr = Array.isArray(d) ? d : (d && Array.isArray(d.contacts) ? d.contacts : null);
+          if (!arr) return;
+          var kept = arr.filter(function (c) { return c && c.name && DEMO.indexOf(c.name) === -1; });
+          if (kept.length === arr.length) return;
+          if (Array.isArray(d)) store.setItem(k, JSON.stringify(kept));
+          else { d.contacts = kept; store.setItem(k, JSON.stringify(d)); }
+        });
+        var chatRaw = store.getItem("mine.chat.v1");
+        if (chatRaw) {
+          var chat = JSON.parse(chatRaw);
+          var chatChanged = false;
+          Object.keys(chat).forEach(function (ck) {
+            var msgs = chat[ck] || [];
+            var keptMsgs = msgs.filter(function (m) { return !(m && m.senderName && DEMO.indexOf(m.senderName) !== -1); });
+            if (keptMsgs.length !== msgs.length) { chat[ck] = keptMsgs; chatChanged = true; }
+            if (!keptMsgs.length) delete chat[ck];
+          });
+          if (chatChanged) store.setItem("mine.chat.v1", JSON.stringify(chat));
+        }
+      } catch (e) {}
       hydrated = true;
       // 版本标记：仅记录存储层版本，不删除任何数据
       try {
