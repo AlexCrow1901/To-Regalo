@@ -1042,7 +1042,7 @@ body {
 <script src="mine-sync.js?v2000"></script>
 <script src="lexicon-card-generator.js?v2000"></script>
 <script src="lexicon-admin.js?v2000"></script>
-<script src="chat.js?v2045"></script>
+<script src="chat.js?v2046"></script>
 <script src="phone.js?v2000"></script>
 <script src="companion.js?v2000"></script>
 <script src="profile.js?v2041"></script>
@@ -1942,19 +1942,41 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     } catch(e){}
   }
   (function(){
+    function toArr(d, field){
+      if (!d) return null;
+      if (Array.isArray(d)) return d;
+      if (typeof d === "object" && Array.isArray(d[field])) return d[field];
+      return null;
+    }
     try {
       var savedC = JSON.parse(localStorage.getItem("mine.contacts.v1") || "null");
-      if (savedC && Array.isArray(savedC)) {
+      var arrC = toArr(savedC, "contacts");
+      /* 兼容：mine.contacts.v1 为空/对象格式时，回退读取 contacts.js 的 mc.v1 联系人，
+         保证聊天链路添加的联系人在字卡/通讯录同样可见 */
+      if (!arrC || arrC.length === 0) {
+        try {
+          var mcRaw = JSON.parse(localStorage.getItem("mine.contacts.mc.v1") || "null");
+          if (mcRaw && typeof mcRaw === "object" && Array.isArray(mcRaw.contacts) && mcRaw.contacts.length) arrC = mcRaw.contacts;
+        } catch(e2){}
+      }
+      if (arrC) {
         /* 过滤旧版预设演示联系人（艾琳·格雷等4人），预设数据不再显示也不随加载复活；用户自建联系人不受影响 */
         var DEMO_NAMES = ["艾琳·格雷","亚瑟·彭德尔顿","维罗妮卡","西奥多"];
-        savedC = savedC.filter(function(sc){ return sc && sc.name && DEMO_NAMES.indexOf(sc.name) === -1; });
-        CONTACTS = savedC.map(function(sc){
+        arrC = arrC.filter(function(sc){ return sc && sc.name && DEMO_NAMES.indexOf(sc.name) === -1; });
+        CONTACTS = arrC.map(function(sc){
           return { id:sc.id, name:sc.name||sc.id, handle:sc.handle||"", avatar:sc.avatar||null, statusText:sc.statusText||"在线", cards:sc.cards||[], autoCards:sc.autoCards||[] };
         });
       }
       var savedG = JSON.parse(localStorage.getItem("mine.groups.v1") || "null");
-      if (savedG && Array.isArray(savedG)) {
-        GROUPS = savedG.map(function(sg){
+      var arrG = toArr(savedG, "groups");
+      if (!arrG || arrG.length === 0) {
+        try {
+          var mcRaw2 = JSON.parse(localStorage.getItem("mine.contacts.mc.v1") || "null");
+          if (mcRaw2 && typeof mcRaw2 === "object" && Array.isArray(mcRaw2.groups) && mcRaw2.groups.length) arrG = mcRaw2.groups;
+        } catch(e3){}
+      }
+      if (arrG) {
+        GROUPS = arrG.map(function(sg){
           return { id:sg.id, name:sg.name||"群聊", avatar:sg.avatar||null, members:sg.members||[], autoCards:sg.autoCards||[] };
         });
       }
@@ -3897,7 +3919,9 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         typeRow("图片字卡",3,["月光照片","窗外风景"]) +
         typeRow("语音字卡",4,["到家了吗","今天开心吗"]);
     if (view === "per")
-      return CONTACTS.map(function(c){
+      return CONTACTS.length === 0
+        ? '<div style="text-align:center;padding:44px 0;opacity:.5"><div style="font-size:14px;margin-bottom:6px">暂无联系人</div><div style="font-size:11.5px">请先在「通讯录」中添加联系人，再为每个联系人单独设置字卡</div></div>'
+        : CONTACTS.map(function(c){
         var cards = c.cards || [];
         var autoCards = c.autoCards || [];
         function cardLabel(x){
