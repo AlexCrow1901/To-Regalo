@@ -1022,8 +1022,8 @@ body {
 <script src="icons.js?v2000"></script>
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
-<script src="contacts.js?v2036"></script>
-<script src="cards.js?v2036"></script>
+<script src="contacts.js?v2037"></script>
+<script src="cards.js?v2037"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1933,6 +1933,9 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     try {
       var savedC = JSON.parse(localStorage.getItem("mine.contacts.v1") || "null");
       if (savedC && Array.isArray(savedC)) {
+        /* 过滤旧版预设演示联系人（艾琳·格雷等4人），预设数据不再显示也不随加载复活；用户自建联系人不受影响 */
+        var DEMO_NAMES = ["艾琳·格雷","亚瑟·彭德尔顿","维罗妮卡","西奥多"];
+        savedC = savedC.filter(function(sc){ return sc && sc.name && DEMO_NAMES.indexOf(sc.name) === -1; });
         CONTACTS = savedC.map(function(sc){
           return { id:sc.id, name:sc.name||sc.id, handle:sc.handle||"", avatar:sc.avatar||null, statusText:sc.statusText||"在线", cards:sc.cards||[] };
         });
