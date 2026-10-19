@@ -391,17 +391,33 @@ window.MineProfile = (function () {
       fileEl.addEventListener("change", function () {
         if (this.files && this.files[0]) {
           var f = this.files[0];
-          if (U && U.compressImage) {
-            U.compressImage(f, 200, 0.85, function (dataURL) {
-              if (!dataURL) return;
-              meProfile.avatar = dataURL;
-              saveMe();
-              renderPage();
-              renderMeSheet();
-            });
-          }
-          this.value = "";
+          var rd = new FileReader();
+          rd.onload = function () {
+            if (window.openAvatarCropper) {
+              /* QQ 式自由裁剪：拖拽 + 缩放，选取任意区域作为头像 */
+              window.openAvatarCropper(rd.result, function (dataURL) {
+                if (!dataURL) return;
+                meProfile.avatar = dataURL;
+                saveMe();
+                renderPage();
+                renderMeSheet();
+                showToast("头像已更新");
+              });
+            } else {
+              if (U && U.compressImage) {
+                U.compressImage(f, 200, 0.85, function (dataURL) {
+                  if (!dataURL) return;
+                  meProfile.avatar = dataURL;
+                  saveMe();
+                  renderPage();
+                  renderMeSheet();
+                });
+              }
+            }
+          };
+          rd.readAsDataURL(f);
         }
+        this.value = "";
       });
     }
 

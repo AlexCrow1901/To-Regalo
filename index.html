@@ -423,6 +423,18 @@ body {
 .ga-cell img{width:100%;height:100%;object-fit:cover;display:block}
 .avatar.sm{width:34px; height:34px; font-size:13px}
 .avatar.lg{width:62px; height:62px; font-size:22px}
+/* ===== 头像自由裁剪（QQ 式：拖拽 + 缩放，方形选区）===== */
+#avatar-crop-ov{position:fixed;left:0;top:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,.93);display:none;flex-direction:column;align-items:center;justify-content:center;font-family:inherit;-webkit-user-select:none;user-select:none}
+#avatar-crop-ov.on{display:flex}
+#avatar-crop-stage{position:relative;width:min(92vw,420px);height:min(92vw,420px);overflow:hidden;border-radius:14px;background:#111;touch-action:none}
+#avatar-crop-img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) translate(0px,0px) scale(1);max-width:none;touch-action:none;-webkit-user-drag:none;will-change:transform}
+#avatar-crop-mask{position:absolute;inset:0;pointer-events:none}
+#avatar-crop-mask .crop-shade{position:absolute;background:rgba(0,0,0,.55)}
+#avatar-crop-mask .crop-frame{position:absolute;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4),0 0 12px rgba(0,0,0,.5)}
+#avatar-crop-zoom{flex:1;height:32px;accent-color:#c9a96e;cursor:pointer}
+#avatar-crop-ov .crop-btn{border:none;border-radius:22px;padding:11px 30px;font-size:15px;cursor:pointer;background:#c9a96e;color:#1a1a1a;font-weight:600}
+#avatar-crop-ov .crop-btn.ghost{background:rgba(255,255,255,.12);color:#fff}
+#avatar-crop-hint{color:rgba(255,255,255,.75);font-size:12px;margin-top:12px;text-align:center}
 .avatar-group{display:flex; flex-wrap:wrap; width:44px; height:44px; border-radius:50%; overflow:hidden; background:rgba(201,169,110,.18); flex:none; align-items:center; justify-content:center}
 .avatar-group .ag{width:50%; height:50%; display:flex; align-items:center; justify-content:center; font-size:10px; color:#c9a96e}
 .chat-head{display:flex; align-items:center; gap:10px; padding:8px 4px 2px}
@@ -1014,7 +1026,7 @@ body {
     }
   };
 })();
-</script><script src="storage.js?v2038"></script>
+</script><script src="storage.js?v2039"></script>
 <script src="utils.js?v2000"></script>
 <script src="notify.js?v2000"></script>
 <script src="keepalive.js?v2000"></script>
@@ -1022,8 +1034,8 @@ body {
 <script src="icons.js?v2000"></script>
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
-<script src="contacts.js?v2038"></script>
-<script src="cards.js?v2038"></script>
+<script src="contacts.js?v2039"></script>
+<script src="cards.js?v2039"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1033,7 +1045,7 @@ body {
 <script src="chat.js?v2007"></script>
 <script src="phone.js?v2000"></script>
 <script src="companion.js?v2000"></script>
-<script src="profile.js?v2002"></script>
+<script src="profile.js?v2039"></script>
 <script src="mail.js?v2000"></script>
 <script src="treehole.js?v2000"></script>
 <script src="radio.js?v2000"></script>
@@ -2097,13 +2109,16 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         '<div style="font-size:11px;opacity:.5;padding:6px 2px">暂无寄语 · 添加后可随机展示</div>' +
         '<div style="display:flex;gap:6px;padding:8px 0"><input style="flex:1;border:none;outline:none;background:rgba(128,128,128,.16);border-radius:12px;padding:8px 12px;font-size:12px;color:inherit;box-sizing:border-box" placeholder="输入寄语文案（可选 | 作者）"><button class="card-btn ok">添加</button></div>';
     } else if (kind === "me") {
+      var _myProfile = {};
+      try { _myProfile = JSON.parse(localStorage.getItem("mine.profile.v1") || "null") || {}; } catch(e){}
+      var _myName = _myProfile.name || "CosmicLove";
       h += '<h3>我的资料</h3><div style="font-size:11px;opacity:.6;margin-bottom:6px">在「我的」中修改昵称与头像 · 昵称不超过 20 字</div>' +
         '<div class="me-preview">' +
-          '<div class="pf-avatar" id="me-pv-av">C</div>' +
+          '<div class="pf-avatar" id="me-pv-av">' + (_myProfile.avatar ? '<img src="' + esc(_myProfile.avatar) + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">' : "C") + '</div>' +
           '<button class="btn-mini" data-me="avatar">更换头像</button>' +
           '<button class="btn-mini ghost" data-me="remove">移除头像</button>' +
         '</div>' +
-        '<div class="me-edit-row"><input class="me-name-input" id="me-pv-name" maxlength="20" value="CosmicLove"><button class="btn-mini" data-me="save">保存</button></div>';
+        '<div class="me-edit-row"><input class="me-name-input" id="me-pv-name" maxlength="20" value="' + esc(_myName) + '"><button class="btn-mini" data-me="save">保存</button></div>';
     } else if (kind === "persona-edit") {
       /* 编辑人设：主动发消息（1 分钟 ~ 12 小时）+ 回复时间（0 ~ 10 分钟） */
       var pc = window._personaEditContact || {};
@@ -2234,9 +2249,48 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     sheet.querySelectorAll("[data-me]").forEach(function(b){
       b.addEventListener("click", function(){
         var act = b.getAttribute("data-me");
-        if (act === "avatar") toastMsg("已打开图片选择（示例）：头像压缩为 200px 并立即生效");
-        else if (act === "remove") { toastMsg("已移除头像"); var av = sheet.querySelector("#me-pv-av"); if (av) av.textContent = "C"; }
-        else if (act === "save") { var inp = sheet.querySelector("#me-pv-name"); toastMsg("已保存昵称：" + (inp ? inp.value : "")); }
+        if (act === "avatar") {
+          var inp = document.createElement("input");
+          inp.type = "file"; inp.accept = "image/*";
+          inp.id = "me-avatar-file";
+          inp.style.display = "none";
+          document.body.appendChild(inp);
+          inp.addEventListener("change", function(){
+            if (this.files && this.files[0]) {
+              var rd = new FileReader();
+              rd.onload = function(){
+                openAvatarCropper(rd.result, function(dataURL){
+                  var me = {};
+                  try { me = JSON.parse(localStorage.getItem("mine.profile.v1") || "null") || {}; } catch(e){}
+                  me.avatar = dataURL;
+                  localStorage.setItem("mine.profile.v1", JSON.stringify(me));
+                  var av = sheet.querySelector("#me-pv-av");
+                  if (av) av.innerHTML = '<img src="' + dataURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">';
+                  toastMsg("头像已更新");
+                });
+              };
+              rd.readAsDataURL(this.files[0]);
+            }
+          });
+          inp.click();
+        }
+        else if (act === "remove") {
+          var me = {};
+          try { me = JSON.parse(localStorage.getItem("mine.profile.v1") || "null") || {}; } catch(e){}
+          delete me.avatar;
+          localStorage.setItem("mine.profile.v1", JSON.stringify(me));
+          var av = sheet.querySelector("#me-pv-av"); if (av) av.textContent = "C";
+          toastMsg("已移除头像");
+        }
+        else if (act === "save") {
+          var inp = sheet.querySelector("#me-pv-name");
+          var nm2 = (inp ? inp.value : "").trim() || "CosmicLove";
+          var me = {};
+          try { me = JSON.parse(localStorage.getItem("mine.profile.v1") || "null") || {}; } catch(e){}
+          me.name = nm2;
+          localStorage.setItem("mine.profile.v1", JSON.stringify(me));
+          toastMsg("已保存昵称：" + nm2);
+        }
       });
     });
   }
@@ -3871,20 +3925,13 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
             var f = this.files[0];
             var rd = new FileReader();
             rd.onload = function(){
-              var img = new Image();
-              img.onload = function(){
-                var cv = document.createElement("canvas");
-                var s = Math.min(img.width, img.height, 400);
-                cv.width = s; cv.height = s;
-                cv.getContext("2d").drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, s, s);
-                var dataURL = cv.toDataURL("image/jpeg", 0.85);
+              openAvatarCropper(rd.result, function(dataURL){
                 var nm = (page.querySelector("#cp-name") || {}).textContent || "";
                 CONTACTS.forEach(function(x){ if (x.name === nm) x.avatar = dataURL; });
                 saveContactsData();
                 avWrap.innerHTML = '<img src="' + dataURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"><span class="cam-badge">📷</span>';
                 toastMsg("头像已更新");
-              };
-              img.src = rd.result;
+              });
             };
             rd.readAsDataURL(f);
           }
@@ -4486,19 +4533,12 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
           var f = this.files[0];
           var rd = new FileReader();
           rd.onload = function(){
-            var img = new Image();
-            img.onload = function(){
-              var cv = document.createElement("canvas");
-              var s = Math.min(img.width, img.height, 400);
-              cv.width = s; cv.height = s;
-              cv.getContext("2d").drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, s, s);
-              var dataURL = cv.toDataURL("image/jpeg", 0.85);
+            openAvatarCropper(rd.result, function(dataURL){
               g.avatar = dataURL;
               saveContactsData();
               gav.innerHTML = '<img src="' + dataURL + '" style="width:100%;height:100%;object-fit:cover;"><span class="cam-badge">📷</span>';
               toastMsg("群头像已更新");
-            };
-            img.src = rd.result;
+            });
           };
           rd.readAsDataURL(f);
         }
@@ -4548,6 +4588,160 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     });
   }
   /* 添加联系人：名字（必填）+ 头像（可选）→ 加入通讯录并持久化（对齐原网站 contacts.js 新增联系人交互） */
+  /* ===== 头像自由裁剪器（QQ 式：方形选区，可拖拽/缩放/双指缩放）=====
+     用法：openAvatarCropper(imageSrc, function(dataURL){ ... })  */
+  var _avatarCrop = null;
+  function openAvatarCropper(src, cb){
+    if (!_avatarCrop) {
+      var ov = document.createElement("div");
+      ov.id = "avatar-crop-ov";
+      ov.innerHTML =
+        '<div id="avatar-crop-stage"><img id="avatar-crop-img" alt=""><div id="avatar-crop-mask"></div></div>' +
+        '<div style="width:min(92vw,420px);margin-top:14px;display:flex;align-items:center;gap:10px"><span style="color:#fff;font-size:13px;flex:none">缩放</span><input type="range" id="avatar-crop-zoom" min="1" max="4" step="0.02" value="1"></div>' +
+        '<div id="avatar-crop-hint">拖动图片调整位置，缩放条 / 双指缩放调整大小</div>' +
+        '<div style="display:flex;gap:14px;margin-top:14px"><button class="crop-btn ghost" id="avatar-crop-cancel">取消</button><button class="crop-btn" id="avatar-crop-done">完成</button></div>';
+      document.body.appendChild(ov);
+      _avatarCrop = {
+        ov: ov, img: ov.querySelector("#avatar-crop-img"), stage: ov.querySelector("#avatar-crop-stage"),
+        mask: ov.querySelector("#avatar-crop-mask"), zoom: ov.querySelector("#avatar-crop-zoom"),
+        cancel: ov.querySelector("#avatar-crop-cancel"), done: ov.querySelector("#avatar-crop-done"),
+        state: null
+      };
+      var A = _avatarCrop;
+      A.cancel.addEventListener("click", function(){ A.ov.classList.remove("on"); A._cb = null; });
+      A.zoom.addEventListener("input", function(){
+        var st = A.state;
+        if (!st) return;
+        var v = parseFloat(A.zoom.value);
+        if (!isNaN(v)) st.scale = Math.max(st.minZoom, Math.min(st.maxZoom, v));
+        clampCropState();
+        applyCropState();
+      });
+      /* 拖拽 + 双指缩放（pointer events） */
+      var pointers = {}, pinchDist = 0, pinchScale = 0;
+      A.stage.addEventListener("pointerdown", function(e){
+        if (!A.state) return;
+        e.preventDefault();
+        A.stage.setPointerCapture(e.pointerId);
+        pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+        var keys = Object.keys(pointers);
+        if (keys.length === 1) {
+          A.state._drag = { sx: e.clientX, sy: e.clientY, tx: A.state.tx, ty: A.state.ty };
+        } else if (keys.length === 2) {
+          var p = Object.values(pointers);
+          pinchDist = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+          pinchScale = A.state.scale;
+          A.state._drag = null;
+        }
+      });
+      A.stage.addEventListener("pointermove", function(e){
+        if (!A.state) return;
+        e.preventDefault();
+        if (pointers[e.pointerId]) pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+        var keys = Object.keys(pointers);
+        if (keys.length === 1 && A.state._drag) {
+          A.state.tx = A.state._drag.tx + (e.clientX - A.state._drag.sx);
+          A.state.ty = A.state._drag.ty + (e.clientY - A.state._drag.sy);
+          clampCropState();
+          applyCropState();
+        } else if (keys.length === 2) {
+          var p = Object.values(pointers);
+          var d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+          if (pinchDist > 0) {
+            var ns = pinchScale * (d / pinchDist);
+            var mn = A.state.minZoom, mx = A.state.maxZoom;
+            A.state.scale = Math.max(mn, Math.min(mx, ns));
+            clampCropState();
+            applyCropState();
+          }
+        }
+      });
+      function endPointer(e){
+        delete pointers[e.pointerId];
+        if (A.state) A.state._drag = null;
+      }
+      A.stage.addEventListener("pointerup", endPointer);
+      A.stage.addEventListener("pointercancel", endPointer);
+      A.stage.addEventListener("pointerleave", endPointer);
+      A.done.addEventListener("click", function(){
+        if (!A.state || !A._cb) return;
+        var st = A.state;
+        var dispScale = st.baseScale * st.scale;
+        /* 选区中心相对图片中心的偏移（显示像素）= (-tx, -ty) */
+        var sSize = st.S / dispScale;                 /* 选区在原图上的边长 */
+        var sx = st.natW / 2 - st.tx / dispScale - sSize / 2;
+        var sy = st.natH / 2 - st.ty / dispScale - sSize / 2;
+        sx = Math.max(0, Math.min(st.natW - sSize, sx));
+        sy = Math.max(0, Math.min(st.natH - sSize, sy));
+        var out = 256;
+        var cv = document.createElement("canvas");
+        cv.width = out; cv.height = out;
+        try {
+          cv.getContext("2d").drawImage(st.img, sx, sy, sSize, sSize, 0, 0, out, out);
+          var url = cv.toDataURL("image/jpeg", 0.88);
+        } catch (err) {
+          /* 跨域/异常时回退：直接用整图中心方块 */
+          var s2 = Math.min(st.natW, st.natH);
+          cv.getContext("2d").drawImage(st.img, (st.natW - s2) / 2, (st.natH - s2) / 2, s2, s2, 0, 0, out, out);
+          var url = cv.toDataURL("image/jpeg", 0.88);
+        }
+        var cbk = A._cb;
+        A._cb = null;
+        A.ov.classList.remove("on");
+        if (cbk) cbk(url);
+      });
+      function clampCropState(){
+        var st = A.state;
+        if (!st) return;
+        var iw = st.natW * st.baseScale * st.scale;
+        var ih = st.natH * st.baseScale * st.scale;
+        var S = st.S;
+        var txMin = S / 2 - iw / 2, txMax = iw / 2 - S / 2;
+        var tyMin = S / 2 - ih / 2, tyMax = ih / 2 - S / 2;
+        st.tx = Math.max(txMin, Math.min(txMax, st.tx));
+        st.ty = Math.max(tyMin, Math.min(tyMax, st.ty));
+      }
+      function applyCropState(){
+        var st = A.state;
+        if (!st) return;
+        A.img.style.transform = "translate(-50%,-50%) translate(" + st.tx + "px," + st.ty + "px) scale(" + st.scale + ")";
+        A.zoom.value = st.scale;
+      }
+      window._avatarCropApi = { clamp: clampCropState, apply: applyCropState };
+    }
+    var A = _avatarCrop;
+    var img = new Image();
+    img.onload = function(){
+      A.ov.classList.add("on");   /* 先显示，stage 才有真实尺寸 */
+      var natW = img.naturalWidth || img.width, natH = img.naturalHeight || img.height;
+      var stageW = A.stage.clientWidth, stageH = A.stage.clientHeight;
+      var S = Math.max(160, Math.min(stageW, stageH) * 0.72);  /* 方形选区边长 */
+      var baseScale = Math.min(stageW / natW, stageH / natH);
+      var iw1 = natW * baseScale, ih1 = natH * baseScale;
+      var minZoom = Math.max(1, S / iw1, S / ih1);
+      var maxZoom = 4;
+      A.state = { img: img, natW: natW, natH: natH, baseScale: baseScale, S: S, scale: minZoom, tx: 0, ty: 0, minZoom: minZoom, maxZoom: maxZoom };
+      A.img.src = src;
+      A.img.style.width = iw1 + "px";
+      A.img.style.height = ih1 + "px";
+      /* 遮罩：四周变暗 + 中心方形框 */
+      A.mask.innerHTML =
+        '<div class="crop-shade" style="left:0;top:0;right:0;height:' + ((stageH - S) / 2) + 'px"></div>' +
+        '<div class="crop-shade" style="left:0;bottom:0;right:0;height:' + ((stageH - S) / 2) + 'px"></div>' +
+        '<div class="crop-shade" style="left:0;top:' + ((stageH - S) / 2) + 'px;width:' + ((stageW - S) / 2) + 'px;height:' + S + 'px"></div>' +
+        '<div class="crop-shade" style="right:0;top:' + ((stageH - S) / 2) + 'px;width:' + ((stageW - S) / 2) + 'px;height:' + S + 'px"></div>' +
+        '<div class="crop-frame" style="left:' + ((stageW - S) / 2) + 'px;top:' + ((stageH - S) / 2) + 'px;width:' + S + 'px;height:' + S + 'px;border-radius:8px"></div>';
+      A.zoom.min = minZoom; A.zoom.max = maxZoom; A.zoom.value = minZoom;
+      A._cb = cb;
+      A.ov.classList.add("on");
+      clampCropState();
+      applyCropState();
+    };
+    img.onerror = function(){ toastMsg("图片加载失败，请重试"); };
+    img.src = src;
+  }
+  window.openAvatarCropper = openAvatarCropper;   /* 暴露给 profile.js 等外部脚本 */
+
   function openAddContact(phone){
     var overlay = document.getElementById("sheetOverlay");
     var sheet = document.getElementById("sheet");
@@ -4576,16 +4770,10 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
           var f = this.files[0];
           var rd = new FileReader();
           rd.onload = function(){
-            var img = new Image();
-            img.onload = function(){
-              var cv = document.createElement("canvas");
-              var s = Math.min(img.width, img.height, 400);
-              cv.width = s; cv.height = s;
-              cv.getContext("2d").drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, s, s);
-              avatarData = cv.toDataURL("image/jpeg", 0.85);
-              avEl.innerHTML = '<img src="' + avatarData + '" style="width:100%;height:100%;object-fit:cover;">';
-            };
-            img.src = rd.result;
+            openAvatarCropper(rd.result, function(dataURL){
+              avatarData = dataURL;
+              avEl.innerHTML = '<img src="' + avatarData + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+            });
           };
           rd.readAsDataURL(f);
         }
