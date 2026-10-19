@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="To Regalo" />
-<meta name="app-version" content="1.0.53-zipui" />
+<meta name="app-version" content="1.0.54" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
@@ -1026,37 +1026,37 @@ body {
     }
   };
 })();
-</script><script src="storage.js?v2041"></script>
-<script src="utils.js?v2000"></script>
-<script src="notify.js?v2000"></script>
-<script src="keepalive.js?v2000"></script>
-<script src="settings.js?v2042"></script>
-<script src="icons.js?v2000"></script>
-<script src="background.js?v2002"></script>
-<script src="probabilities.js?v2000"></script>
-<script src="contacts.js?v2052"></script>
-<script src="cards.js?v2052"></script>
-<script src="lexicon.js?v2000"></script>
-<script src="lexicon-engine.js?v2000"></script>
-<script src="mine-ai.js?v2000"></script>
-<script src="mine-sync.js?v2000"></script>
-<script src="lexicon-card-generator.js?v2000"></script>
-<script src="lexicon-admin.js?v2000"></script>
-<script src="chat.js?v2052"></script>
-<script src="phone.js?v2000"></script>
-<script src="companion.js?v2000"></script>
-<script src="profile.js?v2041"></script>
-<script src="mail.js?v2000"></script>
-<script src="treehole.js?v2000"></script>
-<script src="radio.js?v2000"></script>
-<script src="netease.js?v2000"></script>
-<script src="foodie.js?v2000"></script>
-<script src="moments.js?v2000"></script>
-<script src="contact-moments.js?v2000"></script>
-<script src="theme-manager.js?v2001"></script>
-<script src="bubble-manager.js?v2000"></script>
-<script src="files.js?v2000"></script>
-<script src="browser.js?v2000"></script><script>
+</script><script src="storage.js?v2100"></script>
+<script src="utils.js?v2100"></script>
+<script src="notify.js?v2100"></script>
+<script src="keepalive.js?v2100"></script>
+<script src="settings.js?v2100"></script>
+<script src="icons.js?v2100"></script>
+<script src="background.js?v2100"></script>
+<script src="probabilities.js?v2100"></script>
+<script src="contacts.js?v2100"></script>
+<script src="cards.js?v2100"></script>
+<script src="lexicon.js?v2100"></script>
+<script src="lexicon-engine.js?v2100"></script>
+<script src="mine-ai.js?v2100"></script>
+<script src="mine-sync.js?v2100"></script>
+<script src="lexicon-card-generator.js?v2100"></script>
+<script src="lexicon-admin.js?v2100"></script>
+<script src="chat.js?v2100"></script>
+<script src="phone.js?v2100"></script>
+<script src="companion.js?v2100"></script>
+<script src="profile.js?v2100"></script>
+<script src="mail.js?v2100"></script>
+<script src="treehole.js?v2100"></script>
+<script src="radio.js?v2100"></script>
+<script src="netease.js?v2100"></script>
+<script src="foodie.js?v2100"></script>
+<script src="moments.js?v2100"></script>
+<script src="contact-moments.js?v2100"></script>
+<script src="theme-manager.js?v2100"></script>
+<script src="bubble-manager.js?v2100"></script>
+<script src="files.js?v2100"></script>
+<script src="browser.js?v2100"></script><script>
 /* ===== 功能接入层（bridge-init）：页面渲染钩子 + 模块初始化 ===== */
 (function () {
   "use strict";
@@ -1143,7 +1143,7 @@ body {
     setTimeout(safeMount, 100);
   }
   /* 陪伴组件点击兜底（capture 拦截：确保 detail 系模块渲染进正确容器并切换显示）
-     v1.0.53 起陪伴页为 zip 蓝本 UI（.comp-app 卡片），按 data-app 映射回原模块功能 */
+     v1.0.54 起陪伴页为 zip 蓝本 UI（.comp-app 卡片），按 data-app 映射回原模块功能 */
   try {
     var comp = document.getElementById("page-companion");
     if (comp) comp.addEventListener("click", function (e) {
@@ -4080,7 +4080,18 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         if (!c || !inp) return;
         var v = inp.value.trim(); if (!v) { toastMsg("请输入字卡内容"); return; }
         if (!c.cards) c.cards = [];
-        c.cards.push(v); saveContactsData(); inp.value = ""; toastMsg("已添加字卡"); rerenderPer();
+        /* 批量添加：按空格拆分、去重、不设上限（与联系人主页人设编辑一致） */
+        var parts = v.split(/\s+/);
+        var added = 0;
+        parts.forEach(function(t){
+          t = String(t).trim();
+          if (!t) return;
+          if (c.cards.indexOf(t) >= 0) return;
+          c.cards.push(t); added++;
+        });
+        saveContactsData(); inp.value = "";
+        toastMsg(added ? "已添加 " + added + " 张字卡" : "字卡已全部存在");
+        rerenderPer();
       });
     });
     page.querySelectorAll("[data-add-auto-btn]").forEach(function(btn){
@@ -4798,7 +4809,6 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       var send = function(dataURL){
         if (window.MineChat && MineChat.sendMsg) MineChat.sendMsg(page._convKey, dataURL);
         renderConv(page);
-        scheduleZipReply(page);
       };
       if (window.MineUtils && MineUtils.compressImage) {
         MineUtils.compressImage(f, 1080, 0.82, send);
@@ -4840,54 +4850,22 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       if (window.MineChat && MineChat.sendMsg) MineChat.sendMsg(page._convKey, t);
       if (inp) inp.value = "";
       renderConv(page);
-      scheduleZipReply(page);
+      /* 对方回复统一由 sendMsg 内的原网站回复链调度（组卡+AI润色+撤回概率+点击展开原文+删除字卡请求），
+         zip 不再自建回复池，避免绕过 AI 润色与双重回复 */
       /* 兜底刷新（对方回复随机延迟） */
       [2500, 4500].forEach(function(ms){ setTimeout(function(){ renderConv(page); }, ms); });
     };
     if (send) send.addEventListener("click", doSend);
     if (inp) inp.addEventListener("keydown", function(e){ if (e.key === "Enter") { e.preventDefault(); doSend(); } });
   }
-  /* 对方/群成员回复调度：从联系人字卡池随机抽取（zip 设定文案，写入原网站会话数据） */
+  /* 对方/群成员回复调度：已废弃。
+     统一由 MineChat.sendMsg → chat.js 原网站回复链（组卡+AI润色+撤回概率+删除请求）调度；
+     本函数保留定义但立即返回，防止任何遗漏调用点绕过 AI 润色或造成双重回复。 */
   function zipReplyPool(page){
-    var pool = [];
-    if (page._isGroup) {
-      var g = findGroup(page._convKey.split(":")[1]);
-      if (g) g.members.forEach(function(name){
-        var c = null;
-        CONTACTS.forEach(function(x){ if (x.name === name) c = x; });
-        (c && c.cards || []).forEach(function(t){ pool.push({ from: c.id, name: c.name, text: t }); });
-      });
-    } else {
-      var c = findContact(page._convKey.split(":")[1]);
-      (c && c.cards || []).forEach(function(t){ pool.push({ from: c.id, name: c.name, text: t }); });
-    }
-    return pool;
+    return [];
   }
   function scheduleZipReply(page){
-    var pool = zipReplyPool(page);
-    if (!pool.length || !window.MineChat || !MineChat.pushFrom) return;
-    var delay = 900 + Math.random() * 2400;
-    setTimeout(function(){
-      /* 回复到达时若已离开该会话（不在看），正常计入未读角标；仍在该会话则不重复计 */
-      var stillViewing = page.classList.contains("on") &&
-        document.querySelector(".page.on[data-page='chat-detail']") === page;
-      var n = page._isGroup ? Math.min(1 + Math.floor(Math.random() * 2), 2) : 1;
-      var used = [];
-      for (var i = 0; i < n && used.length < pool.length; i++) {
-        var pick = pool[Math.floor(Math.random() * pool.length)];
-        if (used.indexOf(pick) >= 0 && used.length < pool.length) continue;
-        used.push(pick);
-        /* 与联系人主页同设定：文字回复小概率为撤回态（点击可展开原文）；
-           另有小概率以"征求意见删除字卡"形式出现（同意删除/留着可用） */
-        var roll = Math.random();
-        var opts = {};
-        if (stillViewing) opts.noUnread = true;
-        if (roll < 0.08) opts.deleteRequest = true, opts.deleteCardText = pick.text;
-        else if (roll < 0.20) opts.recalled = true;
-        MineChat.pushFrom(page._convKey, pick.from, pick.name, pick.text, opts);
-      }
-      renderConv(page);
-    }, delay);
+    return;
   }
   function openContactPage(phone, c){
     showPage(phone.getAttribute("data-pi"), "contact");
