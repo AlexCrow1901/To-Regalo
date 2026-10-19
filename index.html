@@ -1023,7 +1023,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2032"></script>
+<script src="cards.js?v2033"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1915,7 +1915,7 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
      仅执行一次；此后系统更新不再内置任何种子数据，测试时临时新增、测试完删除即永久生效。 ===== */
   try {
     if (!localStorage.getItem("mine.demo.cleared.v2030")) {
-      ["mine.contacts.v1","mine.groups.v1","mine.contacts.lastShuffle",
+      ["mine.contacts.v1","mine.groups.v1","mine.contacts.lastShuffle","mine.contacts.mc.v1",
        "mine.chat.v1","mine.chat.unread.v1","mine.chat.bg.v1","mine.chat.fontColor.v1","mine.chat.choices.v1","mine.chat.proactive.v1",
        "mine.cards.v1","mine.cards.ai.v1","mine.cards.pending.v1","mine.cards.req.v1",
        "mine.mail.v1","mine.moments.v1","mine.phone.log.v1","mine.netease.v1","mine.radio.v1","mine.foodie.v1"
@@ -1931,8 +1931,7 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
   function saveContactsData(){
     try {
       localStorage.setItem("mine.contacts.v1", JSON.stringify(CONTACTS.map(function(c){
-        return { id:c.id, name:c.name, handle:c.handle||"", avatar:c.avatar||null, statusText:c.statusText||"在线", cards:c.cards||[],
-          replyDelay:c.replyDelay, proactiveMin:c.proactiveMin, proactiveMax:c.proactiveMax, proactiveOn:c.proactiveOn };
+        return { id:c.id, name:c.name, handle:c.handle||"", avatar:c.avatar||null, statusText:c.statusText||"在线", cards:c.cards||[] };
       })));
       localStorage.setItem("mine.groups.v1", JSON.stringify(GROUPS.map(function(g){
         return { id:g.id, name:g.name, avatar:g.avatar||null, members:g.members||[] };
@@ -1944,8 +1943,7 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       var savedC = JSON.parse(localStorage.getItem("mine.contacts.v1") || "null");
       if (savedC && Array.isArray(savedC)) {
         CONTACTS = savedC.map(function(sc){
-          return { id:sc.id, name:sc.name||sc.id, handle:sc.handle||"", avatar:sc.avatar||null, statusText:sc.statusText||"在线", cards:sc.cards||[],
-            replyDelay:sc.replyDelay, proactiveMin:sc.proactiveMin, proactiveMax:sc.proactiveMax, proactiveOn:sc.proactiveOn };
+          return { id:sc.id, name:sc.name||sc.id, handle:sc.handle||"", avatar:sc.avatar||null, statusText:sc.statusText||"在线", cards:sc.cards||[] };
         });
       }
       var savedG = JSON.parse(localStorage.getItem("mine.groups.v1") || "null");
@@ -2165,19 +2163,17 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
           if (CONTACTS[ci].id === pc2.id || CONTACTS[ci].name === pc2.name) { CONTACTS[ci] = pc2; break; }
         }
         saveContactsData();
-        /* 同步 MineContacts（聊天引擎读取 replyDelay / proactiveMin / proactiveMax / proactiveOn；不存在则自动新增） */
+        /* 同步 MineContacts 同名联系人（聊天引擎读取 replyDelay / proactiveMin / proactiveMax / proactiveOn） */
         try {
-          if (window.MineContacts && MineContacts.upsertContact) {
-            MineContacts.upsertContact(pc2);
-          } else if (window.MineContacts && MineContacts.findContactByName) {
+          if (window.MineContacts && MineContacts.findContactByName) {
             var mc = MineContacts.findContactByName(pc2.name);
             if (mc) {
               mc.replyDelay = pc2.replyDelay; mc.proactiveMin = pc2.proactiveMin;
               mc.proactiveMax = pc2.proactiveMax; mc.proactiveOn = pc2.proactiveOn;
               MineContacts.save();
-              if (window.MineChat && MineChat.refreshProactive) MineChat.refreshProactive(pc2.id || pc2.name);
             }
           }
+          if (window.MineChat && MineChat.refreshProactive) MineChat.refreshProactive();
         } catch(e){}
         overlay.classList.remove("on"); sheet.classList.remove("on");
         toastMsg("已保存「" + pc2.name + "」的人设");

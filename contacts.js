@@ -13,7 +13,7 @@
 window.MineContacts = (function () {
   "use strict";
 
-  var STORE_KEY = "mine.contacts.v1";
+  var STORE_KEY = "mine.contacts.mc.v1";
   var I = window.MineIcons;
 
   /* ---------------- 数据 ---------------- */
