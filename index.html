@@ -1034,15 +1034,15 @@ body {
 <script src="icons.js?v2000"></script>
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
-<script src="contacts.js?v2048"></script>
-<script src="cards.js?v2048"></script>
+<script src="contacts.js?v2049"></script>
+<script src="cards.js?v2049"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
 <script src="mine-sync.js?v2000"></script>
 <script src="lexicon-card-generator.js?v2000"></script>
 <script src="lexicon-admin.js?v2000"></script>
-<script src="chat.js?v2048"></script>
+<script src="chat.js?v2049"></script>
 <script src="phone.js?v2000"></script>
 <script src="companion.js?v2000"></script>
 <script src="profile.js?v2041"></script>
@@ -1934,7 +1934,8 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
   function saveContactsData(){
     try {
       localStorage.setItem("mine.contacts.v1", JSON.stringify(CONTACTS.map(function(c){
-        return { id:c.id, name:c.name, handle:c.handle||"", avatar:c.avatar||null, statusText:c.statusText||"在线", cards:c.cards||[], autoCards:c.autoCards||[] };
+        return { id:c.id, name:c.name, handle:c.handle||"", avatar:c.avatar||null, statusText:c.statusText||"在线", cards:c.cards||[], autoCards:c.autoCards||[],
+                 replyDelay:c.replyDelay, proactiveMin:c.proactiveMin, proactiveMax:c.proactiveMax, proactiveOn:c.proactiveOn };
       })));
       localStorage.setItem("mine.groups.v1", JSON.stringify(GROUPS.map(function(g){
         return { id:g.id, name:g.name, avatar:g.avatar||null, members:g.members||[], autoCards:g.autoCards||[] };
@@ -1964,7 +1965,8 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         var DEMO_NAMES = ["艾琳·格雷","亚瑟·彭德尔顿","维罗妮卡","西奥多"];
         arrC = arrC.filter(function(sc){ return sc && sc.name && DEMO_NAMES.indexOf(sc.name) === -1; });
         CONTACTS = arrC.map(function(sc){
-          return { id:sc.id, name:sc.name||sc.id, handle:sc.handle||"", avatar:sc.avatar||null, statusText:sc.statusText||"在线", cards:sc.cards||[], autoCards:sc.autoCards||[] };
+          return { id:sc.id, name:sc.name||sc.id, handle:sc.handle||"", avatar:sc.avatar||null, statusText:sc.statusText||"在线", cards:sc.cards||[], autoCards:sc.autoCards||[],
+                   replyDelay:sc.replyDelay, proactiveMin:sc.proactiveMin, proactiveMax:sc.proactiveMax, proactiveOn:sc.proactiveOn };
         });
       }
       var savedG = JSON.parse(localStorage.getItem("mine.groups.v1") || "null");
@@ -2189,7 +2191,9 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         '<div class="section-label">回复时间</div>' +
         '<div class="persona-row" style="display:flex;align-items:center;gap:8px;padding:6px 0"><span style="flex:1;font-size:13px">回复耗时</span><span id="pe-delay-v" style="font-size:12px;color:#c9a96e;min-width:62px;text-align:right">' + fmtSec(pDelay) + '</span></div>' +
         '<div class="slider-wrap"><input type="range" class="fog-slider" id="pe-delay-slider" min="0" max="600" step="1" value="' + pDelay + '"></div>' +
-        '<button class="btn-mini" id="pe-save" style="width:100%;margin-top:12px">保存人设</button>';
+        '<button class="btn-mini" id="pe-save" style="width:100%;margin-top:12px">保存人设</button>' +
+        '<button class="btn-mini ghost" id="pe-cards-toggle" style="width:100%;margin-top:8px">管理单独字卡</button>' +
+        '<div id="pe-cards-box" style="display:none;margin-top:4px"></div>';
     } else {
       h += '<h3>示例</h3><div class="row">功能示例</div>';
     }
@@ -2255,6 +2259,62 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         overlay.classList.remove("on"); sheet.classList.remove("on");
         toastMsg("已保存「" + pc2.name + "」的人设");
       });
+      /* 管理单独字卡：当前联系人的专属字卡 / 自动回复字卡 增删（与个人中心"单独字卡"同一数据源 CONTACTS） */
+      var peCardsToggle = sheet.querySelector("#pe-cards-toggle");
+      var peCardsBox = sheet.querySelector("#pe-cards-box");
+      if (peCardsToggle && peCardsBox) {
+        peCardsToggle.addEventListener("click", function () {
+          var vis = peCardsBox.style.display !== "none";
+          peCardsBox.style.display = vis ? "none" : "block";
+          if (!vis) renderPeCards();
+        });
+      }
+      function renderPeCards() {
+        if (!peCardsBox) return;
+        var c = window._personaEditContact;
+        if (!c) { peCardsBox.innerHTML = '<div style="font-size:11px;opacity:.5;padding:6px 0">联系人不存在</div>'; return; }
+        if (!c.cards) c.cards = [];
+        if (!c.autoCards) c.autoCards = [];
+        var cards = c.cards, autos = c.autoCards;
+        var html = '<div style="font-size:11px;opacity:.55;margin:6px 0">单独字卡：仅「' + esc(c.name) + '」回复时使用 · 聊天与自动回复均生效</div>';
+        html += '<div class="group-head" style="font-size:12px">字卡 <span class="count">' + cards.length + '</span></div>';
+        if (cards.length) html += cards.map(function (cd, i) {
+          return '<div class="card-row"><div class="card-txt" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(cd) + '</div><button class="card-btn del" data-pe-del="' + i + '">删除</button></div>';
+        }).join(""); else html += '<div class="card-hint" style="padding:4px 0">暂无字卡</div>';
+        html += '<div style="display:flex;gap:6px;padding:6px 0"><input class="cards-input" id="pe-card-add" placeholder="添加字卡… 回车确认"><button class="card-btn ok" id="pe-card-addbtn">添加</button></div>';
+        html += '<div class="group-head" style="font-size:12px;margin-top:4px">自动回复字卡 <span class="count">' + autos.length + '</span></div>';
+        if (autos.length) html += autos.map(function (cd, i) {
+          return '<div class="card-row"><div class="card-txt" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">自动回复 · ' + esc(cd) + '</div><button class="card-btn del" data-pe-delauto="' + i + '">删除</button></div>';
+        }).join(""); else html += '<div class="card-hint" style="padding:4px 0">暂无自动回复字卡</div>';
+        html += '<div style="display:flex;gap:6px;padding:6px 0"><input class="cards-input" id="pe-auto-add" placeholder="添加自动回复… 回车确认"><button class="card-btn ok" id="pe-auto-addbtn">添加</button></div>';
+        peCardsBox.innerHTML = html;
+        peCardsBox.querySelectorAll("[data-pe-del]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var idx = parseInt(b.getAttribute("data-pe-del"), 10);
+            if (idx >= 0 && idx < cards.length) { cards.splice(idx, 1); saveContactsData(); toastMsg("已删除字卡"); renderPeCards(); }
+          });
+        });
+        peCardsBox.querySelectorAll("[data-pe-delauto]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var idx = parseInt(b.getAttribute("data-pe-delauto"), 10);
+            if (idx >= 0 && idx < autos.length) { autos.splice(idx, 1); saveContactsData(); toastMsg("已删除自动回复字卡"); renderPeCards(); }
+          });
+        });
+        var addBtn = peCardsBox.querySelector("#pe-card-addbtn"), addInp = peCardsBox.querySelector("#pe-card-add");
+        if (addBtn && addInp) addBtn.addEventListener("click", function () {
+          var v = addInp.value.trim(); if (!v) { toastMsg("请输入字卡内容"); return; }
+          var parts = v.split(/\s+/).filter(Boolean); var added = 0;
+          parts.forEach(function (p) { if (cards.indexOf(p) < 0) { cards.push(p); added++; } });
+          saveContactsData(); toastMsg("已添加 " + added + " 张字卡"); addInp.value = ""; renderPeCards();
+        });
+        var aBtn = peCardsBox.querySelector("#pe-auto-addbtn"), aInp = peCardsBox.querySelector("#pe-auto-add");
+        if (aBtn && aInp) aBtn.addEventListener("click", function () {
+          var v = aInp.value.trim(); if (!v) { toastMsg("请输入自动回复字卡内容"); return; }
+          var parts = v.split(/\s+/).filter(Boolean); var added = 0;
+          parts.forEach(function (p) { if (autos.indexOf(p) < 0) { autos.push(p); added++; } });
+          saveContactsData(); toastMsg("已添加 " + added + " 条自动回复字卡"); aInp.value = ""; renderPeCards();
+        });
+      }
     }
     sheet.querySelectorAll(".row").forEach(function(el){ if (!el.getAttribute("data-bg")) el.addEventListener("click", function(){ toastMsg("已应用（示例）"); }); });
     sheet.querySelectorAll(".card-btn").forEach(function(el){ el.addEventListener("click", function(){ toastMsg("已应用（示例）"); }); });

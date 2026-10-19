@@ -1336,7 +1336,7 @@ window.MineChat = (function () {
     ctx.id = contactId;
     ctx.convKey = "contact:" + contactId;
     ctx.title = c.name;
-    ctx.subtitle = c.status || "在线";
+    ctx.subtitle = c.statusText || c.status || "在线";
     if (!conversations[ctx.convKey]) conversations[ctx.convKey] = [];
     renderChatPage();
     if (window.MineApp && MineApp.switchPage) MineApp.switchPage("chat");

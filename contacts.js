@@ -240,20 +240,42 @@ window.MineContacts = (function () {
       '<div class="ga-grid">' + cells + '</div></div>';
   }
 
+  /* 回退读取 index.html 的 CONTACTS/GROUPS（mine.contacts.v1 / mine.groups.v1）：
+     聊天引擎/字卡链路长期以 MineContacts(mc.v1) 为数据源，但用户数据可能只存在于
+     mine.contacts.v1（或联系人由 openAddContact 添加后未同步），导致聊天列表头像、
+     群聊会话、单独字卡、自动回复读不到。回退保证两套数据源都能被读取。 */
   function findContact(id) {
     for (var i = 0; i < state.contacts.length; i++)
       if (state.contacts[i].id === id) return state.contacts[i];
+    try {
+      if (window.CONTACTS && window.CONTACTS.length) {
+        for (var j = 0; j < window.CONTACTS.length; j++)
+          if (window.CONTACTS[j].id === id) return window.CONTACTS[j];
+      }
+    } catch (e) {}
     return null;
   }
   function findContactByName(name) {
     if (!name) return null;
     for (var i = 0; i < state.contacts.length; i++)
       if (state.contacts[i].name === name) return state.contacts[i];
+    try {
+      if (window.CONTACTS && window.CONTACTS.length) {
+        for (var j = 0; j < window.CONTACTS.length; j++)
+          if (window.CONTACTS[j].name === name) return window.CONTACTS[j];
+      }
+    } catch (e) {}
     return null;
   }
   function findGroup(id) {
     for (var i = 0; i < state.groups.length; i++)
       if (state.groups[i].id === id) return state.groups[i];
+    try {
+      if (window.GROUPS && window.GROUPS.length) {
+        for (var j = 0; j < window.GROUPS.length; j++)
+          if (window.GROUPS[j].id === id) return window.GROUPS[j];
+      }
+    } catch (e) {}
     return null;
   }
 
