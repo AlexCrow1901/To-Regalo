@@ -799,7 +799,7 @@ window.MineContacts = (function () {
     if (peCSave) {
       peCSave.addEventListener("click", function () {
         try {
-          if (window.MineAI && cid) {
+          if (window.MineAI && c && c.id) {
             var lines2 = [];
             function pf(sel) { var el = pageEl.querySelector(sel); return el ? el.value.trim() : ""; }
             if (pf("#pe-c-name")) lines2.push("姓名：" + pf("#pe-c-name"));
@@ -810,9 +810,9 @@ window.MineContacts = (function () {
             if (pf("#pe-c-catchphrase")) lines2.push("口头禅：" + pf("#pe-c-catchphrase"));
             if (pf("#pe-c-relation")) lines2.push("和我的关系：" + pf("#pe-c-relation"));
             if (pf("#pe-c-extra")) lines2.push(pf("#pe-c-extra"));
-            MineAI.setPersona(cid, lines2.join("\n"));
+            MineAI.setPersona(c.id, lines2.join("\n"));
             var corpusEl = pageEl.querySelector("#pe-c-corpus");
-            MineAI.setStudyCorpus(cid, corpusEl ? corpusEl.value.split("\n").filter(function (s) { return s.trim(); }) : []);
+            MineAI.setStudyCorpus(c.id, corpusEl ? corpusEl.value.split("\n").filter(function (s) { return s.trim(); }) : []);
             peCSave.textContent = "已保存";
             setTimeout(function () { peCSave.textContent = "保存人设与语料"; }, 1500);
           }
