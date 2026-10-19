@@ -2294,6 +2294,7 @@ window.MineChat = (function () {
     var key = convKey || ctx.convKey;
     var msgs = conversations[key];
     if (!msgs) return;
+    if (!contact) return;  /* 防御：联系人不存在时保持沉默，避免崩溃 */
     var card = pickReplyCard(contact);
     var senderName = (contact && contact.name) ? contact.name : "未知";
     var senderAvatar = (contact && contact.avatar) ? contact.avatar : null;
