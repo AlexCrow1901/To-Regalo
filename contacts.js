@@ -47,14 +47,19 @@ window.MineContacts = (function () {
       var raw = localStorage.getItem(STORE_KEY);
       if (!raw) {
         /* 数据迁移：早期版本 MineContacts 与通讯录共用 mine.contacts.v1，本版本已拆分。
-           若旧 key 存在本模块格式数据（{"contacts":[...]}），自动迁移到新 key，避免用户本地联系人丢失。 */
+           若旧 key 存在本模块格式数据（{"contacts":[...]}），自动迁移到新 key，避免用户本地联系人丢失。
+           迁移时过滤旧版预设演示联系人（艾琳·格雷等4人），防止预设数据随迁移复活。 */
         try {
           var oldRaw = localStorage.getItem("mine.contacts.v1");
           if (oldRaw) {
             var old = JSON.parse(oldRaw);
             if (old && typeof old === "object" && !Array.isArray(old) && Array.isArray(old.contacts) && old.contacts.length) {
-              state = { contacts: old.contacts, groups: Array.isArray(old.groups) ? old.groups : [] };
-              save();
+              var DEMO_NAMES = ["艾琳·格雷", "亚瑟·彭德尔顿", "维罗妮卡", "西奥多"];
+              var realContacts = old.contacts.filter(function (c) { return c && c.name && DEMO_NAMES.indexOf(c.name) === -1; });
+              if (realContacts.length) {
+                state = { contacts: realContacts, groups: Array.isArray(old.groups) ? old.groups : [] };
+                save();
+              }
             }
           }
         } catch (e) {}
