@@ -45,6 +45,21 @@ window.MineContacts = (function () {
   function load() {
     try {
       var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) {
+        /* 数据迁移：早期版本 MineContacts 与通讯录共用 mine.contacts.v1，本版本已拆分。
+           若旧 key 存在本模块格式数据（{"contacts":[...]}），自动迁移到新 key，避免用户本地联系人丢失。 */
+        try {
+          var oldRaw = localStorage.getItem("mine.contacts.v1");
+          if (oldRaw) {
+            var old = JSON.parse(oldRaw);
+            if (old && typeof old === "object" && !Array.isArray(old) && Array.isArray(old.contacts) && old.contacts.length) {
+              state = { contacts: old.contacts, groups: Array.isArray(old.groups) ? old.groups : [] };
+              save();
+            }
+          }
+        } catch (e) {}
+      }
+      raw = localStorage.getItem(STORE_KEY);
       if (raw) {
         var parsed = JSON.parse(raw);
         /* 数据校验：只有结构合法的对象（含 contacts 数组）才采用；"[]" / "null" / 损坏数据回退默认种子 */

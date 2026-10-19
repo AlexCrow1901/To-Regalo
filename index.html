@@ -1023,7 +1023,7 @@ body {
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
 <script src="contacts.js?v2000"></script>
-<script src="cards.js?v2033"></script>
+<script src="cards.js?v2034"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1911,18 +1911,9 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
   }
 
   /* ============ 整合增强：真实功能二级页 ============ */
-  /* ===== v2030 一次性清理：移除历史内置演示数据（联系人/群聊/聊天/字卡审批/字卡等）。
-     仅执行一次；此后系统更新不再内置任何种子数据，测试时临时新增、测试完删除即永久生效。 ===== */
-  try {
-    if (!localStorage.getItem("mine.demo.cleared.v2030")) {
-      ["mine.contacts.v1","mine.groups.v1","mine.contacts.lastShuffle","mine.contacts.mc.v1",
-       "mine.chat.v1","mine.chat.unread.v1","mine.chat.bg.v1","mine.chat.fontColor.v1","mine.chat.choices.v1","mine.chat.proactive.v1",
-       "mine.cards.v1","mine.cards.ai.v1","mine.cards.pending.v1","mine.cards.req.v1",
-       "mine.mail.v1","mine.moments.v1","mine.phone.log.v1","mine.netease.v1","mine.radio.v1","mine.foodie.v1"
-      ].forEach(function(k){ try { localStorage.removeItem(k); } catch(e){} });
-      localStorage.setItem("mine.demo.cleared.v2030", "1");
-    }
-  } catch(e){}
+  /* ===== 系统更新不再清空任何本地数据：联系人/群聊/聊天/字卡等用户数据永久保留。
+     演示数据不再内置（CONTACTS/GROUPS 为空、contacts.js SEED 为空、审批种子为空、restore-data 已清空），
+     因此无需运行时清理；用户本地数据（含手动添加的联系人、聊天、字卡）不因版本更新而丢失或被覆盖。 ===== */
   /* 联系人/群聊：默认空（不内置演示数据）。测试时临时新增，测试完删除即永久生效。 */
   var CONTACTS = [];
   var GROUPS = [];
