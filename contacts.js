@@ -471,11 +471,40 @@ window.MineContacts = (function () {
 
     html += '<div class="list-sep"></div>';
 
-    // 编辑人设区（主动发消息 + 回复时间）
+    // 编辑人设区（联系人人设 + 学习语料 + 主动发消息 + 回复时间）
+    var cid = c.id || "";
+    var savedPersona = "", savedCorpus = "";
+    try {
+      if (window.MineAI && cid) { savedPersona = MineAI.getPersona(cid) || ""; savedCorpus = (MineAI.getStudyCorpus(cid) || []).join("\n"); }
+    } catch (e) {}
+    function pvC(prefix) {
+      var re = new RegExp(prefix + "[：:](.*)");
+      var m = savedPersona.match(re);
+      return (m && m[1]) ? m[1].trim() : "";
+    }
+    var peExtraC = savedPersona
+      .replace(/姓名[：:].*\n?/g, "").replace(/年龄[：:].*\n?/g, "")
+      .replace(/职业[：:].*\n?/g, "").replace(/性格[：:].*\n?/g, "")
+      .replace(/喜好[：:].*\n?/g, "").replace(/口头禅[：:].*\n?/g, "")
+      .replace(/和我的关系[：:].*\n?/g, "").trim();
+    function peInC(id, ph, v, col) {
+      return '<input id="' + id + '" placeholder="' + ph + '" value="' + escapeHtml(v) + '" style="padding:8px;border-radius:8px;border:1px solid rgba(128,128,128,.25);background:rgba(128,128,128,.07);color:inherit;font-size:13px;box-sizing:border-box;' + (col ? "grid-column:span 2;" : "") + '">';
+    }
     var delaySec = c.replyDelay !== undefined ? c.replyDelay : 1.5;
     var delayLabel = formatDelayLabel(delaySec);
     html += '<div class="group-head">编辑人设</div>';
-    html += '<div class="reply-hint" style="padding:0 0 6px">设置对方主动发消息的时间区间与回复耗时 · 保存后即时生效</div>';
+    html += '<div class="reply-hint" style="padding:0 0 6px">人设与语料供 AI 润色参考 · 主动发消息与回复耗时 · 保存后即时生效</div>';
+    html += '<div class="section-label">联系人人设（AI 润色时参考）</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+        peInC("pe-c-name", "姓名", pvC("姓名")) + peInC("pe-c-age", "年龄", pvC("年龄")) +
+        peInC("pe-c-job", "职业", pvC("职业")) + peInC("pe-c-personality", "性格", pvC("性格")) +
+        peInC("pe-c-hobby", "喜好", pvC("喜好"), true) + peInC("pe-c-catchphrase", "口头禅", pvC("口头禅"), true) +
+        peInC("pe-c-relation", "和我的关系", pvC("和我的关系"), true) +
+      '</div>' +
+      '<textarea id="pe-c-extra" rows="3" placeholder="其他补充：说话习惯、经历、小故事..." style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid rgba(128,128,128,.25);background:rgba(128,128,128,.07);color:inherit;font-size:13px;resize:vertical;margin-bottom:8px;">' + escapeHtml(peExtraC) + '</textarea>' +
+      '<div class="section-label">学习语料（一行一条，仅供 AI 学习，不会发送）</div>' +
+      '<textarea id="pe-c-corpus" rows="4" placeholder="这个角色可能会说的话..." style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid rgba(128,128,128,.25);background:rgba(128,128,128,.07);color:inherit;font-size:13px;resize:vertical;margin-bottom:8px;">' + escapeHtml(savedCorpus) + '</textarea>' +
+      '<button class="chat-bg-btn" id="pe-c-save" style="width:100%;margin-bottom:12px">保存人设与语料</button>';
     html += '<div class="reply-settings">' +
       '<div class="reply-setting-row">' +
         '<div class="reply-setting-info">' +
@@ -762,6 +791,32 @@ window.MineContacts = (function () {
           });
           this.value = "";
         }
+      });
+    }
+
+    // 联系人人设 + 学习语料保存（AI 润色参考）
+    var peCSave = pageEl.querySelector("#pe-c-save");
+    if (peCSave) {
+      peCSave.addEventListener("click", function () {
+        try {
+          if (window.MineAI && cid) {
+            var lines2 = [];
+            function pf(sel) { var el = pageEl.querySelector(sel); return el ? el.value.trim() : ""; }
+            if (pf("#pe-c-name")) lines2.push("姓名：" + pf("#pe-c-name"));
+            if (pf("#pe-c-age")) lines2.push("年龄：" + pf("#pe-c-age"));
+            if (pf("#pe-c-job")) lines2.push("职业：" + pf("#pe-c-job"));
+            if (pf("#pe-c-personality")) lines2.push("性格：" + pf("#pe-c-personality"));
+            if (pf("#pe-c-hobby")) lines2.push("喜好：" + pf("#pe-c-hobby"));
+            if (pf("#pe-c-catchphrase")) lines2.push("口头禅：" + pf("#pe-c-catchphrase"));
+            if (pf("#pe-c-relation")) lines2.push("和我的关系：" + pf("#pe-c-relation"));
+            if (pf("#pe-c-extra")) lines2.push(pf("#pe-c-extra"));
+            MineAI.setPersona(cid, lines2.join("\n"));
+            var corpusEl = pageEl.querySelector("#pe-c-corpus");
+            MineAI.setStudyCorpus(cid, corpusEl ? corpusEl.value.split("\n").filter(function (s) { return s.trim(); }) : []);
+            peCSave.textContent = "已保存";
+            setTimeout(function () { peCSave.textContent = "保存人设与语料"; }, 1500);
+          }
+        } catch (e) {}
       });
     }
 

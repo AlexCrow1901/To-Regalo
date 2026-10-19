@@ -1034,7 +1034,7 @@ body {
 <script src="icons.js?v2000"></script>
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
-<script src="contacts.js?v2041"></script>
+<script src="contacts.js?v2043"></script>
 <script src="cards.js?v2041"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
@@ -2120,16 +2120,44 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         '</div>' +
         '<div class="me-edit-row"><input class="me-name-input" id="me-pv-name" maxlength="20" value="' + esc(_myName) + '"><button class="btn-mini" data-me="save">保存</button></div>';
     } else if (kind === "persona-edit") {
-      /* 编辑人设：主动发消息（1 分钟 ~ 12 小时）+ 回复时间（0 ~ 10 分钟） */
+      /* 编辑人设：联系人人设（AI 润色参考 · 结构化字段 + 自由文本）+ 学习语料 + 主动发消息 + 回复时间 */
       var pc = window._personaEditContact || {};
+      var cid2 = pc.id || "";
+      var savedPersona = "", savedCorpus = "";
+      try {
+        if (window.MineAI && cid2) { savedPersona = MineAI.getPersona(cid2) || ""; savedCorpus = (MineAI.getStudyCorpus(cid2) || []).join("\n"); }
+      } catch (e) {}
+      function pv(prefix) {
+        var re = new RegExp(prefix + "[：:](.*)");
+        var m = savedPersona.match(re);
+        return (m && m[1]) ? m[1].trim() : "";
+      }
+      var peExtra = savedPersona
+        .replace(/姓名[：:].*\n?/g, "").replace(/年龄[：:].*\n?/g, "")
+        .replace(/职业[：:].*\n?/g, "").replace(/性格[：:].*\n?/g, "")
+        .replace(/喜好[：:].*\n?/g, "").replace(/口头禅[：:].*\n?/g, "")
+        .replace(/和我的关系[：:].*\n?/g, "").trim();
       var pDelay = pc.replyDelay !== undefined ? pc.replyDelay : 1.5;
       var pMin = pc.proactiveMin !== undefined ? pc.proactiveMin : 1;
       var pMax = pc.proactiveMax !== undefined ? pc.proactiveMax : 720;
       var pOn = pc.proactiveOn !== undefined ? pc.proactiveOn : true;
       function fmtMin(m){ m = parseInt(m,10) || 0; if (m >= 60) return (m % 60 === 0) ? (m/60) + " 小时" : Math.floor(m/60) + " 小时 " + (m%60) + " 分"; return m + " 分钟"; }
       function fmtSec(s){ s = parseFloat(s) || 0; if (s >= 60) return (s % 60 === 0) ? (s/60) + " 分钟" : Math.floor(s/60) + " 分 " + Math.round(s%60) + " 秒"; return Math.round(s) + " 秒"; }
+      function peIn(id, ph, v, col) {
+        return '<input id="' + id + '" placeholder="' + ph + '" value="' + esc(v) + '" style="padding:8px;border-radius:8px;border:1px solid rgba(128,128,128,.25);background:rgba(128,128,128,.07);color:inherit;font-size:13px;box-sizing:border-box;' + (col ? "grid-column:span 2;" : "") + '">';
+      }
       h += '<h3>编辑人设</h3>' +
-        '<div style="font-size:11px;opacity:.6;margin-bottom:6px">' + esc(pc.name || "联系人") + ' · 主动发消息 1 分钟 ~ 12 小时，回复时间 0 ~ 10 分钟</div>' +
+        '<div style="font-size:11px;opacity:.6;margin-bottom:6px">' + esc(pc.name || "联系人") + ' · 人设与语料供 AI 润色参考 · 主动发消息 1 分钟 ~ 12 小时 · 回复时间 0 ~ 10 分钟</div>' +
+        '<div class="section-label">联系人人设（AI 润色时参考）</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+          peIn("pe-name", "姓名", pv("姓名")) + peIn("pe-age", "年龄", pv("年龄")) +
+          peIn("pe-job", "职业", pv("职业")) + peIn("pe-personality", "性格", pv("性格")) +
+          peIn("pe-hobby", "喜好", pv("喜好"), true) + peIn("pe-catchphrase", "口头禅", pv("口头禅"), true) +
+          peIn("pe-relation", "和我的关系", pv("和我的关系"), true) +
+        '</div>' +
+        '<textarea id="pe-extra" rows="3" placeholder="其他补充：说话习惯、经历、小故事..." style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid rgba(128,128,128,.25);background:rgba(128,128,128,.07);color:inherit;font-size:13px;resize:vertical;margin-bottom:8px;">' + esc(peExtra) + '</textarea>' +
+        '<div class="section-label">学习语料（一行一条，仅供 AI 学习，不会发送）</div>' +
+        '<textarea id="pe-corpus" rows="4" placeholder="这个角色可能会说的话..." style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid rgba(128,128,128,.25);background:rgba(128,128,128,.07);color:inherit;font-size:13px;resize:vertical;margin-bottom:8px;">' + esc(savedCorpus) + '</textarea>' +
         '<div class="section-label">主动发消息</div>' +
         '<div class="persona-row" style="display:flex;align-items:center;gap:8px;padding:6px 0"><span style="flex:1;font-size:13px">开启主动消息</span><div class="toggle' + (pOn ? " on" : "") + '" id="pe-proactive-on"></div></div>' +
         '<div class="persona-row" style="display:flex;align-items:center;gap:8px;padding:6px 0"><span style="flex:1;font-size:13px">最短间隔</span><span id="pe-min-v" style="font-size:12px;color:#c9a96e;min-width:62px;text-align:right">' + fmtMin(pMin) + '</span></div>' +
@@ -2167,6 +2195,24 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         if (peMin) pc2.proactiveMin = parseInt(peMin.value, 10);
         if (peMax) pc2.proactiveMax = parseInt(peMax.value, 10);
         if (peOn) pc2.proactiveOn = peOn.classList.contains("on");
+        /* 联系人人设（结构化字段拼成完整文本）+ 学习语料（存 MineAI，AI 润色时参考） */
+        try {
+          if (window.MineAI && pc2.id) {
+            var lines2 = [];
+            function pf(sel) { var el = sheet.querySelector(sel); return el ? el.value.trim() : ""; }
+            if (pf("#pe-name")) lines2.push("姓名：" + pf("#pe-name"));
+            if (pf("#pe-age")) lines2.push("年龄：" + pf("#pe-age"));
+            if (pf("#pe-job")) lines2.push("职业：" + pf("#pe-job"));
+            if (pf("#pe-personality")) lines2.push("性格：" + pf("#pe-personality"));
+            if (pf("#pe-hobby")) lines2.push("喜好：" + pf("#pe-hobby"));
+            if (pf("#pe-catchphrase")) lines2.push("口头禅：" + pf("#pe-catchphrase"));
+            if (pf("#pe-relation")) lines2.push("和我的关系：" + pf("#pe-relation"));
+            if (pf("#pe-extra")) lines2.push(pf("#pe-extra"));
+            MineAI.setPersona(pc2.id, lines2.join("\n"));
+            var corpusEl = sheet.querySelector("#pe-corpus");
+            MineAI.setStudyCorpus(pc2.id, corpusEl ? corpusEl.value.split("\n").filter(function (s) { return s.trim(); }) : []);
+          }
+        } catch (e) {}
         /* 同步 CONTACTS（按 id/name） */
         for (var ci = 0; ci < CONTACTS.length; ci++) {
           if (CONTACTS[ci].id === pc2.id || CONTACTS[ci].name === pc2.name) { CONTACTS[ci] = pc2; break; }
