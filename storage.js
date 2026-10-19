@@ -222,6 +222,21 @@
           if (chatChanged) store.setItem("mine.chat.v1", JSON.stringify(chat));
         }
       } catch (e) {}
+      /* v2041：一次性清除字卡审批留存数据（联系人生成 pending / AI 生成 auto），
+         之后不再执行；用户后续运行产生的字卡不受影响 */
+      try {
+        if (!store.getItem("mine.cards.gen.cleared.v2041")) {
+          var genRaw = store.getItem("mine.cards.gen.items.v1");
+          if (genRaw) {
+            var genArr = JSON.parse(genRaw);
+            if (Array.isArray(genArr)) {
+              var genKept = genArr.filter(function (i) { return !(i && (i.status === "auto" || i.status === "pending")); });
+              if (genKept.length !== genArr.length) store.setItem("mine.cards.gen.items.v1", JSON.stringify(genKept));
+            }
+          }
+          store.setItem("mine.cards.gen.cleared.v2041", "1");
+        }
+      } catch (e) {}
       hydrated = true;
       // 版本标记：仅记录存储层版本，不删除任何数据
       try {

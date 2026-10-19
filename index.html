@@ -1026,7 +1026,7 @@ body {
     }
   };
 })();
-</script><script src="storage.js?v2040"></script>
+</script><script src="storage.js?v2041"></script>
 <script src="utils.js?v2000"></script>
 <script src="notify.js?v2000"></script>
 <script src="keepalive.js?v2000"></script>
@@ -1034,8 +1034,8 @@ body {
 <script src="icons.js?v2000"></script>
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
-<script src="contacts.js?v2040"></script>
-<script src="cards.js?v2040"></script>
+<script src="contacts.js?v2041"></script>
+<script src="cards.js?v2041"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1045,7 +1045,7 @@ body {
 <script src="chat.js?v2007"></script>
 <script src="phone.js?v2000"></script>
 <script src="companion.js?v2000"></script>
-<script src="profile.js?v2040"></script>
+<script src="profile.js?v2041"></script>
 <script src="mail.js?v2000"></script>
 <script src="treehole.js?v2000"></script>
 <script src="radio.js?v2000"></script>
@@ -2685,9 +2685,9 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     var MODS = [["个人中心","me"],["通讯录","contacts"],["聊天","chat"],["字卡","cards"],["陪伴寄语","companion"],["朋友圈","moments"],["通话记录","phone"],["次元信箱","mail"],["深夜树洞","treehole"],["心情电台","radio"],["音乐","netease"],["雾都觅食","foodie"],["背景与主题","theme"],["设置与保活","settings"],["通知记录","notify"]];
     function mr(n, k, size){
       var ic = {me:SVG.edit, contacts:SVG.list, chat:SVG.chat, cards:SVG.mycards, companion:SVG.quotes, moments:SVG.moments, phone:SVG.phone, mail:SVG.mail, treehole:SVG.feather, radio:SVG.music, netease:SVG.music, foodie:SVG.utensils, theme:SVG.bg, settings:SVG.grid, notify:SVG.bell}[k] || SVG.list;
-      return '<div class="func-row"><div class="func-ic" style="background:rgba(128,128,128,.12);color:inherit">'+ic+'</div>' +
+      return '<div class="func-row" data-mod="'+k+'"><div class="func-ic" style="background:rgba(128,128,128,.12);color:inherit">'+ic+'</div>' +
         '<div class="func-text" style="flex:1"><span class="func-title">'+esc(n)+'</span><span class="func-sub">'+size+'</span></div>' +
-        '<button class="fs-btn" title="导入">📥</button><button class="fs-btn" title="导出">📤</button><button class="fs-btn" title="清除">🗑️</button></div>';
+        '<button class="fs-btn" data-act="import" title="导入">📥</button><button class="fs-btn" data-act="export" title="导出">📤</button><button class="fs-btn" data-act="clear" title="清除">🗑️</button></div>';
     }
     return '<div class="scroll">' +
       '<div class="group-head">存储容量</div>' +
@@ -2695,17 +2695,151 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         '<div style="width:64px;height:64px;border-radius:50%;background:conic-gradient(#c9a96e 0 1%,rgba(128,128,128,.2) 1% 100%);display:flex;align-items:center;justify-content:center"><span style="font-size:13px;font-weight:700">1%</span></div>' +
         '<div style="flex:1"><div style="font-size:14px;font-weight:600">已使用 6.2 MB / 配额约 50 GB（Mine 数据）</div><div style="font-size:11px;opacity:.55;margin-top:4px">IndexedDB 大容量引擎：自动占用可用磁盘空间约 50%，容量越大越好</div></div>' +
       '</div>' +
-      '<div class="func-row"><div class="func-ic" style="background:rgba(128,128,128,.12);color:inherit">'+SVG.refresh+'</div><div class="func-text"><span class="func-title">申请持久化存储</span><span class="func-sub">防止浏览器自动清理，容量更大更稳</span></div><span class="chev">›</span></div>' +
+      '<div class="func-row" data-act="persist"><div class="func-ic" style="background:rgba(128,128,128,.12);color:inherit">'+SVG.refresh+'</div><div class="func-text"><span class="func-title">申请持久化存储</span><span class="func-sub">防止浏览器自动清理，容量更大更稳</span></div><span class="chev">›</span></div>' +
       '<div class="list-sep"></div>' +
       '<div class="group-head">数据导入 · 导出 · 清除</div>' +
-      '<div class="func-row" style="background:rgba(150,170,190,.1)"><div class="func-ic" style="color:#9fb6c9">'+SVG.upload+'</div><div class="func-text"><span class="func-title">一键导入全部数据</span><span class="func-sub">选择 Mine 备份 JSON，恢复下列所有模块</span></div><span class="chev">›</span></div>' +
-      '<div class="func-row" style="background:rgba(150,170,190,.1)"><div class="func-ic" style="color:#9fb6c9">'+SVG.download+'</div><div class="func-text"><span class="func-title">一键导出全部数据</span><span class="func-sub">下载 JSON 备份（含下列所有模块）</span></div><span class="chev">›</span></div>' +
+      '<div class="func-row" data-act="import-all" style="background:rgba(150,170,190,.1)"><div class="func-ic" style="color:#9fb6c9">'+SVG.upload+'</div><div class="func-text"><span class="func-title">一键导入全部数据</span><span class="func-sub">选择 Mine 备份 JSON，恢复下列所有模块</span></div><span class="chev">›</span></div>' +
+      '<div class="func-row" data-act="export-all" style="background:rgba(150,170,190,.1)"><div class="func-ic" style="color:#9fb6c9">'+SVG.download+'</div><div class="func-text"><span class="func-title">一键导出全部数据</span><span class="func-sub">下载 JSON 备份（含下列所有模块）</span></div><span class="chev">›</span></div>' +
       MODS.map(function(m){ return mr(m[0], m[1], m[1]==="chat"?"1.8 MB · 342 项":m[1]==="cards"?"1.2 MB · 486 项":m[1]==="moments"?"0.6 MB · 28 项":m[1]==="contacts"?"24 KB · 3 项":m[1]==="mail"?"0.2 MB · 12 项":"18 KB · 8 项"); }).join("") +
       '<div class="list-sep"></div>' +
       '<div class="group-head" style="color:#e07a7a">危险操作</div>' +
-      '<div class="func-row" style="color:#c98a8a"><div class="func-ic" style="background:rgba(128,128,128,.12);color:inherit">'+SVG.trash+'</div><div class="func-text"><span class="func-title">清空全部 Mine 数据</span><span class="func-sub">删除所有模块数据，不可恢复（先导出备份！）</span></div><span class="chev">›</span></div>' +
+      '<div class="func-row" data-act="clear-all" style="color:#c98a8a"><div class="func-ic" style="background:rgba(128,128,128,.12);color:inherit">'+SVG.trash+'</div><div class="func-text"><span class="func-title">清空全部 Mine 数据</span><span class="func-sub">删除所有模块数据，不可恢复（先导出备份！）</span></div><span class="chev">›</span></div>' +
       '<div class="card-hint" style="font-size:10px;opacity:.55;line-height:1.7;margin:14px 2px 30px">数据保存在本机浏览器（IndexedDB 大容量引擎，配额自动扩至可用磁盘空间约 50%，可达数十 GB）。「清除」后需刷新页面才完全生效；「清空」将自动刷新。</div>' +
       '</div>';
+  }
+  /* ===== 文件备份：真实的导出/导入/清除/持久化（对齐原网站"文件"语义）===== */
+  var FILE_MODS = {
+    me:        { keys: ["mine.me.v1", "mine.profile.v1"] },
+    contacts:  { keys: ["mine.contacts.v1", "mine.contacts.mc.v1", "mine.groups.v1"] },
+    chat:      { keys: ["mine.chat.v1", "mine.chat.unread.v1", "mine.chat.proactive.v1"] },
+    cards:     { prefix: ["mine.cards."] },
+    companion: { prefix: ["mine.quotes."] },
+    moments:   { prefix: ["mine.moments."] },
+    phone:     { prefix: ["mine.phone."] },
+    mail:      { prefix: ["mine.mail."] },
+    treehole:  { prefix: ["mine.treehole."] },
+    radio:     { prefix: ["mine.radio."] },
+    netease:   { prefix: ["mine.music."] },
+    foodie:    { prefix: ["mine.food."] },
+    theme:     { prefix: ["mine.bg.", "mine.theme."] },
+    settings:  { keys: ["mine.sync.gistId", "mine.settings.v1"] },
+    notify:    { prefix: ["mine.notify."] }
+  };
+  function fileKeys(mod){
+    var m = FILE_MODS[mod]; if (!m) return [];
+    var out = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i); if (!k) continue;
+      var hit = false;
+      if (m.keys && m.keys.indexOf(k) >= 0) hit = true;
+      if (m.prefix) m.prefix.forEach(function (p) { if (k.indexOf(p) === 0) hit = true; });
+      if (hit && out.indexOf(k) < 0) out.push(k);
+    }
+    return out;
+  }
+  function fileDownload(name, obj){
+    try {
+      var blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+    } catch (e) { toastMsg("导出失败：" + e.message); }
+  }
+  function fileExportModule(mod){
+    var keys = fileKeys(mod);
+    var obj = {}; keys.forEach(function (k) { obj[k] = localStorage.getItem(k); });
+    fileDownload("mine-" + mod + "-backup.json", obj);
+    toastMsg("已导出「" + mod + "」" + keys.length + " 项数据");
+  }
+  function fileImportModule(mod){
+    var inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "application/json,.json";
+    inp.style.display = "none"; document.body.appendChild(inp);
+    inp.addEventListener("change", function () {
+      var f = this.files[0]; if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function () {
+        try {
+          var obj = JSON.parse(rd.result);
+          var n = 0;
+          for (var k in obj) {
+            if (!obj.hasOwnProperty(k)) continue;
+            var m = FILE_MODS[mod];
+            var hit = mod === "all" || (m && ((m.keys && m.keys.indexOf(k) >= 0) || (m.prefix && m.prefix.some(function (p) { return k.indexOf(p) === 0; }))));
+            if (hit) { try { localStorage.setItem(k, obj[k]); n++; } catch (e2) {} }
+          }
+          toastMsg("已导入「" + mod + "」" + n + " 项，刷新后生效");
+          setTimeout(function () { location.reload(); }, 900);
+        } catch (e) { toastMsg("导入失败：JSON 格式错误"); }
+      };
+      rd.readAsText(f);
+    });
+    inp.click();
+  }
+  function fileClearModule(mod){
+    var keys = fileKeys(mod);
+    if (!keys.length) { toastMsg("「" + mod + "」暂无数据"); return; }
+    if (!confirm("确定清除「" + mod + "」全部数据（" + keys.length + " 项）？不可恢复")) return;
+    keys.forEach(function (k) { localStorage.removeItem(k); });
+    toastMsg("已清除「" + mod + "」，刷新后生效");
+    setTimeout(function () { location.reload(); }, 900);
+  }
+  function fileExportAll(){
+    var obj = {};
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf("mine.") === 0) obj[k] = localStorage.getItem(k);
+    }
+    var d = new Date();
+    var ds = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
+    fileDownload("mine-backup-" + ds + ".json", obj);
+    toastMsg("已导出全部数据 " + Object.keys(obj).length + " 项");
+  }
+  function fileImportAll(){
+    var inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "application/json,.json";
+    inp.style.display = "none"; document.body.appendChild(inp);
+    inp.addEventListener("change", function () {
+      var f = this.files[0]; if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function () {
+        try {
+          var obj = JSON.parse(rd.result);
+          var n = 0;
+          for (var k in obj) {
+            if (!obj.hasOwnProperty(k)) continue;
+            try { localStorage.setItem(k, obj[k]); n++; } catch (e2) {}
+          }
+          toastMsg("已导入全部数据 " + n + " 项，刷新后生效");
+          setTimeout(function () { location.reload(); }, 900);
+        } catch (e) { toastMsg("导入失败：JSON 格式错误"); }
+      };
+      rd.readAsText(f);
+    });
+    inp.click();
+  }
+  function fileClearAll(){
+    if (!confirm("确定清空全部 Mine 数据？所有模块数据将被删除，不可恢复（请先导出备份）")) return;
+    var n = 0;
+    for (var i = localStorage.length - 1; i >= 0; i--) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf("mine.") === 0) { localStorage.removeItem(k); n++; }
+    }
+    toastMsg("已清空全部数据 " + n + " 项，刷新生效");
+    setTimeout(function () { location.reload(); }, 900);
+  }
+  function filePersist(){
+    try {
+      if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().then(function (g) {
+          toastMsg(g ? "已获得持久化存储" : "浏览器暂未授予持久化存储");
+        });
+      } else {
+        toastMsg("当前浏览器不支持持久化申请");
+      }
+    } catch (e) { toastMsg("申请失败：" + e.message); }
   }
   /* ===== 次元信箱（完整版：收件/发件/草稿/写邮件）===== */
   var MAIL = {
@@ -4026,11 +4160,23 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       page.querySelectorAll(".fs-btn").forEach(function(b){
         b.addEventListener("click", function(e){
           e.stopPropagation();
-          var row = b.closest(".func-row"); var t = row ? row.querySelector(".func-title") : null;
-          toastMsg("已" + b.getAttribute("title") + "「" + (t ? t.textContent : "") + "」（示例）");
+          var row = b.closest(".func-row");
+          var mod = row ? row.getAttribute("data-mod") : "";
+          var act = b.getAttribute("data-act");
+          if (act === "export") fileExportModule(mod);
+          else if (act === "import") fileImportModule(mod);
+          else if (act === "clear") fileClearModule(mod);
         });
       });
-      page.querySelectorAll(".func-row").forEach(function(r){ r.addEventListener("click", function(){ var t = r.querySelector(".func-title"); toastMsg(t ? t.textContent + "（示例）" : "（示例）"); }); });
+      page.querySelectorAll(".func-row[data-act]").forEach(function(r){
+        r.addEventListener("click", function(){
+          var act = r.getAttribute("data-act");
+          if (act === "persist") filePersist();
+          else if (act === "import-all") fileImportAll();
+          else if (act === "export-all") fileExportAll();
+          else if (act === "clear-all") fileClearAll();
+        });
+      });
     }
     if (pg === "mail") {
       mailRender(page);
