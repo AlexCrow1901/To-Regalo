@@ -619,6 +619,17 @@ window.MineSettings = (function () {
     }
   }
   function bindEvents(pageEl) {
+    /* 整行可点：点击功能入口行任意位置 → 触发行内主按钮（文件/字卡/云同步/测试通知/版本更新等），
+       修复"点文件行没反应"——此前只有行尾小按钮可点，用户点击行主体区域无响应 */
+    Array.prototype.forEach.call(pageEl.querySelectorAll(".func-row"), function (row) {
+      var btn = row.querySelector("button[id^=set-]");
+      if (!btn) return;
+      row.addEventListener("click", function (e) {
+        if (e.target.closest("button")) return;
+        if (btn.disabled) return;
+        btn.click();
+      });
+    });
     var backBtn = pageEl.querySelector('[data-act="back"]');
     if (backBtn) backBtn.addEventListener("click", function () {
       window.MineApp.goHome();
@@ -713,15 +724,21 @@ window.MineSettings = (function () {
         renderTestResult(st);
       });
     }
-    /* 文件入口：打开文件管理页 */
+    /* 文件入口：打开文件管理页（带兜底：MineApp.page 未处理时直接渲染 files.js 页面） */
     var filesBtn = pageEl.querySelector("#set-files");
     if (filesBtn) {
       filesBtn.addEventListener("click", function () {
+        var handled = false;
         if (window.MineApp && MineApp.page) {
-          MineApp.page("files");
-        } else if (window.MineFiles) {
-          MineFiles.renderPage();
-          if (window.MineApp) MineApp.switchPage("detail", "files");
+          try { handled = MineApp.page("files") === true; } catch (e) {}
+        }
+        if (!handled) {
+          try {
+            if (window.MineFiles) { MineFiles.renderPage(); handled = true; }
+          } catch (e) {}
+        }
+        if (!handled) {
+          try { location.hash = "#files|L"; } catch (e) {}
         }
       });
     }

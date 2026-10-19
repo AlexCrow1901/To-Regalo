@@ -1007,7 +1007,7 @@ body {
     if (id === "sync-config" && window.MineSync) { lastDetail = "settings"; grantDetail("settings"); renderSyncConfig(); return true; }
     if (id === "me" && window.MineProfile) { lastDetail = "me"; grantDetail("me"); MineProfile.renderPage(); return true; }
     if (id === "phone" && window.MinePhone) { lastDetail = "phone"; grantDetail("phone"); MinePhone.renderPage(); return true; }
-    if (id === "files" && window.MineFiles) { lastDetail = "files"; grantDetail("files"); MineFiles.renderPage(); return true; }
+    if (id === "files" && window.MineFiles) { lastDetail = "files"; grantDetail("files"); MineFiles.renderPage(); var _fp = document.querySelector('.page[data-page="files"]'); if (_fp) { _fp.classList.add("on"); document.querySelectorAll(".page").forEach(function (p) { if (p !== _fp) p.classList.remove("on"); }); var _hs = document.querySelector(".home-scroll"), _pd = document.querySelector(".page-dots"); if (_hs) { _hs.style.display = "none"; } if (_pd) { _pd.style.display = "none"; } } return true; }
     if (id === "browser" && window.MineBrowser) { lastDetail = "browser"; grantDetail("browser"); MineBrowser.renderPage(); return true; }
     if (id === "mail" && window.MineMail) { lastDetail = "mail"; grantDetail("mail"); MineMail.open(); return true; }
     if (id === "treehole" && window.MineTreeHole) { lastDetail = "treehole"; grantDetail("treehole"); MineTreeHole.open(); return true; }
@@ -1030,7 +1030,7 @@ body {
 <script src="utils.js?v2000"></script>
 <script src="notify.js?v2000"></script>
 <script src="keepalive.js?v2000"></script>
-<script src="settings.js?v2000"></script>
+<script src="settings.js?v2042"></script>
 <script src="icons.js?v2000"></script>
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
