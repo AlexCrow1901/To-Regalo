@@ -2972,6 +2972,21 @@ window.MineChat = (function () {
         };
       });
     },
+    /* 微信式会话列表：返回所有有消息的会话（含最后一条消息），按最后消息时间倒序。
+       供聊天列表页渲染真实聊天记录（替代硬编码演示数据）。 */
+    listConvs: function () {
+      load();
+      var out = [];
+      Object.keys(conversations).forEach(function (key) {
+        var msgs = conversations[key];
+        if (!msgs || msgs.length === 0) return;
+        var lastMsg = msgs[msgs.length - 1];
+        var parts = key.split(":");
+        out.push({ key: key, type: parts[0], id: parts[1], lastMsg: lastMsg });
+      });
+      out.sort(function (a, b) { return (b.lastMsg.time || 0) - (a.lastMsg.time || 0); });
+      return out;
+    },
     /* 供 zip 蓝本调度"对方/群成员回复"时写入对方消息（不依赖原网站聊天 DOM） */
     pushFrom: function (convKey, from, senderName, text, opts) {
       if (!convKey || !text) return false;

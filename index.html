@@ -1042,7 +1042,7 @@ body {
 <script src="mine-sync.js?v2000"></script>
 <script src="lexicon-card-generator.js?v2000"></script>
 <script src="lexicon-admin.js?v2000"></script>
-<script src="chat.js?v2007"></script>
+<script src="chat.js?v2045"></script>
 <script src="phone.js?v2000"></script>
 <script src="companion.js?v2000"></script>
 <script src="profile.js?v2041"></script>
@@ -1934,10 +1934,10 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
   function saveContactsData(){
     try {
       localStorage.setItem("mine.contacts.v1", JSON.stringify(CONTACTS.map(function(c){
-        return { id:c.id, name:c.name, handle:c.handle||"", avatar:c.avatar||null, statusText:c.statusText||"在线", cards:c.cards||[] };
+        return { id:c.id, name:c.name, handle:c.handle||"", avatar:c.avatar||null, statusText:c.statusText||"在线", cards:c.cards||[], autoCards:c.autoCards||[] };
       })));
       localStorage.setItem("mine.groups.v1", JSON.stringify(GROUPS.map(function(g){
-        return { id:g.id, name:g.name, avatar:g.avatar||null, members:g.members||[] };
+        return { id:g.id, name:g.name, avatar:g.avatar||null, members:g.members||[], autoCards:g.autoCards||[] };
       })));
     } catch(e){}
   }
@@ -1949,13 +1949,13 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         var DEMO_NAMES = ["艾琳·格雷","亚瑟·彭德尔顿","维罗妮卡","西奥多"];
         savedC = savedC.filter(function(sc){ return sc && sc.name && DEMO_NAMES.indexOf(sc.name) === -1; });
         CONTACTS = savedC.map(function(sc){
-          return { id:sc.id, name:sc.name||sc.id, handle:sc.handle||"", avatar:sc.avatar||null, statusText:sc.statusText||"在线", cards:sc.cards||[] };
+          return { id:sc.id, name:sc.name||sc.id, handle:sc.handle||"", avatar:sc.avatar||null, statusText:sc.statusText||"在线", cards:sc.cards||[], autoCards:sc.autoCards||[] };
         });
       }
       var savedG = JSON.parse(localStorage.getItem("mine.groups.v1") || "null");
       if (savedG && Array.isArray(savedG)) {
         GROUPS = savedG.map(function(sg){
-          return { id:sg.id, name:sg.name||"群聊", avatar:sg.avatar||null, members:sg.members||[] };
+          return { id:sg.id, name:sg.name||"群聊", avatar:sg.avatar||null, members:sg.members||[], autoCards:sg.autoCards||[] };
         });
       }
     } catch(e){}
@@ -2342,16 +2342,53 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
   }
 
   /* ---- 页面模板 ---- */
+  function chatTimeLabel(t){
+    if (!t) return "";
+    var d = new Date(t), now = new Date();
+    var sameDay = d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth() && d.getDate()===now.getDate();
+    var y = new Date(now); y.setDate(now.getDate()-1);
+    var isYest = d.getFullYear()===y.getFullYear() && d.getMonth()===y.getMonth() && d.getDate()===y.getDate();
+    function pad(n){ return n<10 ? "0"+n : ""+n; }
+    if (sameDay) return pad(d.getHours()) + ":" + pad(d.getMinutes());
+    if (isYest) return "昨天";
+    return (d.getMonth()+1) + "月" + d.getDate() + "日";
+  }
   function chatPage(){
-    var h = '<div class="scroll" style="padding:2px 16px">';
-    CONTACTS.forEach(function(c){
-      /* 真实未读角标（原网站 MineChat 会话未读数；打开会话即清零） */
-      var unread = (window.MineChat && MineChat.getUnread) ? MineChat.getUnread("contact:"+c.id) : 0;
-      var badge = unread > 0 ? '<span style="background:#c9a96e;color:#fff;font-size:10px;border-radius:9px;padding:1px 6px">'+(unread>99?"99+":unread)+'</span>' : "";
-      h += '<div class="func-row" data-open="contact" data-id="'+c.id+'">' + avatarHTML(c) +
-        '<div class="func-text"><span class="func-title">'+esc(c.name)+'</span><span class="func-sub">'+(c.id==="c1"?"今天超级累…":c.id==="c2"?"刚醒，你呢":"昨天 22:15 未接")+'</span></div>' +
-        '<span style="font-size:10px;opacity:.5">'+(c.id==="c1"?"21:04":c.id==="c2"?"09:12":"昨天")+'</span>' + badge + '</div>';
-    });
+    /* 微信式会话列表：显示真实聊天记录（最后一条消息+时间+未读角标），无记录时为空态。
+       联系人列表归属通讯录页，不再在此展示演示数据。 */
+    var convs = (window.MineChat && MineChat.listConvs) ? MineChat.listConvs() : [];
+    var h = '<div class="scroll" style="padding:2px 0">';
+    if (convs.length === 0) {
+      h += '<div style="text-align:center;padding:72px 0;opacity:.55">' +
+        '<div style="font-size:28px;margin-bottom:10px">💬</div>' +
+        '<div style="font-size:14px;margin-bottom:4px">还没有对话</div>' +
+        '<div style="font-size:11.5px">从通讯录中选择联系人开始聊天</div></div>';
+    } else {
+      convs.forEach(function(conv){
+        var title = "", av = "", open = conv.type, id = conv.id;
+        if (conv.type === "contact") {
+          var c = findContact(conv.id);
+          if (!c) return;
+          title = c.name; av = avatarHTML(c);
+        } else {
+          var g = findGroup(conv.id);
+          if (!g) return;
+          title = g.name; av = groupAvatarHTML(g);
+        }
+        var lm = conv.lastMsg || {};
+        var txt = lm.text || "";
+        var isImg = typeof txt === "string" && txt.indexOf("data:image/") === 0;
+        var isAud = typeof txt === "string" && txt.indexOf("data:audio/") === 0;
+        var preview = isImg ? "[图片]" : (isAud ? "[语音]" : txt);
+        if (lm.from === "me") preview = "我: " + preview;
+        var unread = (window.MineChat && MineChat.getUnread) ? MineChat.getUnread(conv.key) : 0;
+        var badge = unread > 0 ? '<span style="background:#c9a96e;color:#fff;font-size:10px;border-radius:9px;padding:1px 6px;margin-left:6px;flex:0 0 auto">'+(unread>99?"99+":unread)+'</span>' : "";
+        h += '<div class="func-row" data-open="' + open + '" data-id="' + id + '" style="cursor:pointer">' + av +
+          '<div class="func-text" style="min-width:0;flex:1"><span class="func-title" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(title) + '</span>' +
+          '<span class="func-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">' + esc(preview) + '</span></div>' +
+          '<span style="font-size:10.5px;opacity:.5;flex:0 0 auto">' + chatTimeLabel(lm.time) + '</span>' + badge + '</div>';
+      });
+    }
     h += '</div>';
     return h;
   }
@@ -2376,20 +2413,12 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       '<div class="chat-inputbar"><input class="input-box" placeholder="输入消息…"><div class="send-btn">↑</div></div></div>';
   }
   function phonePage(){
-    function callRow(name, type, time, meta){
-      var txt = type === "in" ? "呼入" : type === "out" ? "呼出" : type === "miss" ? "未接" : "群通话";
-      return '<div class="call-row"><div class="avatar sm" style="font-size:12px">'+esc(name.charAt(0))+'</div>' +
-        '<div class="call-info"><div class="call-name">'+esc(name)+'</div><div class="call-meta"><span>'+esc(time)+'</span><span>·</span><span>'+esc(meta)+'</span></div></div>' +
-        '<span class="tag">'+txt+'</span></div>';
-    }
     return '<div class="scroll">' +
-      '<div class="group-head">今天 <span class="count">3 通</span></div>' +
-      callRow("夏以昼","in","21:02","通话 3 分 12 秒") +
-      callRow("小鹿","out","18:44","对方未接 · 已留言") +
-      callRow("周末去哪玩","group","12:30","群通话 · 3 位成员 · 12 分") +
-      '<div class="group-head">昨天 <span class="count">2 通</span></div>' +
-      callRow("陆之遥","miss","昨天 22:15","未接来电 · 附字卡留言") +
-      callRow("夏以昼","in","昨天 09:02","通话 1 分 08 秒") +
+      '<div style="text-align:center;padding:80px 0;opacity:.55">' +
+      '<div style="font-size:28px;margin-bottom:10px">📞</div>' +
+      '<div style="font-size:14px;margin-bottom:4px">暂无通话记录</div>' +
+      '<div style="font-size:11.5px">与联系人的通话记录会显示在这里</div>' +
+      '</div>' +
       '<div class="list-sep"></div>' +
       '<div style="font-size:10.5px;opacity:.55;line-height:1.7;padding:6px 4px">主动来电调度：每个联系人每小时 0.5% 概率呼入 · 呼出被挂断后 49% 附字卡/语音留言</div></div>';
   }
@@ -2398,11 +2427,17 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       '<div class="func-row" data-act="create-group"><div class="func-ic">＋</div><div class="func-text"><span class="func-title">发起群聊</span><span class="func-sub">选择联系人创建群聊</span></div><span class="chev">›</span></div>' +
       '<div class="func-row" data-act="add-contact"><div class="func-ic">＋</div><div class="func-text"><span class="func-title">添加联系人</span><span class="func-sub">新增联系人并设置头像</span></div><span class="chev">›</span></div>' +
       '<div class="group-head">群聊 <span class="count">'+GROUPS.length+'</span></div>';
+    if (GROUPS.length === 0) {
+      h += '<div style="text-align:center;padding:22px 0;opacity:.5;font-size:12px">暂无群聊，点击上方「发起群聊」创建</div>';
+    }
     GROUPS.forEach(function(g){
       h += '<div class="func-row" data-open="group" data-id="'+g.id+'">' + groupAvatarHTML(g) +
         '<div class="func-text"><span class="func-title">'+esc(g.name)+'</span><span class="func-sub">'+g.members.length+' 位成员</span></div><span class="chev">›</span></div>';
     });
     h += '<div class="group-head">联系人 <span class="count">'+CONTACTS.length+'</span></div>';
+    if (CONTACTS.length === 0) {
+      h += '<div style="text-align:center;padding:22px 0;opacity:.5;font-size:12px">暂无联系人，点击上方「添加联系人」新增</div>';
+    }
     CONTACTS.forEach(function(c){
       h += '<div class="func-row" data-open="contact" data-id="'+c.id+'">' + avatarHTML(c) +
         '<div class="func-text"><span class="func-title">'+esc(c.name)+'</span><span class="func-sub">'+esc(c.statusText||"在线")+'</span></div>' +
@@ -2433,8 +2468,8 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         '<div class="cp-row1"><span class="cp-name" id="cp-name">夏以昼</span>' +
           '<span class="cp-badge" id="cp-badge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span></div>' +
         '<div class="cp-handle" id="cp-handle">@xiayizhou</div>' +
-        '<div class="cp-bio">喜欢熬夜看星星，讨厌被放鸽子。说话爱卖关子，句尾常带"好吧/呢/呀"。</div>' +
-        '<div class="cp-stats"><span><b>128</b> 关注</span><span><b>256</b> 粉丝</span><span><b>342</b> 帖子</span></div>' +
+        '<div class="cp-bio" id="cp-bio" style="display:none"></div>' +
+        '<div class="cp-stats"><span><b>0</b> 关注</span><span><b>0</b> 粉丝</span><span><b>0</b> 帖子</span></div>' +
         '<div class="cp-actions"><div class="cp-btn edit" data-act="edit-persona">编辑人设</div><div class="cp-btn chat" data-act="chat">聊天</div>' +
           '<div class="cp-btn danger" data-act="delete-contact">删除联系人</div></div>' +
         '<div class="cp" id="cp-panel">' +
@@ -2458,8 +2493,7 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       '</div>' +
       '<div class="cp-tabs"><span class="cp-tab on">帖子</span><span class="cp-tab">回复</span><span class="cp-tab">媒体</span><span class="cp-tab">喜欢</span></div>' +
       '<div style="padding:4px 0">' +
-        postRow("夏以昼","@xiayizhou","2小时","今晚的月亮特别圆，像一枚银币。你们那边看得见吗？","🌕",12,3) +
-        postRow("夏以昼","@xiayizhou","昨天","今天和某人聊天，感觉整个人都被治愈了。","",34,8) +
+        '<div style="text-align:center;padding:44px 0;opacity:.5">暂无帖子</div>' +
       '</div></div>';
   }
   function postRow(name, handle, time, text, img, likes, comments){
@@ -2481,9 +2515,18 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       '<div class="gp-info" style="display:flex;align-items:center;gap:12px;padding:12px 4px;">' + gav +
         '<div><div style="font-size:15px;font-weight:600;">'+esc(g.name)+'</div><div style="font-size:11px;opacity:.6;margin-top:2px;">'+g.members.length+' 位成员</div></div></div>' +
       '<input type="file" accept="image/*" id="gp-avatar-file" class="file-hidden" style="display:none">' +
-      '<div class="group-head">群自动回复字卡 <span class="count">6</span></div>' +
-      '<div class="card-row"><div class="card-txt">哈哈哈哈<span class="card-raw">原组卡：哈哈 哈哈</span></div><button class="card-btn del">删除</button></div>' +
-      '<div class="card-row"><div class="card-txt">今天也超级开心呀<span class="card-raw">原组卡：今天 开心</span></div><button class="card-btn del">删除</button></div>' +
+      '<div class="group-head">群自动回复字卡 <span class="count" id="gauto-count">' + ((g.autoCards || []).length) + '</span></div>' +
+      '<div id="gauto-list">' + (function(){
+        var ga = g.autoCards || [];
+        var s = "";
+        if (ga.length === 0) s += '<div class="card-hint" style="padding:4px 2px">暂无群自动回复字卡，添加后 1% 不回复时自动发送</div>';
+        else ga.forEach(function(card, i){
+          var lab = (typeof card === "string" && card.indexOf("data:image/") === 0) ? "[图片]" : (typeof card === "string" && card.indexOf("data:audio/") === 0) ? "[语音]" : card;
+          s += '<div class="card-row"><div class="card-txt">' + esc(lab) + '</div><button class="card-btn del" data-del-gauto="' + i + '">删除</button></div>';
+        });
+        return s;
+      })() + '</div>' +
+      '<div style="display:flex;gap:6px;padding:6px 0"><input class="cards-input" id="gauto-add-input" placeholder="添加群自动回复字卡… 回车确认"><button class="card-btn ok" id="gauto-add-btn">添加</button></div>' +
       '<div class="group-head">群成员 <span class="count">'+g.members.length+'</span></div>';
     g.members.forEach(function(name){
       var c = null;
@@ -3855,10 +3898,30 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         typeRow("语音字卡",4,["到家了吗","今天开心吗"]);
     if (view === "per")
       return CONTACTS.map(function(c){
-        return '<div class="th-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' + avatarHTML(c) +
-          '<span style="font-size:13.5px;font-weight:600">'+esc(c.name)+'</span><span class="pill gold">'+([6,4,3][CONTACTS.indexOf(c)]||3)+' 张</span></div>' +
-          '<div class="card-row" style="padding:6px 0"><div class="card-txt">字符 / emoji / 图片 / 语音</div><button class="card-btn ok">编辑</button></div>' +
-          '<div class="card-row" style="padding:6px 0"><div class="card-txt">自动回复字卡</div><button class="card-btn ok">编辑</button></div></div>';
+        var cards = c.cards || [];
+        var autoCards = c.autoCards || [];
+        function cardLabel(x){
+          if (typeof x === "string" && x.indexOf("data:image/") === 0) return "图片 · [图片]";
+          if (typeof x === "string" && x.indexOf("data:audio/") === 0) return "语音 · [语音]";
+          return "字符 · " + x;
+        }
+        var cardRows = cards.map(function(card, i){
+          return '<div class="card-row"><div class="card-txt" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(cardLabel(card)) + '</div>' +
+            '<button class="card-btn del" data-del-card="' + i + '" data-pc="' + c.id + '">删除</button></div>';
+        }).join("");
+        var autoRows = autoCards.map(function(card, i){
+          return '<div class="card-row"><div class="card-txt" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">自动回复 · ' + esc(card) + '</div>' +
+            '<button class="card-btn del" data-del-auto="' + i + '" data-pc="' + c.id + '">删除</button></div>';
+        }).join("");
+        return '<div class="th-card" data-pc="' + c.id + '">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' + avatarHTML(c) +
+          '<span style="font-size:13.5px;font-weight:600">'+esc(c.name)+'</span><span class="pill gold">'+cards.length+' 张</span></div>' +
+          (cards.length ? cardRows : '<div class="card-hint" style="padding:4px 0">暂无字卡</div>') +
+          '<div style="display:flex;gap:6px;padding:6px 0"><input class="cards-input" data-add-card="' + c.id + '" placeholder="添加字卡… 回车确认"><button class="card-btn ok" data-add-card-btn="' + c.id + '">添加</button></div>' +
+          '<div class="group-head" style="font-size:12px;margin-top:4px">自动回复字卡 <span class="count">' + autoCards.length + '</span></div>' +
+          (autoCards.length ? autoRows : '<div class="card-hint" style="padding:4px 0">暂无自动回复字卡</div>') +
+          '<div style="display:flex;gap:6px;padding:6px 0"><input class="cards-input" data-add-auto="' + c.id + '" placeholder="添加自动回复… 回车确认"><button class="card-btn ok" data-add-auto-btn="' + c.id + '">添加</button></div>' +
+          '</div>';
       }).join("");
     if (view === "sys")
       return CONTACTS.map(function(c, i){
@@ -3900,7 +3963,61 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       });
     });
     page.querySelectorAll(".toggle").forEach(function(s){ s.addEventListener("click", function(){ s.classList.toggle("on"); }); });
-    page.querySelectorAll(".card-btn").forEach(function(b){
+    /* 单独字卡：真实增删（个人中心 → 字卡 → 单独字卡），持久化到 mine.contacts.v1 */
+    function findPC(id){ var c = null; CONTACTS.forEach(function(x){ if (x.id === id) c = x; }); return c; }
+    function rerenderPer(){
+      var body = page.querySelector("#cards-body");
+      if (body) { body.innerHTML = cardsLibHTML("per"); bindCardsPage(phone, page); }
+    }
+    page.querySelectorAll(".card-btn[data-del-card]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var c = findPC(b.getAttribute("data-pc"));
+        var idx = parseInt(b.getAttribute("data-del-card"), 10);
+        if (!c || !c.cards || idx < 0 || idx >= c.cards.length) return;
+        c.cards.splice(idx, 1); saveContactsData(); toastMsg("已删除字卡"); rerenderPer();
+      });
+    });
+    page.querySelectorAll(".card-btn[data-del-auto]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var c = findPC(b.getAttribute("data-pc"));
+        var idx = parseInt(b.getAttribute("data-del-auto"), 10);
+        if (!c || !c.autoCards || idx < 0 || idx >= c.autoCards.length) return;
+        c.autoCards.splice(idx, 1); saveContactsData(); toastMsg("已删除自动回复字卡"); rerenderPer();
+      });
+    });
+    page.querySelectorAll("[data-add-card-btn]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var id = btn.getAttribute("data-add-card-btn");
+        var inp = page.querySelector('[data-add-card="' + id + '"]');
+        var c = findPC(id);
+        if (!c || !inp) return;
+        var v = inp.value.trim(); if (!v) { toastMsg("请输入字卡内容"); return; }
+        if (!c.cards) c.cards = [];
+        c.cards.push(v); saveContactsData(); inp.value = ""; toastMsg("已添加字卡"); rerenderPer();
+      });
+    });
+    page.querySelectorAll("[data-add-auto-btn]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var id = btn.getAttribute("data-add-auto-btn");
+        var inp = page.querySelector('[data-add-auto="' + id + '"]');
+        var c = findPC(id);
+        if (!c || !inp) return;
+        var v = inp.value.trim(); if (!v) { toastMsg("请输入自动回复内容"); return; }
+        if (!c.autoCards) c.autoCards = [];
+        if (c.autoCards.indexOf(v) >= 0) { toastMsg("已存在该字卡"); return; }
+        c.autoCards.push(v); saveContactsData(); inp.value = ""; toastMsg("已添加自动回复字卡"); rerenderPer();
+      });
+    });
+    page.querySelectorAll("[data-add-card], [data-add-auto]").forEach(function(inp){
+      inp.addEventListener("keydown", function(e){
+        if (e.key === "Enter") {
+          var id = inp.getAttribute("data-add-card") || inp.getAttribute("data-add-auto");
+          var btn = page.querySelector('[data-add-card-btn="' + id + '"]') || page.querySelector('[data-add-auto-btn="' + id + '"]');
+          if (btn) btn.click();
+        }
+      });
+    });
+    page.querySelectorAll(".card-btn:not([data-del-card]):not([data-del-auto]):not([data-add-card-btn]):not([data-add-auto-btn])").forEach(function(b){
       b.addEventListener("click", function(){
         var row = b.closest(".card-row");
         var txt = row ? ((row.querySelector(".card-txt") || {}).textContent || "") : "";
@@ -4686,7 +4803,8 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         if (!av.querySelector(".cam-badge")) av.insertAdjacentHTML("beforeend", '<span class="cam-badge">📷</span>');
       }
     }
-    var hd = page.querySelector("#cp-handle"); if (hd) hd.textContent = "@" + c.handle + " · 关注中";
+    var hd = page.querySelector("#cp-handle");
+    if (hd) { if (c.handle) hd.textContent = "@" + c.handle + " · 关注中"; else hd.style.display = "none"; }
   }
   function openContactGroup(phone, g){
     showPage(phone.getAttribute("data-pi"), "group");
@@ -4723,6 +4841,64 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       renderPage(phone, "contacts");
       toastMsg("已解散群聊「" + g.name + "」");
     });
+    /* 群自动回复字卡：真实增删（持久化 mine.groups.v1，局部重渲染列表） */
+    function rerenderGAuto(){
+      var list = page.querySelector("#gauto-list");
+      var cnt = page.querySelector("#gauto-count");
+      var ga = g.autoCards || [];
+      if (cnt) cnt.textContent = ga.length;
+      if (list) {
+        if (ga.length === 0) list.innerHTML = '<div class="card-hint" style="padding:4px 2px">暂无群自动回复字卡，添加后 1% 不回复时自动发送</div>';
+        else {
+          var s = "";
+          ga.forEach(function(card, i){
+            var lab = (typeof card === "string" && card.indexOf("data:image/") === 0) ? "[图片]" : (typeof card === "string" && card.indexOf("data:audio/") === 0) ? "[语音]" : card;
+            s += '<div class="card-row"><div class="card-txt">' + esc(lab) + '</div><button class="card-btn del" data-del-gauto="' + i + '">删除</button></div>';
+          });
+          list.innerHTML = s;
+          list.querySelectorAll(".card-btn[data-del-gauto]").forEach(function(b){
+            b.addEventListener("click", function(){
+              var idx = parseInt(b.getAttribute("data-del-gauto"), 10);
+              var ga2 = g.autoCards || [];
+              if (idx < 0 || idx >= ga2.length) return;
+              ga2.splice(idx, 1);
+              g.autoCards = ga2;
+              saveContactsData();
+              rerenderGAuto();
+              toastMsg("已删除群自动回复字卡");
+            });
+          });
+        }
+      }
+    }
+    page.querySelectorAll(".card-btn[data-del-gauto]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var idx = parseInt(b.getAttribute("data-del-gauto"), 10);
+        var ga = g.autoCards || [];
+        if (idx < 0 || idx >= ga.length) return;
+        ga.splice(idx, 1);
+        g.autoCards = ga;
+        saveContactsData();
+        rerenderGAuto();
+        toastMsg("已删除群自动回复字卡");
+      });
+    });
+    var gAddBtn = page.querySelector("#gauto-add-btn");
+    var gAddInp = page.querySelector("#gauto-add-input");
+    function doGAdd(){
+      if (!gAddInp) return;
+      var v = gAddInp.value.trim();
+      if (!v) { toastMsg("请输入自动回复内容"); return; }
+      if (!g.autoCards) g.autoCards = [];
+      if (g.autoCards.indexOf(v) >= 0) { toastMsg("已存在该字卡"); return; }
+      g.autoCards.push(v);
+      saveContactsData();
+      gAddInp.value = "";
+      rerenderGAuto();
+      toastMsg("已添加群自动回复字卡");
+    }
+    if (gAddBtn) gAddBtn.addEventListener("click", doGAdd);
+    if (gAddInp) gAddInp.addEventListener("keydown", function(e){ if (e.key === "Enter") doGAdd(); });
     /* 群头像自定义：点击头像选择图片 → 更新并持久化 */
     var gav = page.querySelector("#gp-avatar");
     var gfile = page.querySelector("#gp-avatar-file");
