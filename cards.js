@@ -361,12 +361,37 @@ window.MineCards = (function () {
         }
       }
     } catch (e) {}
+    /* 回退：从 mine.contacts.v1（index.html zip 通讯录数据）找联系人名 */
+    try {
+      var raw = localStorage.getItem("mine.contacts.v1");
+      if (raw) {
+        var d = JSON.parse(raw);
+        var arr = Array.isArray(d) ? d : (d && Array.isArray(d.contacts) ? d.contacts : null);
+        if (arr) {
+          for (var j = 0; j < arr.length; j++) {
+            if (arr[j].id === cid) return arr[j].name || arr[j].nickname || cid;
+          }
+        }
+      }
+    } catch (e) {}
     return cid;
   }
   function listContacts() {
     try {
       if (C && C.loadData) C.loadData();
-      if (C && C.getState) return C.getState().contacts || [];
+      if (C && C.getState) {
+        var list = C.getState().contacts || [];
+        if (list.length) return list;
+      }
+    } catch (e) {}
+    /* 回退：mine.contacts.v1（index.html zip 通讯录数据，兼容数组与 {contacts:[]} 对象格式） */
+    try {
+      var raw = localStorage.getItem("mine.contacts.v1");
+      if (raw) {
+        var d = JSON.parse(raw);
+        var arr = Array.isArray(d) ? d : (d && Array.isArray(d.contacts) ? d.contacts : null);
+        if (arr && arr.length) return arr;
+      }
     } catch (e) {}
     return [];
   }

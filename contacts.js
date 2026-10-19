@@ -3184,6 +3184,20 @@ window.MineContacts = (function () {
       if (window.MineChat && MineChat.refreshProactive) MineChat.refreshProactive(c.id || c.name);
       return found || state.contacts[state.contacts.length - 1];
     },
+    // 删除联系人（按 id 优先，其次按名称），供联系人主页"删除联系人"同步
+    removeContact: function (id, name) {
+      var removed = false;
+      for (var i = 0; i < state.contacts.length; i++) {
+        if ((id && state.contacts[i].id === id) || (!id && name && state.contacts[i].name === name)) {
+          state.contacts.splice(i, 1); removed = true; break;
+        }
+      }
+      if (removed) {
+        save();
+        if (window.MineChat && MineChat.refreshProactive) MineChat.refreshProactive();
+      }
+      return removed;
+    },
     getState: function () { return JSON.parse(JSON.stringify(state)); },
     // 暴露给聊天模块使用
     findContact: findContact,

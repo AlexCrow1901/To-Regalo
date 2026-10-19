@@ -1034,7 +1034,7 @@ body {
 <script src="icons.js?v2000"></script>
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
-<script src="contacts.js?v2044"></script>
+<script src="contacts.js?v2047"></script>
 <script src="cards.js?v2041"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
@@ -1042,7 +1042,7 @@ body {
 <script src="mine-sync.js?v2000"></script>
 <script src="lexicon-card-generator.js?v2000"></script>
 <script src="lexicon-admin.js?v2000"></script>
-<script src="chat.js?v2046"></script>
+<script src="chat.js?v2047"></script>
 <script src="phone.js?v2000"></script>
 <script src="companion.js?v2000"></script>
 <script src="profile.js?v2041"></script>
@@ -4233,6 +4233,10 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
         if (!confirm("确定删除联系人「" + cur.name + "」？删除后其会话与字卡将不再使用")) return;
         for (var di = 0; di < CONTACTS.length; di++) if (CONTACTS[di].id === cur.id) CONTACTS.splice(di, 1);
         saveContactsData();
+        /* 同步删除 MineContacts 同名联系人（聊天引擎/单独字卡使用同一份数据） */
+        try {
+          if (window.MineContacts && MineContacts.removeContact) MineContacts.removeContact(cur.id, cur.name);
+        } catch(e){}
         showPage(phone.getAttribute("data-pi"), "contacts");
         renderPage(phone, "contacts");
         toastMsg("已删除联系人「" + nm + "」");
@@ -5190,6 +5194,13 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       var id = "c" + (CONTACTS.length + 1) + "_" + Date.now();
       CONTACTS.push({ id: id, name: nm, handle: "", avatar: avatarData, statusText: "在线", cards: [] });
       saveContactsData();
+      /* 同步 MineContacts（聊天引擎/联系人主页/单独字卡共用数据源），新联系人立即可聊可配字卡；
+         不传 cards，避免覆盖该联系人已有的字卡 */
+      try {
+        if (window.MineContacts && MineContacts.upsertContact) {
+          MineContacts.upsertContact({ id: id, name: nm, avatar: avatarData || null, status: "在线" });
+        }
+      } catch(e){}
       closeFn();
       renderPage(phone, "contacts");
       toastMsg("已添加联系人「" + nm + "」");
