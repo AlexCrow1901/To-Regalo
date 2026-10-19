@@ -1026,7 +1026,7 @@ body {
     }
   };
 })();
-</script><script src="storage.js?v2039"></script>
+</script><script src="storage.js?v2040"></script>
 <script src="utils.js?v2000"></script>
 <script src="notify.js?v2000"></script>
 <script src="keepalive.js?v2000"></script>
@@ -1034,8 +1034,8 @@ body {
 <script src="icons.js?v2000"></script>
 <script src="background.js?v2002"></script>
 <script src="probabilities.js?v2000"></script>
-<script src="contacts.js?v2039"></script>
-<script src="cards.js?v2039"></script>
+<script src="contacts.js?v2040"></script>
+<script src="cards.js?v2040"></script>
 <script src="lexicon.js?v2000"></script>
 <script src="lexicon-engine.js?v2000"></script>
 <script src="mine-ai.js?v2000"></script>
@@ -1045,7 +1045,7 @@ body {
 <script src="chat.js?v2007"></script>
 <script src="phone.js?v2000"></script>
 <script src="companion.js?v2000"></script>
-<script src="profile.js?v2039"></script>
+<script src="profile.js?v2040"></script>
 <script src="mail.js?v2000"></script>
 <script src="treehole.js?v2000"></script>
 <script src="radio.js?v2000"></script>
@@ -4485,7 +4485,15 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     var hs = phone.querySelector(".home-scroll"), pd = phone.querySelector(".page-dots");
     if (hs) { hs._savedLeft = hs.scrollLeft; hs.style.display = "none"; } if (pd) pd.style.display = "none";
     var nameEl = page.querySelector("#cp-name"); if (nameEl) nameEl.textContent = c.name;
-    var av = page.querySelector("#cp-avatar"); if (av) av.textContent = c.name.charAt(0);
+    var av = page.querySelector("#cp-avatar");
+    if (av) {
+      if (c.avatar) {
+        av.innerHTML = '<img src="' + c.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block"><span class="cam-badge">📷</span>';
+      } else {
+        av.textContent = c.name.charAt(0);
+        if (!av.querySelector(".cam-badge")) av.insertAdjacentHTML("beforeend", '<span class="cam-badge">📷</span>');
+      }
+    }
     var hd = page.querySelector("#cp-handle"); if (hd) hd.textContent = "@" + c.handle + " · 关注中";
   }
   function openContactGroup(phone, g){
