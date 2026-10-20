@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="To Regalo" />
-<meta name="app-version" content="1.0.61" />
+<meta name="app-version" content="1.0.62" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
@@ -1050,9 +1050,9 @@ body {
 <script src="lexicon-engine.js?v2100"></script>
 <script src="mine-ai.js?v2102"></script>
 <script src="mine-sync.js?v2100"></script>
-<script src="lexicon-card-generator.js?v2101"></script>
+<script src="lexicon-card-generator.js?v2102"></script>
 <script src="lexicon-admin.js?v2100"></script>
-<script src="chat.js?v2106"></script>
+<script src="chat.js?v2107"></script>
 <script src="phone.js?v2100"></script>
 <script src="companion.js?v2100"></script>
 <script src="profile.js?v2100"></script>
@@ -2027,8 +2027,9 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     return '<div class="avatar-group">'+a+'</div>';
   }
   function pageForType(t){
-    /* 点击"聊天"组件 → 直接进入通讯录（所有联系人列表），不再先随机进某联系人会话 */
-    var map = { chat:"contacts", phone:"phone", contacts:"contacts", companion:"companion", moments:"moments", settings:"settings",
+    /* 点击"聊天"组件 → 微信式会话列表（各联系人聊天记录+最后消息+未读角标），
+       不随机进任何联系人会话 */
+    var map = { chat:"chat", phone:"phone", contacts:"contacts", companion:"companion", moments:"moments", settings:"settings",
       weather:"weather", browser:"browser", files:"files", mailbox:"mail", treehole:"treehole", radio:"radio", food:"food",
       netease:"radio", cm:"cm", card:"card", persona:"card", mycards:"card", allcards:"card", probs:"me", export:"files",
       quotes:"quotes", bg:"bg", theme:"theme", vinyl:"vinyl", quote:"quote", album:"album", daily:"companion", breath:"companion",
