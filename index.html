@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="To Regalo" />
-<meta name="app-version" content="1.0.66" />
+<meta name="app-version" content="1.0.67" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
@@ -465,6 +465,12 @@ body {
 .msg-bubble.is-recalled .recalled-text{display:none}
 .msg-bubble.is-recalled.is-revealed .recalled-tag{display:none}
 .msg-bubble.is-recalled.is-revealed .recalled-text{display:inline}
+/* 乱码消息（AI 判定无意义拦截）：默认显示（乱码），点击展开/收起原始字卡 */
+.msg-bubble.is-garbled{background:rgba(128,128,128,.14); color:rgba(128,128,128,.75); font-style:italic; font-size:12.5px; cursor:pointer}
+.msg-bubble.is-garbled .garbled-tag{display:inline-block; font-size:10px; color:#b06ab3; border:1px solid rgba(176,106,179,.45); padding:0 5px; border-radius:6px; margin-right:6px; font-style:normal}
+.msg-bubble.is-garbled .garbled-text{display:none}
+.msg-bubble.is-garbled.is-revealed .garbled-tag{display:none}
+.msg-bubble.is-garbled.is-revealed .garbled-text{display:inline}
 /* AI 润色消息：点击气泡展开/折叠查看原始字卡 */
 .msg-bubble.is-expandable{cursor:pointer}
 /* 消息主体容器：头像右侧竖排（气泡 + 原始字卡展开框），修复原始字卡在 flex 行内错位的问题 */
@@ -1052,11 +1058,11 @@ body {
 <script src="cards.js?v2100"></script>
 <script src="lexicon.js?v2100"></script>
 <script src="lexicon-engine.js?v2100"></script>
-<script src="mine-ai.js?v2103"></script>
+<script src="mine-ai.js?v2104"></script>
 <script src="mine-sync.js?v2100"></script>
-<script src="lexicon-card-generator.js?v2106"></script>
+<script src="lexicon-card-generator.js?v2107"></script>
 <script src="lexicon-admin.js?v2100"></script>
-<script src="chat.js?v2111"></script>
+<script src="chat.js?v2112"></script>
 <script src="phone.js?v2100"></script>
 <script src="companion.js?v2100"></script>
 <script src="profile.js?v2100"></script>
@@ -4756,6 +4762,10 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       /* 撤回消息：默认显示（撤回），点击展开/收回原文 */
       row.innerHTML = '<div class="msg-avatar">' + (whoImg || who) + '</div>' +
         '<div class="msg-bubble is-recalled"><span class="recalled-tag">（撤回）</span><span class="recalled-text">' + esc(m.rawText || m.text) + '</span></div>';
+    } else if (m.garbled) {
+      /* 乱码消息（AI 判定无意义拦截）：默认显示（乱码），点击展开/收回原始字卡 */
+      row.innerHTML = '<div class="msg-avatar">' + (whoImg || who) + '</div>' +
+        '<div class="msg-bubble is-garbled"><span class="garbled-tag">（乱码）</span><span class="garbled-text">' + esc(m.rawText || m.text) + '</span></div>';
     } else if (m.isChoice) {
       /* 抉择消息：标题 + ABCD 选项逐行 + 对方已选标注 */
       var lines = String(m.text || "").split("\n");
@@ -4806,6 +4816,12 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       });
     });
     body.querySelectorAll(".msg-bubble.is-recalled").forEach(function(b){
+      if (b._bound) return;
+      b._bound = true;
+      b.addEventListener("click", function(){ b.classList.toggle("is-revealed"); });
+    });
+    /* 乱码消息：点击气泡展开/折叠查看原始字卡 */
+    body.querySelectorAll(".msg-bubble.is-garbled").forEach(function(b){
       if (b._bound) return;
       b._bound = true;
       b.addEventListener("click", function(){ b.classList.toggle("is-revealed"); });

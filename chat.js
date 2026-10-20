@@ -170,10 +170,10 @@ window.MineChat = (function () {
       (function (id, raw, cid) {
         window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
           if (res && res.ok && res.text) {
-            /* 无意义组卡：AI 判定不可能出现在聊天中（__SKIP_CARD__）→ 移除该消息不发送 */
+            /* 乱码拦截：AI 判定无意义 → 不静默丢弃，标记为乱码消息（显示（乱码），点击可展开原卡） */
             if (res.text.indexOf("__SKIP_CARD__") >= 0) {
               for (var si = 0; si < msgs.length; si++) {
-                if (msgs[si].id === id) { msgs.splice(si, 1); break; }
+                if (msgs[si].id === id) { msgs[si].garbled = true; msgs[si].rawText = msgs[si].text; break; }
               }
               save();
               notifyConvChanged(convKey);
@@ -225,7 +225,7 @@ window.MineChat = (function () {
   }
   /** 直接向联系人会话发送指定文本（字卡生成器 auto 通过 → 实时发送联动）
       复用主动消息的追加消息 / 未读计数 / 系统通知机制 */
-  function sendGeneratedCard(contactId, text, raw) {
+  function sendGeneratedCard(contactId, text, raw, garbled) {
     if (!contactId || !text) return { ok: false, reason: "bad-args" };
     var contact = C.findContact(contactId);
     if (!contact || !contact.id) return { ok: false, reason: "no-contact" };
@@ -250,6 +250,7 @@ window.MineChat = (function () {
       isProactive: true,
       isGenerated: true,
       recalled: recalled || undefined,
+      garbled: garbled || undefined,
       senderName: senderName,
       senderAvatar: senderAvatar
     };
@@ -1601,6 +1602,14 @@ window.MineChat = (function () {
         '<span class="recalled-text">' + bubbleText + '</span>';
       bubbleText = "";
     }
+    // 乱码消息（AI 判定无意义拦截）：默认显示"（乱码）"，点击气泡展开/收起原始字卡
+    var garbledWrap = "";
+    if (msg.garbled) {
+      bubbleClass += " is-garbled";
+      garbledWrap = '<span class="garbled-tag">（乱码）</span>' +
+        '<span class="garbled-text">' + bubbleText + '</span>';
+      bubbleText = "";
+    }
     // 删卡请求：显示按钮或处理结果
     var deleteButtons = "";
     if (msg.isDeleteRequest) {
@@ -1622,7 +1631,7 @@ window.MineChat = (function () {
     }
     // 原始字卡（AI润色过的消息，点击可展开查看原始组卡）
     var rawCardHTML = "";
-    if (msg.rawText && !msg.recalled) {
+    if (msg.rawText && !msg.recalled && !msg.garbled) {
       bubbleClass += " has-raw-card";
       rawCardHTML = '<div class="raw-card-content" style="display:none;font-size:11px;color:#999;margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,0.08);">原始组卡：' + escapeHtml(msg.rawText) + '</div>';
     }
@@ -2190,10 +2199,10 @@ window.MineChat = (function () {
               (function (id, raw, cid, key) {
                 window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "group" }).then(function (res) {
                   if (res && res.ok && res.text) {
-                    /* 无意义组卡：AI 判定不可能出现在聊天中（__SKIP_CARD__）→ 移除该消息不发送 */
+                    /* 乱码拦截：AI 判定无意义 → 不静默丢弃，标记为乱码消息（显示（乱码），点击可展开原卡） */
                     if (res.text.indexOf("__SKIP_CARD__") >= 0) {
                       for (var si = 0; si < msgs.length; si++) {
-                        if (msgs[si].id === id) { msgs.splice(si, 1); break; }
+                        if (msgs[si].id === id) { msgs[si].garbled = true; msgs[si].rawText = msgs[si].text; break; }
                       }
                       save();
                       notifyConvChanged(key);
@@ -2342,10 +2351,10 @@ window.MineChat = (function () {
         (function (id, raw, cid) {
           window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
             if (res && res.ok && res.text && res.text !== raw) {
-              /* 无意义组卡：AI 判定不可能出现在聊天中（__SKIP_CARD__）→ 移除该消息不发送 */
+              /* 乱码拦截：AI 判定无意义 → 不静默丢弃，标记为乱码消息（显示（乱码），点击可展开原卡） */
               if (res.text.indexOf("__SKIP_CARD__") >= 0) {
                 for (var si = 0; si < msgs.length; si++) {
-                  if (msgs[si].id === id) { msgs.splice(si, 1); break; }
+                  if (msgs[si].id === id) { msgs[si].garbled = true; msgs[si].rawText = msgs[si].text; break; }
                 }
                 save();
                 if (typeof renderMessages === "function") renderMessages();
@@ -2424,10 +2433,10 @@ window.MineChat = (function () {
         (function (id, raw, cid, msgObj) {
           window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
             if (res && res.ok && res.text) {
-              /* 无意义组卡：AI 判定不可能出现在聊天中（__SKIP_CARD__）→ 移除该消息不发送 */
+              /* 乱码拦截：AI 判定无意义 → 不静默丢弃，标记为乱码消息（显示（乱码），点击可展开原卡） */
               if (res.text.indexOf("__SKIP_CARD__") >= 0) {
                 for (var si = 0; si < msgs.length; si++) {
-                  if (msgs[si].id === id) { msgs.splice(si, 1); break; }
+                  if (msgs[si].id === id) { msgs[si].garbled = true; msgs[si].rawText = msgs[si].text; break; }
                 }
                 save();
                 notifyConvChanged(key);
