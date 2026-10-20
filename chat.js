@@ -2012,6 +2012,8 @@ window.MineChat = (function () {
   }
   /* ---------------- 追加单条消息 ---------------- */
   function appendMessage(msg) {
+    /* zip 蓝本无 chat.js 旧 UI DOM：消息渲染由 zip 的 renderConv/onConvChange 负责 */
+    if (!msgContainer) return;
     var dateStr = fmtDateSep(msg.time);
     var lastSep = msgContainer.querySelector(".chat-date-sep:last-of-type");
     // 简单处理：若需要日期分隔
@@ -2446,6 +2448,9 @@ window.MineChat = (function () {
   }
   /* ---------------- 输入指示 ---------------- */
   function showTyping(member) {
+    /* zip 蓝本无 chat.js 旧 UI DOM（msgContainer=null）：
+       跳过"正在输入"指示，回复消息由会话变更回调（onConvChange→renderConv）渲染 */
+    if (!msgContainer) return;
     hideTyping();
     var typing = document.createElement("div");
     typing.className = "msg-row";
