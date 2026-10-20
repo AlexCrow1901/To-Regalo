@@ -3102,6 +3102,7 @@ window.MineChat = (function () {
       return (conversations[convKey] || []).map(function (m) {
         return {
           id: m.id, from: m.from, text: m.text, time: m.time, recalled: !!m.recalled,
+          garbled: !!m.garbled,
           rawText: m.rawText || null, senderName: m.senderName || null,
           aiPolished: !!m.aiPolished,
           isDeleteRequest: !!m.isDeleteRequest, deleteCardText: m.deleteCardText || null,
