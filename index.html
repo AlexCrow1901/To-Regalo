@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="To Regalo" />
-<meta name="app-version" content="1.0.58" />
+<meta name="app-version" content="1.0.59" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
@@ -1046,7 +1046,7 @@ body {
 <script src="mine-sync.js?v2100"></script>
 <script src="lexicon-card-generator.js?v2100"></script>
 <script src="lexicon-admin.js?v2100"></script>
-<script src="chat.js?v2103"></script>
+<script src="chat.js?v2104"></script>
 <script src="phone.js?v2100"></script>
 <script src="companion.js?v2100"></script>
 <script src="profile.js?v2100"></script>
@@ -4620,6 +4620,13 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     page._isGroup = !!ctx.group;
     /* 打开会话即清零该会话未读角标（返回聊天列表时角标消失） */
     if (window.MineChat && MineChat.clearUnread) MineChat.clearUnread(page._convKey);
+    /* 会话变更监听：AI 润色异步完成后消息被替换，实时重渲染当前会话 */
+    if (window.MineChat && MineChat.onConvChange && !page._convBound) {
+      page._convBound = true;
+      MineChat.onConvChange(function (key) {
+        if (key === page._convKey && page.classList.contains("on")) renderConv(page);
+      });
+    }
     renderConv(page);
     bindSend(page);
   }

@@ -164,6 +164,7 @@ window.MineChat = (function () {
                 msgs[i].aiPolished = true;
                 msgs[i].recalled = Math.random() < prob("recallGenerated");
                 save();
+                notifyConvChanged(convKey);
                 if (typeof renderMessages === "function") renderMessages();
                 break;
               }
@@ -174,6 +175,7 @@ window.MineChat = (function () {
               if (msgs[i].id === id) {
                 msgs[i].text = window.MineAI.fixPronoun(msgs[i].text, "single", cid);
                 save();
+                notifyConvChanged(convKey);
                 if (typeof renderMessages === "function") renderMessages();
                 break;
               }
@@ -1302,6 +1304,13 @@ window.MineChat = (function () {
     title: "",
     subtitle: ""
   };
+  /* 会话变更监听：消息新增/被 AI 润色替换后通知外部界面（zip 聊天页实时刷新） */
+  var _convListeners = [];
+  function notifyConvChanged(convKey) {
+    for (var i = 0; i < _convListeners.length; i++) {
+      try { _convListeners[i](convKey); } catch (e) {}
+    }
+  }
   var pageEl = null;
   var msgContainer = null;
   var inputEl = null;
@@ -2121,14 +2130,15 @@ window.MineChat = (function () {
             var msgs = conversations[curConvKey];
             if (!msgs) return;
             var beforeLen = msgs.length;
-            msgs.push({
+            var newMsg = {
               id: uid(),
               from: m.id,
               text: card,
               time: Date.now(),
               senderName: m.name || "未知",
               senderAvatar: m.avatar || null
-            });
+            };
+            msgs.push(newMsg);
             // 文字字卡有 15% 概率附加 1~3 条 emoji（图片/语音字卡不附加）
             if (!isImageCard(card) && !isAudioCard(card) && !isEmojiCard(card)) {
               var _pool = [];
@@ -2145,6 +2155,42 @@ window.MineChat = (function () {
                   senderAvatar: m.avatar || null
                 });
               }
+            }
+            /* AI 润色：群聊回复同样全部经过 AI 润色（对齐单聊 doContactReply），
+               润色成功后保存原始字卡 rawText + aiPolished 标记，供聊天界面点击展开查看 */
+            if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 2) {
+              (function (id, raw, cid, key) {
+                window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "group" }).then(function (res) {
+                  if (res && res.ok && res.text && res.text !== raw) {
+                    for (var i = 0; i < msgs.length; i++) {
+                      if (msgs[i].id === id) {
+                        msgs[i].text = res.text;
+                        msgs[i].rawText = raw;
+                        msgs[i].aiPolished = true;
+                        msgs[i].recalled = Math.random() < prob("recallGenerated");
+                        save();
+                        notifyConvChanged(key);
+                        if (typeof renderMessages === "function") renderMessages();
+                        break;
+                      }
+                    }
+                  } else {
+                    /* AI失败兜底：本地人称转换 */
+                    for (var i = 0; i < msgs.length; i++) {
+                      if (msgs[i].id === id) {
+                        msgs[i].text = window.MineAI.fixPronoun(msgs[i].text, "group", cid);
+                        save();
+                        notifyConvChanged(key);
+                        if (typeof renderMessages === "function") renderMessages();
+                        break;
+                      }
+                    }
+                  }
+                });
+              })(newMsg.id, card, m.id, curConvKey);
+            } else if (!isImageCard(card) && !isAudioCard(card)) {
+              /* 短句或没开AI时，本地直接做人称转换 */
+              newMsg.text = window.MineAI.fixPronoun(newMsg.text, "group", m.id);
             }
             save();
             // 未查看时增加未读计数（类微信机制）
@@ -2338,6 +2384,7 @@ window.MineChat = (function () {
                   /* 撤回机制：和 sendGeneratedCard 一样，20% 概率撤回态发送 */
                   msgs[i].recalled = Math.random() < prob("recallGenerated");
                   save();
+                  notifyConvChanged(key);
                   /* 更新 DOM */
                   if (typeof renderMessages === "function") renderMessages();
                   break;
@@ -2988,6 +3035,10 @@ window.MineChat = (function () {
           deleteResolved: !!m.deleteResolved, deleteAccepted: !!m.deleteAccepted
         };
       });
+    },
+    /* 会话变更监听：zip 聊天页注册后，AI 润色异步完成/消息变化时实时刷新 */
+    onConvChange: function (fn) {
+      if (typeof fn === "function") _convListeners.push(fn);
     },
     /* 微信式会话列表：返回所有有消息的会话（含最后一条消息），按最后消息时间倒序。
        供聊天列表页渲染真实聊天记录（替代硬编码演示数据）。 */
