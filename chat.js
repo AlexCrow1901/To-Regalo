@@ -1471,6 +1471,9 @@ window.MineChat = (function () {
   }
   /* ---------------- 渲染所有消息 ---------------- */
   function renderMessages() {
+    /* zip 蓝本界面没有原网站聊天 DOM（msgContainer 为 null）时直接返回，
+       避免每次回复都在控制台抛 TypeError；zip 界面由自己的 renderConv 渲染 */
+    if (!msgContainer) return;
     var msgs = conversations[ctx.convKey] || [];
     var html = "";
     var lastDateStr = "";
