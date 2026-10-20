@@ -1267,7 +1267,19 @@ window.MineChat = (function () {
     var hasSysCards = window.MineCards && window.MineCards.getSysCards
       ? window.MineCards.getSysCards().length > 0
       : false;
-    var members = (group.members || []).map(C.findContact).filter(function (c) {
+    var members = (group.members || []).map(function (m) {
+      /* 兼容群成员存储格式：可能是联系人对象 / id / 名字。
+         发起群聊存的是名字，必须按名字兜底查找，否则群聊回复链永远查不到成员。 */
+      var c = null;
+      try {
+        if (m && typeof m === "object" && m.id) {
+          c = C.findContact(m.id);
+        } else if (m) {
+          c = C.findContact(String(m)) || C.findContactByName(String(m));
+        }
+      } catch (e) {}
+      return c;
+    }).filter(function (c) {
       if (!c) return false;
       // 我的单独字卡 + 我的公用字卡（所有联系人可用）+ 系统字卡（所有联系人可用）
       var hasMine = mineCardPool(c.id).length > 0 || hasSysCards;
