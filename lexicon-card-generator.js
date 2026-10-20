@@ -1183,6 +1183,8 @@ window.MineCardGenerator = (function () {
         (function (cid2, raw, inp, route) {
           window.MineAI.polish({ raw: raw, input: inp, route: route, contactId: cid2, chatType: "single" })
             .then(function (res) {
+              /* 无意义组卡：AI 判定不可能出现在聊天中（__SKIP_CARD__）→ 不发送 */
+              if (res && res.ok && res.text && res.text.indexOf("__SKIP_CARD__") >= 0) return;
               var finalText = (res && res.ok && res.text) ? res.text : raw;
               if (window.MineChat && window.MineChat.sendGeneratedCard) {
                 /* 传入原始组卡文本（gen.text）作为 raw：展示原始字卡 + 发送去重依据 */

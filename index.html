@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="To Regalo" />
-<meta name="app-version" content="1.0.65" />
+<meta name="app-version" content="1.0.66" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
@@ -467,7 +467,11 @@ body {
 .msg-bubble.is-recalled.is-revealed .recalled-text{display:inline}
 /* AI 润色消息：点击气泡展开/折叠查看原始字卡 */
 .msg-bubble.is-expandable{cursor:pointer}
-.msg-rawbox{margin:3px 0 2px 42px; padding:6px 10px; border-radius:10px; background:rgba(128,128,128,.10); border:1px dashed rgba(128,128,128,.28); font-size:11px; color:rgba(128,128,128,.72); word-break:break-all; line-height:1.5}
+/* 消息主体容器：头像右侧竖排（气泡 + 原始字卡展开框），修复原始字卡在 flex 行内错位的问题 */
+.msg-main{display:flex; flex-direction:column; align-items:flex-start; gap:4px; max-width:78%}
+.msg-main .msg-bubble{max-width:100%}
+.msg-row.me .msg-main{align-items:flex-end}
+.msg-rawbox{margin:0; padding:6px 10px; border-radius:10px; background:rgba(128,128,128,.10); border:1px dashed rgba(128,128,128,.28); font-size:11px; color:rgba(128,128,128,.72); word-break:break-all; line-height:1.5}
 .msg-rawbox .raw-label{display:inline-block; font-size:9px; color:#c9a96e; margin-right:6px; border:1px solid rgba(201,169,110,.4); padding:0 5px; border-radius:6px; vertical-align:1px}
 .msg-bubble.ai-tag::after{content:"AI润色"; position:absolute; top:-9px; right:6px; font-size:8.5px; color:#c9a96e; background:rgba(201,169,110,.14); padding:1px 6px; border-radius:6px}
 .msg-bubble .b-actions{display:flex; gap:8px; margin-top:8px}
@@ -1048,11 +1052,11 @@ body {
 <script src="cards.js?v2100"></script>
 <script src="lexicon.js?v2100"></script>
 <script src="lexicon-engine.js?v2100"></script>
-<script src="mine-ai.js?v2102"></script>
+<script src="mine-ai.js?v2103"></script>
 <script src="mine-sync.js?v2100"></script>
-<script src="lexicon-card-generator.js?v2105"></script>
+<script src="lexicon-card-generator.js?v2106"></script>
 <script src="lexicon-admin.js?v2100"></script>
-<script src="chat.js?v2110"></script>
+<script src="chat.js?v2111"></script>
 <script src="phone.js?v2100"></script>
 <script src="companion.js?v2100"></script>
 <script src="profile.js?v2100"></script>
@@ -4774,8 +4778,10 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       var hasRaw = !!(m.rawText && m.aiPolished && m.rawText !== m.text);
       if (hasRaw) {
         row.innerHTML = '<div class="msg-avatar">' + (whoImg || who) + '</div>' +
-          '<div class="msg-bubble is-expandable" data-msgid="' + esc(m.id) + '">' + esc(m.text) + '</div>' +
-          '<div class="msg-rawbox" data-msgid="' + esc(m.id) + '" style="display:none"><span class="raw-label">原始字卡</span>' + esc(m.rawText) + '</div>';
+          '<div class="msg-main">' +
+            '<div class="msg-bubble is-expandable" data-msgid="' + esc(m.id) + '">' + esc(m.text) + '</div>' +
+            '<div class="msg-rawbox" data-msgid="' + esc(m.id) + '" style="display:none"><span class="raw-label">原始字卡</span>' + esc(m.rawText) + '</div>' +
+          '</div>';
       } else {
         row.innerHTML = '<div class="msg-avatar">' + (whoImg || who) + '</div><div class="msg-bubble">' + esc(m.text) + '</div>';
       }
