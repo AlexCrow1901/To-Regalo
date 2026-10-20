@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="To Regalo" />
-<meta name="app-version" content="1.0.57" />
+<meta name="app-version" content="1.0.58" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
@@ -459,6 +459,10 @@ body {
 .msg-bubble.is-recalled .recalled-text{display:none}
 .msg-bubble.is-recalled.is-revealed .recalled-tag{display:none}
 .msg-bubble.is-recalled.is-revealed .recalled-text{display:inline}
+/* AI 润色消息：点击气泡展开/折叠查看原始字卡 */
+.msg-bubble.is-expandable{cursor:pointer}
+.msg-rawbox{margin:3px 0 2px 42px; padding:6px 10px; border-radius:10px; background:rgba(128,128,128,.10); border:1px dashed rgba(128,128,128,.28); font-size:11px; color:rgba(128,128,128,.72); word-break:break-all; line-height:1.5}
+.msg-rawbox .raw-label{display:inline-block; font-size:9px; color:#c9a96e; margin-right:6px; border:1px solid rgba(201,169,110,.4); padding:0 5px; border-radius:6px; vertical-align:1px}
 .msg-bubble.ai-tag::after{content:"AI润色"; position:absolute; top:-9px; right:6px; font-size:8.5px; color:#c9a96e; background:rgba(201,169,110,.14); padding:1px 6px; border-radius:6px}
 .msg-bubble .b-actions{display:flex; gap:8px; margin-top:8px}
 .msg-bubble .b-actions button{flex:1; padding:7px 0; border-radius:10px; border:none; font-size:12px; cursor:pointer}
@@ -1038,11 +1042,11 @@ body {
 <script src="cards.js?v2100"></script>
 <script src="lexicon.js?v2100"></script>
 <script src="lexicon-engine.js?v2100"></script>
-<script src="mine-ai.js?v2101"></script>
+<script src="mine-ai.js?v2102"></script>
 <script src="mine-sync.js?v2100"></script>
 <script src="lexicon-card-generator.js?v2100"></script>
 <script src="lexicon-admin.js?v2100"></script>
-<script src="chat.js?v2102"></script>
+<script src="chat.js?v2103"></script>
 <script src="phone.js?v2100"></script>
 <script src="companion.js?v2100"></script>
 <script src="profile.js?v2100"></script>
@@ -4659,9 +4663,18 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     var row = document.createElement("div");
     row.className = "msg-row" + (m.from === "me" ? " me" : "");
     var who = m.from === "me" ? "我" : esc((m.senderName || "?").charAt(0));
-    /* 对方消息头像：优先消息快照 senderAvatar，其次实时查联系人自定义头像（mine.contacts.v1），无则首字占位 */
     var whoImg = "";
-    if (m.from !== "me") {
+    if (m.from === "me") {
+      /* 自己的消息头像：读个人中心设置的头像（mine.me.v1），无则首字占位 */
+      try {
+        var _meRaw = localStorage.getItem("mine.me.v1");
+        if (_meRaw) {
+          var _me = JSON.parse(_meRaw);
+          if (_me && _me.avatar) whoImg = '<img src="' + _me.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">';
+        }
+      } catch (e) {}
+    } else {
+      /* 对方消息头像：优先消息快照 senderAvatar，其次实时查联系人自定义头像（mine.contacts.v1），无则首字占位 */
       var _mav = m.senderAvatar || null;
       if (!_mav) {
         try {
@@ -4706,7 +4719,15 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       /* 图片消息 */
       row.innerHTML = '<div class="msg-avatar">' + (whoImg || who) + '</div><div class="msg-bubble"><img class="msg-img" src="' + m.text + '" alt="图片"></div>';
     } else {
-      row.innerHTML = '<div class="msg-avatar">' + (whoImg || who) + '</div><div class="msg-bubble">' + esc(m.text) + '</div>';
+      /* 普通文字消息：AI 润色过的消息可点击展开/折叠查看原始字卡 */
+      var hasRaw = !!(m.rawText && m.aiPolished && m.rawText !== m.text);
+      if (hasRaw) {
+        row.innerHTML = '<div class="msg-avatar">' + (whoImg || who) + '</div>' +
+          '<div class="msg-bubble is-expandable" data-msgid="' + esc(m.id) + '">' + esc(m.text) + '</div>' +
+          '<div class="msg-rawbox" data-msgid="' + esc(m.id) + '" style="display:none"><span class="raw-label">原始字卡</span>' + esc(m.rawText) + '</div>';
+      } else {
+        row.innerHTML = '<div class="msg-avatar">' + (whoImg || who) + '</div><div class="msg-bubble">' + esc(m.text) + '</div>';
+      }
     }
     /* 消息气泡下方时间标注：点击在 时间 ↔ 日期 间切换（对齐原网站） */
     row.insertAdjacentHTML("beforeend",
@@ -4731,6 +4752,16 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       if (b._bound) return;
       b._bound = true;
       b.addEventListener("click", function(){ b.classList.toggle("is-revealed"); });
+    });
+    /* AI 润色消息：点击气泡展开/折叠查看原始字卡 */
+    body.querySelectorAll(".msg-bubble.is-expandable").forEach(function(b){
+      if (b._bound) return;
+      b._bound = true;
+      b.addEventListener("click", function(){
+        var id = b.getAttribute("data-msgid");
+        var box = body.querySelector('.msg-rawbox[data-msgid="' + id + '"]');
+        if (box) box.style.display = (box.style.display === "none") ? "block" : "none";
+      });
     });
     body.querySelectorAll(".b-ok").forEach(function(b){
       if (b._bound) return;

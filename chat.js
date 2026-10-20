@@ -2983,6 +2983,7 @@ window.MineChat = (function () {
         return {
           id: m.id, from: m.from, text: m.text, time: m.time, recalled: !!m.recalled,
           rawText: m.rawText || null, senderName: m.senderName || null,
+          aiPolished: !!m.aiPolished,
           isDeleteRequest: !!m.isDeleteRequest, deleteCardText: m.deleteCardText || null,
           deleteResolved: !!m.deleteResolved, deleteAccepted: !!m.deleteAccepted
         };
