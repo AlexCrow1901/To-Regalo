@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="To Regalo" />
-<meta name="app-version" content="1.0.59" />
+<meta name="app-version" content="1.0.60" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
@@ -1046,7 +1046,7 @@ body {
 <script src="mine-sync.js?v2100"></script>
 <script src="lexicon-card-generator.js?v2100"></script>
 <script src="lexicon-admin.js?v2100"></script>
-<script src="chat.js?v2104"></script>
+<script src="chat.js?v2105"></script>
 <script src="phone.js?v2100"></script>
 <script src="companion.js?v2100"></script>
 <script src="profile.js?v2100"></script>
@@ -4672,13 +4672,17 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     var who = m.from === "me" ? "我" : esc((m.senderName || "?").charAt(0));
     var whoImg = "";
     if (m.from === "me") {
-      /* 自己的消息头像：读个人中心设置的头像（mine.me.v1），无则首字占位 */
+      /* 自己的消息头像：优先读个人中心设置的头像（mine.profile.v1.avatar），
+         兼容旧数据 mine.me.v1.avatar，无则首字占位 */
       try {
-        var _meRaw = localStorage.getItem("mine.me.v1");
-        if (_meRaw) {
-          var _me = JSON.parse(_meRaw);
-          if (_me && _me.avatar) whoImg = '<img src="' + _me.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">';
+        var _meRaw = localStorage.getItem("mine.profile.v1");
+        var _me = null;
+        if (_meRaw) { try { _me = JSON.parse(_meRaw); } catch (e) {} }
+        if (!_me || !_me.avatar) {
+          var _meRaw2 = localStorage.getItem("mine.me.v1");
+          if (_meRaw2) { try { _me = JSON.parse(_meRaw2); } catch (e) {} }
         }
+        if (_me && _me.avatar) whoImg = '<img src="' + _me.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">';
       } catch (e) {}
     } else {
       /* 对方消息头像：优先消息快照 senderAvatar，其次实时查联系人自定义头像（mine.contacts.v1），无则首字占位 */

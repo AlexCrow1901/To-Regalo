@@ -156,7 +156,7 @@ window.MineChat = (function () {
     if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 2) {
       (function (id, raw, cid) {
         window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
-          if (res && res.ok && res.text && res.text !== raw) {
+          if (res && res.ok && res.text) {
             for (var i = 0; i < msgs.length; i++) {
               if (msgs[i].id === id) {
                 msgs[i].text = res.text;
@@ -2161,7 +2161,7 @@ window.MineChat = (function () {
             if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 2) {
               (function (id, raw, cid, key) {
                 window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "group" }).then(function (res) {
-                  if (res && res.ok && res.text && res.text !== raw) {
+                  if (res && res.ok && res.text) {
                     for (var i = 0; i < msgs.length; i++) {
                       if (msgs[i].id === id) {
                         msgs[i].text = res.text;
@@ -2374,7 +2374,7 @@ window.MineChat = (function () {
       if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(card) && !isAudioCard(card) && card.length > 2) {
         (function (id, raw, cid, msgObj) {
           window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
-            if (res && res.ok && res.text && res.text !== raw) {
+            if (res && res.ok && res.text) {
               /* 找到这条消息，替换文本 */
               for (var i = 0; i < msgs.length; i++) {
                 if (msgs[i].id === id) {
