@@ -974,21 +974,28 @@ window.MineCardGenerator = (function () {
         (function (it) {
           window.MineAI.polish({ raw: it.text, input: it.input, route: it.route, contactId: it.contactId, chatType: "single" })
             .then(function (res) {
-              if (res && res.ok && res.text && res.text !== it.text) {
+              if (res && res.ok && res.text) {
                 var list = getItems();
                 for (var i = 0; i < list.length; i++) {
                   if (list[i].id === it.id) {
-                    list[i].rawText = it.text;
-                    list[i].text = res.text;
-                    list[i].aiPolished = true;
-                    list[i].status = "auto";
-                    list[i].judgedBy = "ai";
-                    list[i].decidedAt = Date.now();
-                    /* 自动加入字卡池 */
-                    if (list[i].contactId && list[i].contactId !== "global" && window.MineCards && window.MineCards.addPerCard) {
-                      window.MineCards.addPerCard(list[i].contactId, res.text);
-                    } else {
-                      addToPublicPool(res.text);
+                    /* 乱码/角色搞反：不进字卡库，保持待审批（rawText 显示拼音原文），用户审批页可查看删除 */
+                    if (res.text.indexOf("__SKIP_CARD__") >= 0 || isRoleReversedReplyLocal(res.text, it.text)) {
+                      list[i].dropReason = "ai-nonsense";
+                      break;
+                    }
+                    if (res.text !== it.text) {
+                      list[i].rawText = (it.route === "pinyin" && it.input) ? it.input : it.text;
+                      list[i].text = res.text;
+                      list[i].aiPolished = true;
+                      list[i].status = "auto";
+                      list[i].judgedBy = "ai";
+                      list[i].decidedAt = Date.now();
+                      /* 自动加入字卡池 */
+                      if (list[i].contactId && list[i].contactId !== "global" && window.MineCards && window.MineCards.addPerCard) {
+                        window.MineCards.addPerCard(list[i].contactId, res.text);
+                      } else {
+                        addToPublicPool(res.text);
+                      }
                     }
                     break;
                   }
@@ -1154,6 +1161,20 @@ window.MineCardGenerator = (function () {
     saveLast(last);
   }
 
+  /* 本地角色搞反兜底（与 chat.js 同款）：AI 润色结果出现回应式反问，原卡无没懂/不懂/意思字样 → 角色搞反 */
+  function isRoleReversedReplyLocal(text, raw) {
+    if (!text || !raw) return false;
+    var replyPats = ["我没懂", "没听懂", "没听明白", "我没明白", "看不懂你", "你发的是什么", "这是什么意思", "你说什么", "什么意思呀", "什么意思"];
+    for (var i = 0; i < replyPats.length; i++) {
+      if (text.indexOf(replyPats[i]) >= 0) {
+        if (raw.indexOf("没懂") >= 0 || raw.indexOf("不懂") >= 0 || raw.indexOf("没听懂") >= 0 ||
+            raw.indexOf("意思") >= 0 || raw.indexOf("明白") >= 0) return false;
+        return true;
+      }
+    }
+    return false;
+  }
+
   /* ==================== 实时聊天组卡（系统审批即发，入池需你审批） ====================
      联系人在实时聊天中组字卡：系统审批（评分 ≥ 自动阈值 → 通过）后**实时发出**，
      聊天体验不变；但该卡**不会自动入池**，转为待审批（来源标记「实时字卡」），
@@ -1183,17 +1204,21 @@ window.MineCardGenerator = (function () {
         (function (cid2, raw, inp, route) {
           window.MineAI.polish({ raw: raw, input: inp, route: route, contactId: cid2, chatType: "single" })
             .then(function (res) {
-              /* 乱码拦截：AI 判定无意义 → 以乱码消息形式发出（带 garbled 标记），用户可点击展开查看原卡 */
-              if (res && res.ok && res.text && res.text.indexOf("__SKIP_CARD__") >= 0) {
+              /* 乱码拦截：AI 判定无意义，或润色结果出现回应式反问（角色搞反）→ 以乱码消息形式发出 */
+              var roleReversed = (res && res.ok && res.text && isRoleReversedReplyLocal(res.text, raw));
+              if (res && res.ok && res.text && (res.text.indexOf("__SKIP_CARD__") >= 0 || roleReversed)) {
                 if (window.MineChat && window.MineChat.sendGeneratedCard) {
-                  window.MineChat.sendGeneratedCard(cid2, raw, raw, true);
+                  /* 乱码消息：原卡显示拼音原文（拼音路线）或还原词，text 用还原词 */
+                  var rawGarbled = (route === "pinyin") ? inp : raw;
+                  window.MineChat.sendGeneratedCard(cid2, raw, rawGarbled, true);
                 }
                 return;
               }
               var finalText = (res && res.ok && res.text) ? res.text : raw;
               if (window.MineChat && window.MineChat.sendGeneratedCard) {
-                /* 传入原始组卡文本（gen.text）作为 raw：展示原始字卡 + 发送去重依据 */
-                window.MineChat.sendGeneratedCard(cid2, finalText, gen.text);
+                /* 传入原始组卡文本作为 raw：拼音路线显示拼音字母原文，词路线显示还原词 */
+                var rawShow = (route === "pinyin") ? inp : raw;
+                window.MineChat.sendGeneratedCard(cid2, finalText, rawShow);
               }
             });
         })(cid, gen.text, gen.input, gen.route);

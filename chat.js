@@ -127,6 +127,22 @@ window.MineChat = (function () {
     recentSent[key] = now;
     return true;
   }
+  /* 本地角色搞反兜底：AI 润色结果出现"回应式反问"（我没懂/这是什么意思/你发的是什么等），
+     而原卡本身没有「没懂/不懂/意思/明白」等字样 → 说明 AI 把碎片当成了宝宝发来的消息在回复，
+     判定为角色搞反，按乱码处理（不发送润色结果） */
+  function isRoleReversedReply(text, raw) {
+    if (!text || !raw) return false;
+    var replyPats = ["我没懂", "没听懂", "没听明白", "我没明白", "看不懂你", "你发的是什么", "这是什么意思", "你说什么", "什么意思呀", "什么意思"];
+    for (var i = 0; i < replyPats.length; i++) {
+      if (text.indexOf(replyPats[i]) >= 0) {
+        /* 原卡本身有没懂/不懂/意思/明白等字样 → 联系人是真的没懂宝宝说的话，正常放行 */
+        if (raw.indexOf("没懂") >= 0 || raw.indexOf("不懂") >= 0 || raw.indexOf("没听懂") >= 0 ||
+            raw.indexOf("意思") >= 0 || raw.indexOf("明白") >= 0) return false;
+        return true;
+      }
+    }
+    return false;
+  }
   /** 发送一条主动消息（复用字卡抽取 / emoji 附加 / 未读计数 / 系统通知机制） */
   function sendProactiveMessage(contact, group, convKey) {
     if (!contact || !contact.id) return;
@@ -171,7 +187,7 @@ window.MineChat = (function () {
         window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
           if (res && res.ok && res.text) {
             /* 乱码拦截：AI 判定无意义 → 不静默丢弃，标记为乱码消息（显示（乱码），点击可展开原卡） */
-            if (res.text.indexOf("__SKIP_CARD__") >= 0) {
+            if (res.text.indexOf("__SKIP_CARD__") >= 0 || isRoleReversedReply(res.text, raw)) {
               for (var si = 0; si < msgs.length; si++) {
                 if (msgs[si].id === id) { msgs[si].garbled = true; msgs[si].rawText = msgs[si].text; break; }
               }
@@ -260,7 +276,8 @@ window.MineChat = (function () {
        "宝宝发来的话"导致角色搞反、内容被错误改写） */
     if (rawKey && rawKey !== text) {
       newMsg.rawText = rawKey;
-      newMsg.aiPolished = true;
+      /* 乱码消息不带 AI 润色标记（它不是润色结果，仅展示原卡） */
+      if (!garbled) newMsg.aiPolished = true;
     }
     save();
     // 未查看该会话时增加未读计数（并触发后台系统通知）
@@ -2200,7 +2217,7 @@ window.MineChat = (function () {
                 window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "group" }).then(function (res) {
                   if (res && res.ok && res.text) {
                     /* 乱码拦截：AI 判定无意义 → 不静默丢弃，标记为乱码消息（显示（乱码），点击可展开原卡） */
-                    if (res.text.indexOf("__SKIP_CARD__") >= 0) {
+                    if (res.text.indexOf("__SKIP_CARD__") >= 0 || isRoleReversedReply(res.text, raw)) {
                       for (var si = 0; si < msgs.length; si++) {
                         if (msgs[si].id === id) { msgs[si].garbled = true; msgs[si].rawText = msgs[si].text; break; }
                       }
@@ -2352,7 +2369,7 @@ window.MineChat = (function () {
           window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
             if (res && res.ok && res.text && res.text !== raw) {
               /* 乱码拦截：AI 判定无意义 → 不静默丢弃，标记为乱码消息（显示（乱码），点击可展开原卡） */
-              if (res.text.indexOf("__SKIP_CARD__") >= 0) {
+              if (res.text.indexOf("__SKIP_CARD__") >= 0 || isRoleReversedReply(res.text, raw)) {
                 for (var si = 0; si < msgs.length; si++) {
                   if (msgs[si].id === id) { msgs[si].garbled = true; msgs[si].rawText = msgs[si].text; break; }
                 }
@@ -2434,7 +2451,7 @@ window.MineChat = (function () {
           window.MineAI.polish({ raw: raw, route: "template", contactId: cid, chatType: "single" }).then(function (res) {
             if (res && res.ok && res.text) {
               /* 乱码拦截：AI 判定无意义 → 不静默丢弃，标记为乱码消息（显示（乱码），点击可展开原卡） */
-              if (res.text.indexOf("__SKIP_CARD__") >= 0) {
+              if (res.text.indexOf("__SKIP_CARD__") >= 0 || isRoleReversedReply(res.text, raw)) {
                 for (var si = 0; si < msgs.length; si++) {
                   if (msgs[si].id === id) { msgs[si].garbled = true; msgs[si].rawText = msgs[si].text; break; }
                 }
