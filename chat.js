@@ -3019,6 +3019,8 @@ window.MineChat = (function () {
     getConvBg: getConvBg,
     /* 主动消息：设置变更后重排对应联系人的发送计划（contacts.js 调用） */
     refreshProactive: refreshProactive,
+    /* 重新从 localStorage 加载会话/未读/调度状态（渲染列表前调用，确保数据新鲜） */
+    reload: function () { try { load(); } catch (e) {} },
     /* 字卡生成器联动：直接向联系人会话发送指定文本 */
     sendGeneratedCard: sendGeneratedCard,
     /* 联系人主动删除字卡 */
@@ -3100,11 +3102,13 @@ window.MineChat = (function () {
       }
       return true;
     },
-    /* 未读角标：zip 蓝本聊天列表读取/清零（打开会话时清零） */
+    /* 未读角标：zip 蓝本聊天列表读取/清零（读取前 reload，确保刷新后数据最新） */
     getUnread: function (convKey) {
+      try { load(); } catch (e) {}
       return getUnread(convKey);
     },
     clearUnread: function (convKey) {
+      try { load(); } catch (e) {}
       clearUnread(convKey);
       if (window.MineNotify) MineNotify.refreshBadges();
       return true;

@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="To Regalo" />
-<meta name="app-version" content="1.0.63" />
+<meta name="app-version" content="1.0.64" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
@@ -1050,9 +1050,9 @@ body {
 <script src="lexicon-engine.js?v2100"></script>
 <script src="mine-ai.js?v2102"></script>
 <script src="mine-sync.js?v2100"></script>
-<script src="lexicon-card-generator.js?v2103"></script>
+<script src="lexicon-card-generator.js?v2104"></script>
 <script src="lexicon-admin.js?v2100"></script>
-<script src="chat.js?v2108"></script>
+<script src="chat.js?v2109"></script>
 <script src="phone.js?v2100"></script>
 <script src="companion.js?v2100"></script>
 <script src="profile.js?v2100"></script>
@@ -2464,6 +2464,8 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
   function chatPage(){
     /* 微信式聊天列表：群聊区 + 联系人区（全部列出），点击任意群/联系人直接进入对话框。
        有会话记录的行显示最后一条消息 + 时间 + 未读角标，无会话的显示"开始聊天" */
+    /* 渲染前重新加载会话数据（页面刷新后内存为空，getConv 不触发 load） */
+    try { if (window.MineChat && MineChat.reload) MineChat.reload(); } catch (e) {}
     function convLastOf(key){
       try {
         var msgs = (window.MineChat && MineChat.getConv) ? MineChat.getConv(key) : [];
