@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="To Regalo" />
-<meta name="app-version" content="1.0.60" />
+<meta name="app-version" content="1.0.61" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>To Regalo</title>
@@ -228,8 +228,11 @@ body {
 
 /* 单个应用图标组件 */
 .w-app { width:66px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:5px; }
-.w-app .ic { width:42px; height:42px; display:flex; align-items:center; justify-content:center; color:#f0f0f0; }
+.w-app .ic { width:42px; height:42px; display:flex; align-items:center; justify-content:center; color:#f0f0f0; position:relative; }
 .phone.light .w-app .ic { color:#1a1a1a; }
+/* 通知角标（"聊天"组件未读数：图标左上角、无边框、象牙白数字） */
+.w-app .ic .notify-badge { position:absolute; top:-4px; left:-6px; color:#fffff0; font-size:11px; font-weight:bold; z-index:20; pointer-events:none; background:rgba(0,0,0,.38); border-radius:8px; padding:0 4px; line-height:1.4; }
+.phone.light .w-app .ic .notify-badge { color:#1a1a1a; background:rgba(255,255,255,.55); }
 .w-app .ic svg { width:25px; height:25px; stroke:currentColor; fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 .w-app .nm { font-size:10px; color:#888; text-align:center; }
 .phone.light .w-app .nm { color:#555; }
@@ -261,6 +264,9 @@ body {
   border-top:1px solid #262626;
   z-index: 9;
 }
+/* 进入聊天界面（会话列表/对话页）时隐藏底部导航栏：
+   导航栏不再随键盘弹出而上移，聊天页占满手机屏，输入栏固定在底部 */
+.phone.in-chat .dock { display:none; }
 .phone.light .dock { background:#f7f7f4; border-top:1px solid #e5e5e2; }
 .dock .di { display:flex; flex-direction:column; align-items:center; gap:3px; color:#555; font-size:10px; }
 .phone.light .dock .di { color:#aaa; }
@@ -1044,9 +1050,9 @@ body {
 <script src="lexicon-engine.js?v2100"></script>
 <script src="mine-ai.js?v2102"></script>
 <script src="mine-sync.js?v2100"></script>
-<script src="lexicon-card-generator.js?v2100"></script>
+<script src="lexicon-card-generator.js?v2101"></script>
 <script src="lexicon-admin.js?v2100"></script>
-<script src="chat.js?v2105"></script>
+<script src="chat.js?v2106"></script>
 <script src="phone.js?v2100"></script>
 <script src="companion.js?v2100"></script>
 <script src="profile.js?v2100"></script>
@@ -1669,7 +1675,11 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       case "album": return { cls:"w-album", html:"", w:1, h:1 };
     }
     var appTypes = { chat:1, phone:1, contacts:1, companion:1, moments:1, settings:1, weather:1, browser:1 };
-    if (appTypes[type]) return { cls:"w-app", html:'<div class="ic">' + SVG[type] + '</div><div class="nm">' + libName(type) + '</div><div class="w-del">×</div>', w:1, h:1 };
+    if (appTypes[type]) {
+      /* "聊天"组件渲染未读角标（左上角数字），由 MineNotify 定时刷新 */
+      var badge = (type === "chat" && window.MineNotify) ? MineNotify.badgeHTML("chat") : "";
+      return { cls:"w-app", html:'<div class="ic">' + SVG[type] + badge + '</div><div class="nm">' + libName(type) + '</div><div class="w-del">×</div>', w:1, h:1 };
+    }
     return { cls:"w-comp", html:'<div class="ic">' + SVG[type] + '</div><div class="nm">' + libName(type) + '</div><div class="w-del">×</div>', w:1, h:1 };
   }
 
@@ -2017,7 +2027,8 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
     return '<div class="avatar-group">'+a+'</div>';
   }
   function pageForType(t){
-    var map = { chat:"chat", phone:"phone", contacts:"contacts", companion:"companion", moments:"moments", settings:"settings",
+    /* 点击"聊天"组件 → 直接进入通讯录（所有联系人列表），不再先随机进某联系人会话 */
+    var map = { chat:"contacts", phone:"phone", contacts:"contacts", companion:"companion", moments:"moments", settings:"settings",
       weather:"weather", browser:"browser", files:"files", mailbox:"mail", treehole:"treehole", radio:"radio", food:"food",
       netease:"radio", cm:"cm", card:"card", persona:"card", mycards:"card", allcards:"card", probs:"me", export:"files",
       quotes:"quotes", bg:"bg", theme:"theme", vinyl:"vinyl", quote:"quote", album:"album", daily:"companion", breath:"companion",
@@ -2070,6 +2081,13 @@ body.theme-neumorphism #cards-sheet-body .sp-group-head, body.theme-neumorphism 
       var app = d.getAttribute("data-app");
       d.classList.toggle("on", app === pg || (pg === "home" && app === "home"));
     });
+    /* 聊天界面隐藏底部导航栏（含会话列表 chat 与对话页 chat-detail），
+       键盘弹出时 dock 不再被顶起 */
+    phone.classList.toggle("in-chat", pg === "chat" || pg === "chat-detail");
+    /* 打开聊天入口（通讯录/会话列表）→ 清除主屏角标，各会话未读保留 */
+    if ((pg === "contacts" || pg === "chat") && window.MineChat && MineChat.clearAllUnread) {
+      try { MineChat.clearAllUnread(); } catch (e) {}
+    }
     /* 切到聊天页时重渲染列表：未读角标实时（打开会话清零后返回立即消失） */
     if (pg === "chat" && typeof renderPage === "function") renderPage(phone, "chat");
     try { var want = "#" + pg + "|" + pi; if (location.hash !== want) location.hash = want; } catch(e){}

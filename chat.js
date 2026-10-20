@@ -115,6 +115,18 @@ window.MineChat = (function () {
     if (isNaN(max) || max < min) max = min;
     return min + Math.random() * (max - min);
   }
+  /* ---------------- 发送去重 ----------------
+     同一会话在 DEDUP_SEND_MS 窗口内已发过相同原始字卡/组卡文本时，跳过本次发送，
+     防止"实时组卡 + 主动调度"等双路径对同一张卡重复润色发送两条消息 */
+  var RECENT_SEND_MS = 25000;
+  var recentSent = {};
+  function sendDedupPass(convKey, raw) {
+    var key = convKey + "|" + String(raw || "");
+    var now = Date.now();
+    if (recentSent[key] && now - recentSent[key] < RECENT_SEND_MS) return false;
+    recentSent[key] = now;
+    return true;
+  }
   /** 发送一条主动消息（复用字卡抽取 / emoji 附加 / 未读计数 / 系统通知机制） */
   function sendProactiveMessage(contact, group, convKey) {
     if (!contact || !contact.id) return;
@@ -122,6 +134,7 @@ window.MineChat = (function () {
     // 也不创建空的会话记录）
     var card = group ? pickReplyCardForGroup(contact, group) : pickReplyCard(contact);
     if (!card) return;
+    if (!sendDedupPass(convKey, card)) return;  // 25 秒内同会话同内容已发过 → 跳过
     if (!conversations[convKey]) conversations[convKey] = [];
     var msgs = conversations[convKey];
     var senderName = contact.name || "未知";
@@ -202,11 +215,13 @@ window.MineChat = (function () {
   }
   /** 直接向联系人会话发送指定文本（字卡生成器 auto 通过 → 实时发送联动）
       复用主动消息的追加消息 / 未读计数 / 系统通知机制 */
-  function sendGeneratedCard(contactId, text) {
+  function sendGeneratedCard(contactId, text, raw) {
     if (!contactId || !text) return { ok: false, reason: "bad-args" };
     var contact = C.findContact(contactId);
     if (!contact || !contact.id) return { ok: false, reason: "no-contact" };
     var convKey = "contact:" + contact.id;
+    var rawKey = raw || text;   // 原始组卡文本（用于去重，可与润色后文本不同）
+    if (!sendDedupPass(convKey, rawKey)) return { ok: false, reason: "duplicated" };
     if (!conversations[convKey]) conversations[convKey] = [];
     var msgs = conversations[convKey];
     var senderName = contact.name || "未知";
@@ -229,19 +244,12 @@ window.MineChat = (function () {
       senderAvatar: senderAvatar
     };
     msgs.push(newMsg);
-    /* AI 润色：所有文字字卡都经过AI润色 */
-    if (window.MineAI && window.MineAI.isEnabled() && !isImageCard(text) && !isAudioCard(text) && text.length > 1) {
-      (function (id, raw, cid, msgObj) {
-        window.MineAI.polish({ raw: raw, route: "generated", contactId: cid, chatType: "single" }).then(function (res) {
-          if (res && res.ok && res.text && res.text !== raw) {
-            msgObj.text = res.text;
-            msgObj.rawText = raw;
-            msgObj.aiPolished = true;
-            save();
-            if (typeof renderMessages === "function") renderMessages();
-          }
-        });
-      })(newMsg.id, text, contact.id, newMsg);
+    /* 文本已是调用方（组卡生成器）AI 润色后的结果：直接记录原始组卡文本，
+       供聊天界面点击展开查看；不再二次润色（二次润色会把已润色句子误当成
+       "宝宝发来的话"导致角色搞反、内容被错误改写） */
+    if (rawKey && rawKey !== text) {
+      newMsg.rawText = rawKey;
+      newMsg.aiPolished = true;
     }
     save();
     // 未查看该会话时增加未读计数（并触发后台系统通知）
@@ -824,10 +832,17 @@ window.MineChat = (function () {
   function getNotifyCount() {
     return appLevelSeen ? 0 : getTotalUnread();
   }
-  /* 判断当前是否正在查看某个会话 */
+  /* 判断当前是否正在查看某个会话
+     zip UI：聊天详情页 .on + _convKey 为准；旧 UI：page-chat 激活 + ctx.convKey */
   function isViewingConv(convKey) {
+    var cd = document.querySelector('.page[data-page="chat-detail"]');
+    if (cd && cd._convKey !== undefined) {
+      return cd.classList.contains("on") && cd._convKey === convKey;
+    }
     var chatPage = document.getElementById("page-chat");
-    if (!chatPage || !chatPage.classList.contains("is-active")) return false;
+    if (!chatPage) return false;
+    var active = chatPage.classList.contains("is-active") || chatPage.classList.contains("on");
+    if (!active) return false;
     return ctx.convKey === convKey;
   }
   /* ---------------- 工具 ---------------- */
@@ -2127,6 +2142,7 @@ window.MineChat = (function () {
             if (isViewingConv(curConvKey)) hideTyping();
             var card = pickReplyCardForGroup(m, group);
             if (!card) return;
+            if (!sendDedupPass(curConvKey, card)) return;  // 25 秒内同会话同内容已发过 → 跳过
             var msgs = conversations[curConvKey];
             if (!msgs) return;
             var beforeLen = msgs.length;
@@ -2238,6 +2254,7 @@ window.MineChat = (function () {
     }
     // 仍无任何字卡 → 保持沉默
     if (!card) return;
+    if (!sendDedupPass(convKey, card)) return;  // 25 秒内同会话同内容已发过 → 跳过
     var maxDelay = (contact && contact.replyDelay !== undefined) ? contact.replyDelay : 1.5;
     var actualDelay = Math.random() * maxDelay * 1000;
     var typingMember = group ? contact : null;
@@ -2361,6 +2378,7 @@ window.MineChat = (function () {
     var senderAvatar = (contact && contact.avatar) ? contact.avatar : null;
     var beforeLen = msgs.length;
     if (card) {
+      if (!sendDedupPass(key, card)) return;  // 25 秒内同会话同内容已发过 → 跳过
       var newMsg = { id: uid(), from: contact.id, text: card, time: Date.now(), senderName: senderName, senderAvatar: senderAvatar };
       msgs.push(newMsg);
       // 文字字卡有 15% 概率附加 1~3 条 emoji（图片/语音字卡不附加）

@@ -1185,7 +1185,8 @@ window.MineCardGenerator = (function () {
             .then(function (res) {
               var finalText = (res && res.ok && res.text) ? res.text : raw;
               if (window.MineChat && window.MineChat.sendGeneratedCard) {
-                window.MineChat.sendGeneratedCard(cid2, finalText);
+                /* 传入原始组卡文本（gen.text）作为 raw：展示原始字卡 + 发送去重依据 */
+                window.MineChat.sendGeneratedCard(cid2, finalText, gen.text);
               }
             });
         })(cid, gen.text, gen.input, gen.route);
